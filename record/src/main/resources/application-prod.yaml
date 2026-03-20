@@ -1,0 +1,22 @@
+# 生产环境配置。
+# 这里不写死真实值，全部通过环境变量注入，避免敏感信息进入仓库。
+
+spring:
+  datasource:
+    # 生产数据库地址，启动前必须提供。
+    url: ${DB_URL}
+    # 生产数据库用户名。
+    username: ${DB_USERNAME}
+    # 生产数据库密码。
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      # 生产 Redis 主机。
+      host: ${REDIS_HOST}
+      # 生产 Redis 端口。
+      port: ${REDIS_PORT:6379}
+      # 生产 Redis 库号。
+      database: ${REDIS_DATABASE:0}
+      # Redis 连接超时。
+      timeout: 3s

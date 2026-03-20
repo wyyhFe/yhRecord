@@ -1,0 +1,22 @@
+# 开发环境配置。
+# 这里保留本地默认值，适合你本机直接启动调试。
+
+spring:
+  datasource:
+    # 本地 MySQL 连接地址。
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/life_record?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    # 本地数据库用户名。
+    username: ${DB_USERNAME:root}
+    # 本地数据库密码。
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      # 本地 Redis 地址。
+      host: ${REDIS_HOST:127.0.0.1}
+      # 本地 Redis 端口。
+      port: ${REDIS_PORT:6379}
+      # 本地 Redis 数据库编号。
+      database: ${REDIS_DATABASE:0}
+      # Redis 连接超时。
+      timeout: 3s

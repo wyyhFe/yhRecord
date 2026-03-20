@@ -1,0 +1,113 @@
+{
+  "easycom": {
+    "autoscan": true
+  },
+  "globalStyle": {
+    "navigationBarTitleText": "Life Record",
+    "navigationBarBackgroundColor": "#fffaf4",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f6efe5"
+  },
+  "tabBar": {
+    "color": "#7b6c5a",
+    "selectedColor": "#c47c52",
+    "backgroundColor": "#fffaf4",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/diary/index",
+        "text": "日记"
+      },
+      {
+        "pagePath": "pages/ledger/index",
+        "text": "记账"
+      },
+      {
+        "pagePath": "pages/checkin/index",
+        "text": "打卡"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "生活记录"
+      }
+    },
+    {
+      "path": "pages/diary/index",
+      "style": {
+        "navigationBarTitleText": "日记本"
+      }
+    },
+    {
+      "path": "pages/diary/editor",
+      "style": {
+        "navigationBarTitleText": "写日记"
+      }
+    },
+    {
+      "path": "pages/diary/detail",
+      "style": {
+        "navigationBarTitleText": "日记详情"
+      }
+    },
+    {
+      "path": "pages/ledger/index",
+      "style": {
+        "navigationBarTitleText": "记账本"
+      }
+    },
+    {
+      "path": "pages/ledger/editor",
+      "style": {
+        "navigationBarTitleText": "新增账单"
+      }
+    },
+    {
+      "path": "pages/checkin/index",
+      "style": {
+        "navigationBarTitleText": "打卡"
+      }
+    },
+    {
+      "path": "pages/checkin/editor",
+      "style": {
+        "navigationBarTitleText": "创建打卡任务"
+      }
+    },
+    {
+      "path": "pages/memory/index",
+      "style": {
+        "navigationBarTitleText": "回忆"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "个人中心"
+      }
+    },
+    {
+      "path": "pages/profile/reminder",
+      "style": {
+        "navigationBarTitleText": "提醒设置"
+      }
+    },
+    {
+      "path": "pages/auth/login",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    }
+  ]
+}

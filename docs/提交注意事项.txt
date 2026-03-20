@@ -1,0 +1,7 @@
+按“单次提交 + 多行分类说明”提交这次改动：
+1）subject 一行中文总标题
+2）body 按多行分类前缀写：feat: / fix: / refactor: / perf: / docs: / chore: / test:
+3）每行一句，描述具体改动和结果，不要空话
+4）提交前先按模块归类改动并给我预览提交说明
+5）我确认后再 git add、git commit、git push
+6）默认全部中文

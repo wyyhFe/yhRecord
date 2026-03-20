@@ -1,0 +1,48 @@
+$ink: #1e293b;
+$paper: #f6efe5;
+$cream: #fffaf4;
+$sand: #e8d9c5;
+$clay: #c47c52;
+$moss: #4b6b57;
+$blush: #d87c86;
+
+.page-shell {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 160rpx;
+  box-sizing: border-box;
+}
+
+.glass-panel {
+  background: rgba(255, 250, 244, 0.94);
+  border: 1rpx solid rgba(196, 124, 82, 0.08);
+  box-shadow: 0 18rpx 48rpx rgba(67, 41, 26, 0.08);
+  border-radius: 28rpx;
+}
+
+.section-title {
+  color: $ink;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.section-subtitle {
+  color: rgba(30, 41, 59, 0.58);
+  font-size: 24rpx;
+}
+
+.soft-text {
+  color: rgba(30, 41, 59, 0.62);
+}
+
+.brand-button {
+  background: linear-gradient(135deg, $clay 0%, #d7a648 100%);
+  color: #fff;
+  border-radius: 999rpx;
+  padding: 0 28rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  box-shadow: 0 14rpx 30rpx rgba(196, 124, 82, 0.22);
+}
