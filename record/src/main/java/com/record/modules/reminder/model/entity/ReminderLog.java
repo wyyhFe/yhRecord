@@ -20,23 +20,32 @@ import java.time.LocalDateTime;
 @TableName("reminder_log")
 @Schema(description = "提醒发送日志实体")
 public class ReminderLog extends BaseEntity {
+
     @TableId
     @Schema(description = "日志 ID", example = "1")
     private Long id;
+
     @Schema(description = "所属用户 ID", example = "10001")
     private Long userId;
+
     @Schema(description = "业务类型", example = "DIARY_DAILY")
     private ReminderBusinessType businessType;
+
     @Schema(description = "发送通道", example = "MINI_PROGRAM")
     private ReminderChannel channel;
+
     @Schema(description = "业务目标 ID", example = "10")
     private Long targetId;
+
     @Schema(description = "业务日期", example = "2026-03-21")
     private LocalDate businessDate;
+
     @Schema(description = "发送状态", example = "SUCCESS")
     private String sendStatus;
-    @Schema(description = "发送结果说明", example = "sent")
+
+    @Schema(description = "发送结果说明", example = "发送成功")
     private String sendMessage;
-    @Schema(description = "发送时间", example = "2026-03-21 21:00:00")
+
+    @Schema(description = "发送时间", example = "2026-03-21T21:00:00")
     private LocalDateTime sentAt;
 }

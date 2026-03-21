@@ -3,6 +3,7 @@ package com.record.modules.user.model.entity;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.record.common.enums.CommonStatus;
+import com.record.common.enums.GenderType;
 import com.record.common.model.BaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -18,23 +19,32 @@ import java.time.LocalDate;
 @TableName("user")
 @Schema(description = "用户实体")
 public class User extends BaseEntity {
+
     @TableId
     @Schema(description = "用户 ID", example = "10001")
     private Long id;
+
     @Schema(description = "小程序 openid")
     private String openid;
+
     @Schema(description = "昵称", example = "wyh")
     private String nickname;
+
     @Schema(description = "头像路径", example = "avatar/20260321/demo.jpg")
     private String avatarPath;
+
     @Schema(description = "性别", example = "FEMALE")
-    private String gender;
+    private GenderType gender;
+
     @Schema(description = "公众号 openid", example = "oa-openid-demo")
     private String officialAccountOpenid;
+
     @Schema(description = "生日", example = "2004-02-11")
     private LocalDate birthday;
-    @Schema(description = "个性签名", example = "把生活认真记下来")
+
+    @Schema(description = "个性签名", example = "把生活认真记录下来")
     private String signature;
+
     @Schema(description = "状态", example = "ENABLED")
     private CommonStatus status;
 }

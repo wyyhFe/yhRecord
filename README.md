@@ -6,7 +6,7 @@
 
 ## 项目简介
 
-`lifeRecord` 主要服务于日常生活记录场景，围绕“记录、回看、提醒、统计”四条主线展开，当前已经覆盖：
+`lifeRecord` 围绕“记录、回看、提醒、统计”四条主线展开，当前已覆盖：
 
 - 日记记录
 - 记账管理
@@ -15,10 +15,10 @@
 - 去年今日回忆
 - 标签体系
 - 回收站
-- 微信消息提醒
+- 微信提醒消息
 - 定位与图片上传
 
-项目采用前后端分离架构：
+项目采用前后端分离结构：
 
 - `miniapp`：微信小程序前端
 - `record`：Spring Boot 后端
@@ -41,6 +41,7 @@
 
 - 自定义账本
 - 收入 / 支出流水
+- 月度查询
 - 标签统计
 - 年度汇总
 
@@ -63,9 +64,9 @@
 
 ### 6. 定位与媒体模块
 
-- 当前定位
+- 当前位置
 - 手动选点
-- 经纬度逆地理编码
+- 腾讯地图逆地理编码
 - OSS 路径存储
 
 ---
@@ -247,8 +248,12 @@ npm run build:mp-weixin
 lifeRecord/
   miniapp/                     # uni-app 微信小程序前端
   record/                      # Spring Boot 后端
-  docs/                        # 项目文档
-  .editorconfig                # 编辑器与编码规范
+  docs/
+    architecture/             # 架构设计文档
+    guide/                    # 发布、接入、配置操作指南
+    standards/                # 开发规范、提交规范
+    assets/                   # 文档附件与资源包
+  .editorconfig               # 编辑器与编码规范
   README.md
 ```
 
@@ -272,10 +277,12 @@ modules/<module-name>/
 
 建议按下面顺序阅读：
 
-1. [开发规范.md](/e:/01-server/lifeRecord/docs/开发规范.md)
-2. [架构设计文档](./docs/architecture.md)
-3. [发布配置清单.md](/e:/01-server/lifeRecord/docs/发布配置清单.md)
-4. [新手发布步骤.md](/e:/01-server/lifeRecord/docs/新手发布步骤.md)
+1. [开发规范](./docs/standards/开发规范.md)
+2. [提交规范](./docs/standards/提交规范.md)
+3. [架构设计文档](./docs/architecture/architecture.md)
+4. [发布配置清单](./docs/guide/发布配置清单.md)
+5. [新手发布步骤](./docs/guide/新手发布步骤.md)
+6. [小程序订阅消息和地图配置步骤](./docs/guide/小程序订阅消息和地图配置步骤.md)
 
 ---
 
@@ -291,18 +298,17 @@ modules/<module-name>/
 - 打卡页
 - 个人中心页
 
-如果后续补图，建议放到：
+如需统一存放，建议放到：
 
 ```text
-docs/screenshots/
+docs/assets/screenshots/
 ```
 
 ---
 
 ## TODO
 
-- 补充完整页面截图
-- 完善标签管理页面
+- 补充正式页面截图
 - 完善评论互动体验
 - 完善提醒模板配置指引
 - 增加更多统计分析能力
@@ -338,7 +344,7 @@ docs/screenshots/
 - Java 源码使用 `UTF-8 without BOM`
 - 换行统一使用 `LF`
 - DTO / VO / Entity 必须补 `@Schema`
-- `schema.sql` 必须写字段 `COMMENT`
+- `schema.sql` 必须补字段 `COMMENT`
 - 提交前至少完成编译或构建检查
 
 ---
@@ -354,6 +360,6 @@ docs/screenshots/
 后续仍可继续增强：
 
 - 更完整的评论互动
-- 更完整的标签管理页面
+- 更完整的标签管理体验
 - 更完善的提醒模板配置
 - 更丰富的数据统计能力

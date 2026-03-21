@@ -60,6 +60,8 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public TagVO create(Long userId, CreateTagRequest request) {
+        ensureUniqueName(userId, request.getModuleType(), request.getName(), null);
+
         UserTag tag = new UserTag();
         tag.setUserId(userId);
         tag.setName(request.getName());
@@ -77,10 +79,13 @@ public class TagServiceImpl implements TagService {
             throw new TagException("标签模板不存在");
         }
 
+        String finalName = request.getName() != null ? request.getName() : template.getName();
+        ensureUniqueName(userId, template.getModuleType(), finalName, null);
+
         UserTag tag = new UserTag();
         tag.setUserId(userId);
         tag.setTemplateId(template.getId());
-        tag.setName(request.getName() != null ? request.getName() : template.getName());
+        tag.setName(finalName);
         tag.setColor(request.getColor() != null ? request.getColor() : template.getColor());
         tag.setIcon(request.getIcon() != null ? request.getIcon() : template.getIcon());
         tag.setModuleType(template.getModuleType());
@@ -91,6 +96,7 @@ public class TagServiceImpl implements TagService {
     @Override
     public TagVO update(Long userId, Long id, UpdateTagRequest request) {
         UserTag tag = requireOwnedTag(userId, id);
+        ensureUniqueName(userId, tag.getModuleType(), request.getName(), id);
         tag.setName(request.getName());
         tag.setColor(request.getColor());
         tag.setIcon(request.getIcon());
@@ -113,6 +119,23 @@ public class TagServiceImpl implements TagService {
             throw new TagException("标签不存在或无权限操作");
         }
         return tag;
+    }
+
+    /**
+     * 同一用户在同一模块下不允许使用重复标签名。
+     */
+    private void ensureUniqueName(Long userId, TagModuleType moduleType, String name, Long excludeId) {
+        if (name == null || name.isBlank()) {
+            return;
+        }
+        Long count = userTagMapper.selectCount(new LambdaQueryWrapper<UserTag>()
+                .eq(UserTag::getUserId, userId)
+                .eq(UserTag::getModuleType, moduleType)
+                .eq(UserTag::getName, name)
+                .ne(excludeId != null, UserTag::getId, excludeId));
+        if (count != null && count > 0) {
+            throw new TagException("同一模块下标签名称不能重复");
+        }
     }
 
     /**

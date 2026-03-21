@@ -17,19 +17,26 @@ import lombok.EqualsAndHashCode;
 @TableName("tag_template")
 @Schema(description = "标签模板实体")
 public class TagTemplate extends BaseEntity {
+
     @TableId
     @Schema(description = "模板 ID", example = "1")
     private Long id;
+
     @Schema(description = "模板名称", example = "旅行")
     private String name;
+
     @Schema(description = "模板颜色", example = "#FF8A65")
     private String color;
+
     @Schema(description = "模板图标", example = "plane")
     private String icon;
+
     @Schema(description = "所属模块", example = "DIARY")
     private TagModuleType moduleType;
+
     @Schema(description = "排序值", example = "10")
     private Integer sortOrder;
+
     @Schema(description = "状态", example = "ENABLED")
     private CommonStatus status;
 }

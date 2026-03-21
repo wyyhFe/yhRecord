@@ -3,6 +3,7 @@ package com.record.modules.diary.controller;
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
 import com.record.modules.diary.model.dto.DiaryCommentRequest;
+import com.record.modules.diary.model.vo.DiaryCommentVO;
 import com.record.modules.diary.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -50,7 +51,7 @@ public class DiaryInteractController {
 
     @Operation(summary = "评论列表")
     @GetMapping("/{id}/comments")
-    public ApiResponse<List<String>> comments(@PathVariable Long id) {
+    public ApiResponse<List<DiaryCommentVO>> comments(@PathVariable Long id) {
         return ApiResponse.success(diaryService.comments(UserContext.getUserId(), id));
     }
 }

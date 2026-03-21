@@ -1,22 +1,27 @@
 -- 生活记录项目初始化表结构
 --
 -- 说明：
--- 1. 所有主键统一使用 BIGINT。
+-- 1. 主键统一使用 BIGINT。
 -- 2. 业务日期优先使用 DATE，操作时间优先使用 DATETIME。
--- 3. 所有核心字段都补充了 COMMENT，便于后续直接看表结构理解含义。
+-- 3. 通用审计字段统一为 created_at / updated_at / created_by / updated_by。
+-- 4. 枚举类字段统一使用 VARCHAR，并通过 CHECK 约束限制取值范围。
 
 CREATE TABLE IF NOT EXISTS user (
     id BIGINT PRIMARY KEY COMMENT '用户主键 ID',
     openid VARCHAR(128) NOT NULL UNIQUE COMMENT '小程序用户唯一标识 openid',
     nickname VARCHAR(64) COMMENT '用户昵称',
     avatar_path VARCHAR(255) COMMENT '头像相对路径',
-    gender VARCHAR(16) COMMENT '性别',
-    official_account_openid VARCHAR(128) COMMENT '公众号 openid，用于公众号消息通道',
+    gender VARCHAR(16) NOT NULL DEFAULT 'UNKNOWN' COMMENT '性别：UNKNOWN / MALE / FEMALE',
+    official_account_openid VARCHAR(128) COMMENT '公众号 openid，用于公众号模板消息通道',
     birthday DATE COMMENT '生日，用于年龄展示',
     signature VARCHAR(255) COMMENT '个性签名',
-    status VARCHAR(16) COMMENT '用户状态，例如 ENABLED / DISABLED',
+    status VARCHAR(16) NOT NULL DEFAULT 'ENABLED' COMMENT '用户状态：ENABLED / DISABLED',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
+    CONSTRAINT chk_user_gender CHECK (gender IN ('UNKNOWN', 'MALE', 'FEMALE')),
+    CONSTRAINT chk_user_status CHECK (status IN ('ENABLED', 'DISABLED')),
     INDEX idx_user_official_openid (official_account_openid)
 ) COMMENT='用户表';
 
@@ -27,7 +32,9 @@ CREATE TABLE IF NOT EXISTS user_session (
     refresh_token VARCHAR(1024) NOT NULL COMMENT '刷新令牌',
     refresh_expire_at DATETIME NOT NULL COMMENT '刷新令牌过期时间',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
     UNIQUE KEY uk_user_session_user (user_id),
     UNIQUE KEY uk_user_session_session (session_id),
     INDEX idx_user_session_expire (refresh_expire_at)
@@ -38,11 +45,15 @@ CREATE TABLE IF NOT EXISTS tag_template (
     name VARCHAR(64) NOT NULL COMMENT '模板名称',
     color VARCHAR(32) COMMENT '模板颜色',
     icon VARCHAR(128) COMMENT '模板图标',
-    module_type VARCHAR(16) NOT NULL COMMENT '所属模块，例如 DIARY / LEDGER',
+    module_type VARCHAR(16) NOT NULL COMMENT '所属模块：DIARY / LEDGER',
     sort_order INT COMMENT '排序值',
-    status VARCHAR(16) COMMENT '模板状态，例如 ENABLED / DISABLED',
+    status VARCHAR(16) NOT NULL DEFAULT 'ENABLED' COMMENT '模板状态：ENABLED / DISABLED',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
+    CONSTRAINT chk_tag_template_module CHECK (module_type IN ('DIARY', 'LEDGER')),
+    CONSTRAINT chk_tag_template_status CHECK (status IN ('ENABLED', 'DISABLED')),
     INDEX idx_tag_template_module_status (module_type, status, sort_order)
 ) COMMENT='后台标签模板表';
 
@@ -53,9 +64,13 @@ CREATE TABLE IF NOT EXISTS user_tag (
     name VARCHAR(64) NOT NULL COMMENT '标签名称',
     color VARCHAR(32) COMMENT '标签颜色',
     icon VARCHAR(128) COMMENT '标签图标',
-    module_type VARCHAR(16) NOT NULL COMMENT '所属模块，例如 DIARY / LEDGER',
+    module_type VARCHAR(16) NOT NULL COMMENT '所属模块：DIARY / LEDGER',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
+    CONSTRAINT chk_user_tag_module CHECK (module_type IN ('DIARY', 'LEDGER')),
+    UNIQUE KEY uk_user_tag_user_module_name (user_id, module_type, name),
     INDEX idx_user_tag_user_module (user_id, module_type),
     INDEX idx_user_tag_template (template_id)
 ) COMMENT='用户标签表';
@@ -65,10 +80,10 @@ CREATE TABLE IF NOT EXISTS diary (
     user_id BIGINT NOT NULL COMMENT '作者用户 ID',
     title VARCHAR(128) NOT NULL COMMENT '日记标题',
     content TEXT NOT NULL COMMENT '日记正文',
-    record_date DATE NOT NULL COMMENT '记录日期，表示这篇日记属于哪一天',
+    record_date DATE NOT NULL COMMENT '记录日期',
     weather VARCHAR(32) COMMENT '天气',
     mood VARCHAR(32) COMMENT '心情',
-    visibility VARCHAR(16) NOT NULL COMMENT '可见范围，例如 PRIVATE / SHARED / PUBLIC',
+    visibility VARCHAR(16) NOT NULL COMMENT '可见范围：PRIVATE / SHARED / PUBLIC',
     remind_at DATETIME COMMENT '单篇日记提醒时间，可选',
     location_name VARCHAR(128) COMMENT '地点名称',
     address VARCHAR(255) COMMENT '完整地址',
@@ -77,12 +92,16 @@ CREATE TABLE IF NOT EXISTS diary (
     district VARCHAR(64) COMMENT '区县',
     latitude DECIMAL(10, 7) COMMENT '纬度',
     longitude DECIMAL(10, 7) COMMENT '经度',
-    location_source_type VARCHAR(16) COMMENT '定位来源，例如 CURRENT / MANUAL',
+    location_source_type VARCHAR(16) COMMENT '定位来源：CURRENT / MANUAL',
     like_count INT DEFAULT 0 COMMENT '点赞数缓存',
     comment_count INT DEFAULT 0 COMMENT '评论数缓存',
     deleted_at DATETIME COMMENT '软删除时间，为空表示未删除',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
+    CONSTRAINT chk_diary_visibility CHECK (visibility IN ('PRIVATE', 'SHARED', 'PUBLIC')),
+    CONSTRAINT chk_diary_location_source CHECK (location_source_type IS NULL OR location_source_type IN ('CURRENT', 'MANUAL')),
     INDEX idx_diary_user_date (user_id, record_date),
     INDEX idx_diary_user_visibility_date (user_id, visibility, record_date),
     INDEX idx_diary_user_deleted (user_id, deleted_at)
@@ -95,7 +114,9 @@ CREATE TABLE IF NOT EXISTS diary_media (
     file_path VARCHAR(255) NOT NULL COMMENT 'OSS 相对路径或对象 key',
     sort_order INT COMMENT '排序值',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
     INDEX idx_diary_media_diary (diary_id, sort_order)
 ) COMMENT='日记附件表';
 
@@ -111,10 +132,14 @@ CREATE TABLE IF NOT EXISTS diary_comment (
     id BIGINT PRIMARY KEY COMMENT '评论主键 ID',
     diary_id BIGINT NOT NULL COMMENT '所属日记 ID',
     user_id BIGINT NOT NULL COMMENT '评论用户 ID',
+    parent_id BIGINT COMMENT '父评论 ID，顶级评论为空',
     content VARCHAR(500) NOT NULL COMMENT '评论内容',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
     INDEX idx_diary_comment_diary (diary_id, created_at),
+    INDEX idx_diary_comment_parent (diary_id, parent_id, created_at),
     INDEX idx_diary_comment_user (user_id)
 ) COMMENT='日记评论表';
 
@@ -132,7 +157,9 @@ CREATE TABLE IF NOT EXISTS ledger_book (
     name VARCHAR(64) NOT NULL COMMENT '账本名称',
     description VARCHAR(255) COMMENT '账本描述',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
     INDEX idx_ledger_book_user (user_id)
 ) COMMENT='记账账本表';
 
@@ -140,13 +167,17 @@ CREATE TABLE IF NOT EXISTS ledger_entry (
     id BIGINT PRIMARY KEY COMMENT '记账流水主键 ID',
     user_id BIGINT NOT NULL COMMENT '所属用户 ID',
     book_id BIGINT NOT NULL COMMENT '所属账本 ID',
-    type VARCHAR(16) NOT NULL COMMENT '流水类型，例如 INCOME / EXPENSE',
-    amount DECIMAL(12, 2) NOT NULL COMMENT '金额，保留两位小数',
+    type VARCHAR(16) NOT NULL COMMENT '流水类型：INCOME / EXPENSE',
+    amount DECIMAL(12, 2) NOT NULL COMMENT '金额，必须大于 0',
     entry_date DATE NOT NULL COMMENT '记账日期',
     remark VARCHAR(255) COMMENT '备注',
     image_path VARCHAR(255) COMMENT '记账图片路径',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
+    CONSTRAINT chk_ledger_entry_type CHECK (type IN ('INCOME', 'EXPENSE')),
+    CONSTRAINT chk_ledger_entry_amount CHECK (amount > 0),
     INDEX idx_ledger_entry_user_date (user_id, entry_date),
     INDEX idx_ledger_entry_book_date (book_id, entry_date)
 ) COMMENT='记账流水表';
@@ -165,9 +196,12 @@ CREATE TABLE IF NOT EXISTS checkin_task (
     name VARCHAR(128) NOT NULL COMMENT '任务名称',
     description VARCHAR(255) COMMENT '任务描述',
     start_date DATE NOT NULL COMMENT '任务开始日期',
-    status VARCHAR(16) COMMENT '任务状态，例如 ENABLED / DISABLED',
+    status VARCHAR(16) NOT NULL DEFAULT 'ENABLED' COMMENT '任务状态：ENABLED / DISABLED',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
+    CONSTRAINT chk_checkin_task_status CHECK (status IN ('ENABLED', 'DISABLED')),
     INDEX idx_checkin_task_user (user_id, status)
 ) COMMENT='打卡任务表';
 
@@ -179,7 +213,9 @@ CREATE TABLE IF NOT EXISTS checkin_record (
     checked_at DATETIME NOT NULL COMMENT '实际打卡时间',
     remark VARCHAR(255) COMMENT '打卡备注',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
     UNIQUE KEY uk_task_user_date (task_id, user_id, checkin_date),
     INDEX idx_checkin_record_user_date (user_id, checkin_date)
 ) COMMENT='打卡记录表';
@@ -193,9 +229,12 @@ CREATE TABLE IF NOT EXISTS memorial_day (
     annual_repeat BIT(1) DEFAULT 0 COMMENT '是否每年重复',
     remark VARCHAR(255) COMMENT '备注',
     remind_at DATETIME COMMENT '提醒时间',
-    status VARCHAR(16) COMMENT '状态，例如 ENABLED / DISABLED',
+    status VARCHAR(16) NOT NULL DEFAULT 'ENABLED' COMMENT '状态：ENABLED / DISABLED',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
+    CONSTRAINT chk_memorial_day_status CHECK (status IN ('ENABLED', 'DISABLED')),
     INDEX idx_memorial_user_date (user_id, memorial_date),
     INDEX idx_memorial_remind (remind_at)
 ) COMMENT='纪念日表';
@@ -208,7 +247,9 @@ CREATE TABLE IF NOT EXISTS recycle_bin (
     deleted_at DATETIME NOT NULL COMMENT '删除时间',
     expire_at DATETIME NOT NULL COMMENT '过期清理时间',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
     INDEX idx_recycle_user_deleted (user_id, deleted_at),
     INDEX idx_recycle_expire (expire_at),
     INDEX idx_recycle_resource (resource_type, resource_id)
@@ -221,7 +262,9 @@ CREATE TABLE IF NOT EXISTS reminder_setting (
     mini_program_reminder_enabled BIT(1) DEFAULT 0 COMMENT '是否启用小程序订阅消息通道',
     official_account_reminder_enabled BIT(1) DEFAULT 0 COMMENT '是否启用公众号模板消息通道',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
     UNIQUE KEY uk_reminder_setting_user (user_id)
 ) COMMENT='用户提醒设置表';
 
@@ -236,7 +279,10 @@ CREATE TABLE IF NOT EXISTS reminder_log (
     send_message VARCHAR(255) COMMENT '发送结果说明或失败原因',
     sent_at DATETIME COMMENT '发送时间',
     created_at DATETIME COMMENT '创建时间',
-    updated_at DATETIME COMMENT '更新时间',
+    updated_at DATETIME COMMENT '最后更新时间',
+    created_by BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+    updated_by BIGINT NOT NULL DEFAULT 0 COMMENT '最后更新人用户 ID，系统任务写 0',
+    CONSTRAINT chk_reminder_log_channel CHECK (channel IN ('MINI_PROGRAM', 'OFFICIAL_ACCOUNT')),
     INDEX idx_reminder_log_user_date (user_id, business_date),
     INDEX idx_reminder_log_type_channel_date (business_type, channel, business_date),
     INDEX idx_reminder_log_target (target_id)

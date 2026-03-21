@@ -1,5 +1,6 @@
 package com.record.modules.user.model.vo;
 
+import com.record.common.enums.GenderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +28,7 @@ public class UserProfileVO {
     private String avatarPath;
 
     @Schema(description = "性别", example = "FEMALE")
-    private String gender;
+    private GenderType gender;
 
     @Schema(description = "公众号 openid", example = "oa-openid-demo")
     private String officialAccountOpenid;
@@ -35,7 +36,7 @@ public class UserProfileVO {
     @Schema(description = "生日", example = "2004-02-11")
     private LocalDate birthday;
 
-    @Schema(description = "个性签名", example = "把生活认真记下来")
+    @Schema(description = "个性签名", example = "把生活认真记录下来")
     private String signature;
 
     @Schema(description = "日记数量", example = "23")

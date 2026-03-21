@@ -55,7 +55,8 @@ public class LedgerServiceImpl implements LedgerService {
     @Override
     public List<LedgerBookVO> listBooks(Long userId) {
         return ledgerBookMapper.selectList(new LambdaQueryWrapper<LedgerBook>().eq(LedgerBook::getUserId, userId))
-                .stream().map(item -> LedgerBookVO.builder().id(item.getId()).name(item.getName()).description(item.getDescription()).build())
+                .stream()
+                .map(item -> LedgerBookVO.builder().id(item.getId()).name(item.getName()).description(item.getDescription()).build())
                 .toList();
     }
 
@@ -97,7 +98,9 @@ public class LedgerServiceImpl implements LedgerService {
                         .apply("YEAR(entry_date) = {0}", year)
                         .apply("MONTH(entry_date) = {0}", month)
                         .orderByDesc(LedgerEntry::getEntryDate))
-                .stream().map(this::toVO).toList();
+                .stream()
+                .map(this::toVO)
+                .toList();
     }
 
     @Override
@@ -110,7 +113,9 @@ public class LedgerServiceImpl implements LedgerService {
         for (LedgerEntry entry : entries) {
             List<Long> tagIds = ledgerEntryTagRelMapper.selectList(new LambdaQueryWrapper<LedgerEntryTagRel>()
                             .eq(LedgerEntryTagRel::getEntryId, entry.getId()))
-                    .stream().map(LedgerEntryTagRel::getTagId).toList();
+                    .stream()
+                    .map(LedgerEntryTagRel::getTagId)
+                    .toList();
             for (Long tagId : tagIds) {
                 amountMap.merge(tagId, entry.getAmount(), BigDecimal::add);
                 total = total.add(entry.getAmount());
@@ -129,7 +134,16 @@ public class LedgerServiceImpl implements LedgerService {
                 .build();
     }
 
+    /**
+     * 金额必须为正数，且最多保留两位小数。
+     */
     private void validateAmount(BigDecimal amount) {
+        if (amount == null) {
+            throw new LedgerException("金额不能为空");
+        }
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new LedgerException("金额必须大于 0");
+        }
         if (amount.scale() > 2) {
             throw new LedgerException("金额最多只能保留两位小数");
         }
@@ -169,7 +183,9 @@ public class LedgerServiceImpl implements LedgerService {
     private LedgerEntryVO toVO(LedgerEntry entry) {
         List<Long> tagIds = ledgerEntryTagRelMapper.selectList(new LambdaQueryWrapper<LedgerEntryTagRel>()
                         .eq(LedgerEntryTagRel::getEntryId, entry.getId()))
-                .stream().map(LedgerEntryTagRel::getTagId).toList();
+                .stream()
+                .map(LedgerEntryTagRel::getTagId)
+                .toList();
         return LedgerEntryVO.builder()
                 .id(entry.getId())
                 .bookId(entry.getBookId())

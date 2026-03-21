@@ -11,13 +11,14 @@ import java.time.LocalDateTime;
 
 /**
  * 用户登录会话。
- * 结合 Redis 记录当前生效的 sessionId，用于实现单设备登录。
+ * 结合 Redis 保存当前生效的 sessionId，用于实现单设备登录。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("user_session")
 @Schema(description = "用户登录会话")
 public class UserSession extends BaseEntity {
+
     @TableId
     @Schema(description = "主键 ID", example = "1")
     private Long id;

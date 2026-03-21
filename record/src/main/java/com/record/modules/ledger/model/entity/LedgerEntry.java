@@ -33,7 +33,7 @@ public class LedgerEntry extends BaseEntity {
     @Schema(description = "流水类型", example = "EXPENSE")
     private LedgerType type;
 
-    @Schema(description = "金额", example = "52.30")
+    @Schema(description = "金额，必须大于 0", example = "52.30")
     private BigDecimal amount;
 
     @Schema(description = "记账日期", example = "2026-03-21")

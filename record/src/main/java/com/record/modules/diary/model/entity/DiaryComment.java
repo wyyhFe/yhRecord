@@ -15,6 +15,7 @@ import lombok.EqualsAndHashCode;
 @TableName("diary_comment")
 @Schema(description = "日记评论记录")
 public class DiaryComment extends BaseEntity {
+
     @TableId
     @Schema(description = "评论 ID", example = "1")
     private Long id;
@@ -24,6 +25,9 @@ public class DiaryComment extends BaseEntity {
 
     @Schema(description = "评论用户 ID", example = "10001")
     private Long userId;
+
+    @Schema(description = "父评论 ID，顶级评论为空", example = "10")
+    private Long parentId;
 
     @Schema(description = "评论内容", example = "今天的心情写得很真实")
     private String content;

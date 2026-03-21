@@ -6,7 +6,7 @@ package com.record.common.enums;
 public enum VisibilityType {
     /** 仅自己可见。 */
     PRIVATE,
-    /** 共享日记本内成员可见。 */
+    /** 共享成员可见。 */
     SHARED,
     /** 公开可见。 */
     PUBLIC

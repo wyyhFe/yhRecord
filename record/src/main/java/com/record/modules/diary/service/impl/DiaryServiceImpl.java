@@ -20,6 +20,7 @@ import com.record.modules.diary.model.entity.DiaryComment;
 import com.record.modules.diary.model.entity.DiaryLike;
 import com.record.modules.diary.model.entity.DiaryMedia;
 import com.record.modules.diary.model.entity.DiaryTagRel;
+import com.record.modules.diary.model.vo.DiaryCommentVO;
 import com.record.modules.diary.model.vo.DiaryVO;
 import com.record.modules.diary.service.DiaryService;
 import com.record.modules.location.service.LocationService;
@@ -102,7 +103,6 @@ public class DiaryServiceImpl implements DiaryService {
 
         User user = userMapper.selectById(userId);
         List<DiaryVO> records = page.getRecords().stream()
-                // 标签过滤在分页结果上做二次筛选，避免额外联表。
                 .filter(item -> tagId == null || hasTag(item.getId(), tagId))
                 .map(item -> buildVO(item, user))
                 .toList();
@@ -193,23 +193,41 @@ public class DiaryServiceImpl implements DiaryService {
     @Transactional
     public void comment(Long userId, Long diaryId, DiaryCommentRequest request) {
         Diary diary = requireOwnedDiary(userId, diaryId, false);
+        Long parentId = request.getParentId();
+        if (parentId != null) {
+            DiaryComment parentComment = diaryCommentMapper.selectById(parentId);
+            if (parentComment == null || !parentComment.getDiaryId().equals(diaryId)) {
+                throw new DiaryException("父评论不存在或不属于当前日记");
+            }
+        }
+
         DiaryComment comment = new DiaryComment();
         comment.setDiaryId(diaryId);
         comment.setUserId(userId);
+        comment.setParentId(parentId);
         comment.setContent(request.getContent());
         diaryCommentMapper.insert(comment);
+
         diary.setCommentCount((diary.getCommentCount() == null ? 0 : diary.getCommentCount()) + 1);
         diaryMapper.updateById(diary);
     }
 
     @Override
-    public List<String> comments(Long userId, Long diaryId) {
+    public List<DiaryCommentVO> comments(Long userId, Long diaryId) {
         requireOwnedDiary(userId, diaryId, false);
         return diaryCommentMapper.selectList(new LambdaQueryWrapper<DiaryComment>()
                         .eq(DiaryComment::getDiaryId, diaryId)
-                        .orderByAsc(DiaryComment::getCreatedAt))
+                        .orderByAsc(DiaryComment::getCreatedAt)
+                        .orderByAsc(DiaryComment::getId))
                 .stream()
-                .map(DiaryComment::getContent)
+                .map(item -> DiaryCommentVO.builder()
+                        .id(item.getId())
+                        .diaryId(item.getDiaryId())
+                        .userId(item.getUserId())
+                        .parentId(item.getParentId())
+                        .content(item.getContent())
+                        .createdAt(item.getCreatedAt())
+                        .build())
                 .toList();
     }
 
@@ -238,7 +256,6 @@ public class DiaryServiceImpl implements DiaryService {
             diary.setLongitude(location.getLongitude());
             diary.setLocationSourceType(location.getSourceType());
 
-            // 前端只传经纬度时，服务端再做一次逆地理编码。
             if ((location.getAddress() == null || location.getAddress().isBlank())
                     && location.getLatitude() != null && location.getLongitude() != null) {
                 var geo = locationService.reverseGeocode(location.getLatitude(), location.getLongitude());
@@ -337,7 +354,7 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     /**
-     * 计算“记于 22 岁 1 月 10 天”这一类年龄文案。
+     * 计算“记于 22 岁 1 月 10 天”这类年龄文案。
      */
     private String buildAgeLabel(User user, LocalDate recordDate) {
         if (user == null || user.getBirthday() == null || recordDate == null || user.getBirthday().isAfter(recordDate)) {

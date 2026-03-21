@@ -2,6 +2,7 @@ package com.record.modules.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.CommonStatus;
+import com.record.common.enums.GenderType;
 import com.record.modules.diary.service.DiaryService;
 import com.record.modules.user.mapper.UserMapper;
 import com.record.modules.user.model.dto.UserProfileUpdateRequest;
@@ -31,9 +32,11 @@ public class UserServiceImpl implements UserService {
         if (user != null) {
             return user;
         }
+
         user = new User();
         user.setOpenid(openid);
         user.setNickname("微信用户");
+        user.setGender(GenderType.UNKNOWN);
         user.setStatus(CommonStatus.ENABLED);
         userMapper.insert(user);
         return user;
