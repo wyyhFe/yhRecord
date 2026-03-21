@@ -6,3 +6,4 @@ public class FileException extends BusinessException {
         super(ErrorCode.FILE_ERROR, message);
     }
 }
+

@@ -3,14 +3,17 @@ package com.record.modules.user.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.CommonStatus;
 import com.record.modules.diary.service.DiaryService;
-import com.record.modules.user.dto.UserProfileUpdateRequest;
-import com.record.modules.user.entity.User;
 import com.record.modules.user.mapper.UserMapper;
+import com.record.modules.user.model.dto.UserProfileUpdateRequest;
+import com.record.modules.user.model.entity.User;
+import com.record.modules.user.model.vo.UserProfileVO;
 import com.record.modules.user.service.UserService;
-import com.record.modules.user.vo.UserProfileVO;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+/**
+ * 用户资料服务实现。
+ */
 @Service
 public class UserServiceImpl implements UserService {
 

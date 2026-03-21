@@ -23,3 +23,4 @@ public class ReverseGeocodeResponse {
         private String district;
     }
 }
+

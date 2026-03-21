@@ -6,3 +6,4 @@ public class DiaryException extends BusinessException {
         super(ErrorCode.DIARY_ERROR, message);
     }
 }
+

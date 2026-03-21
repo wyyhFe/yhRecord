@@ -1,8 +1,8 @@
 package com.record.modules.memorial.service;
 
-import com.record.modules.memorial.dto.CreateMemorialDayRequest;
-import com.record.modules.memorial.dto.UpdateMemorialDayRequest;
-import com.record.modules.memorial.vo.MemorialDayVO;
+import com.record.modules.memorial.model.dto.CreateMemorialDayRequest;
+import com.record.modules.memorial.model.dto.UpdateMemorialDayRequest;
+import com.record.modules.memorial.model.vo.MemorialDayVO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,3 +14,4 @@ public interface MemorialDayService {
     void delete(Long userId, Long id);
     List<MemorialDayVO> listByDate(Long userId, LocalDate date);
 }
+

@@ -5,27 +5,27 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.enums.ResourceType;
 import com.record.common.enums.VisibilityType;
 import com.record.common.exception.DiaryException;
-import com.record.modules.diary.dto.CreateDiaryRequest;
-import com.record.modules.diary.dto.DiaryCommentRequest;
-import com.record.modules.diary.dto.DiaryLocationDTO;
-import com.record.modules.diary.dto.DiaryMediaDTO;
-import com.record.modules.diary.dto.UpdateDiaryRequest;
-import com.record.modules.diary.entity.Diary;
-import com.record.modules.diary.entity.DiaryComment;
-import com.record.modules.diary.entity.DiaryLike;
-import com.record.modules.diary.entity.DiaryMedia;
-import com.record.modules.diary.entity.DiaryTagRel;
 import com.record.modules.diary.mapper.DiaryCommentMapper;
 import com.record.modules.diary.mapper.DiaryLikeMapper;
 import com.record.modules.diary.mapper.DiaryMapper;
 import com.record.modules.diary.mapper.DiaryMediaMapper;
 import com.record.modules.diary.mapper.DiaryTagRelMapper;
+import com.record.modules.diary.model.dto.CreateDiaryRequest;
+import com.record.modules.diary.model.dto.DiaryCommentRequest;
+import com.record.modules.diary.model.dto.DiaryLocationDTO;
+import com.record.modules.diary.model.dto.DiaryMediaDTO;
+import com.record.modules.diary.model.dto.UpdateDiaryRequest;
+import com.record.modules.diary.model.entity.Diary;
+import com.record.modules.diary.model.entity.DiaryComment;
+import com.record.modules.diary.model.entity.DiaryLike;
+import com.record.modules.diary.model.entity.DiaryMedia;
+import com.record.modules.diary.model.entity.DiaryTagRel;
+import com.record.modules.diary.model.vo.DiaryVO;
 import com.record.modules.diary.service.DiaryService;
-import com.record.modules.diary.vo.DiaryVO;
 import com.record.modules.location.service.LocationService;
 import com.record.modules.recycle.service.RecycleBinService;
-import com.record.modules.user.entity.User;
 import com.record.modules.user.mapper.UserMapper;
+import com.record.modules.user.model.entity.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +36,7 @@ import java.util.List;
 
 /**
  * 日记服务实现。
- * 把日记主表、媒体、标签、点赞、评论、位置和回收站行为统一编排在一个服务里。
+ * 统一处理日记主表、附件、标签、点赞、评论和回收站逻辑。
  */
 @Service
 public class DiaryServiceImpl implements DiaryService {
@@ -102,7 +102,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         User user = userMapper.selectById(userId);
         List<DiaryVO> records = page.getRecords().stream()
-                // 标签筛选放在这里做，是因为当前标签关系独立存表。
+                // 标签过滤在分页结果上做二次筛选，避免额外联表。
                 .filter(item -> tagId == null || hasTag(item.getId(), tagId))
                 .map(item -> buildVO(item, user))
                 .toList();
@@ -214,8 +214,8 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     /**
-     * 把请求对象中的通用字段落到实体上。
-     * 创建和编辑共用这段逻辑，避免字段分散更新。
+     * 将请求体字段写入日记实体。
+     * 如果前端只传经纬度，服务端会兜底补齐结构化地址。
      */
     private void fillDiary(Diary diary, Long userId, CreateDiaryRequest request) {
         diary.setUserId(userId);
@@ -238,7 +238,7 @@ public class DiaryServiceImpl implements DiaryService {
             diary.setLongitude(location.getLongitude());
             diary.setLocationSourceType(location.getSourceType());
 
-            // 前端只传经纬度时，这里兜底做一次逆地理编码。
+            // 前端只传经纬度时，服务端再做一次逆地理编码。
             if ((location.getAddress() == null || location.getAddress().isBlank())
                     && location.getLatitude() != null && location.getLongitude() != null) {
                 var geo = locationService.reverseGeocode(location.getLatitude(), location.getLongitude());
@@ -251,7 +251,7 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     /**
-     * 媒体和标签都采用“整批替换”策略，避免前端增删改明细同步过于复杂。
+     * 用全量覆盖的方式更新附件和标签关系。
      */
     private void replaceMediaAndTags(Long diaryId, List<DiaryMediaDTO> mediaList, List<Long> tagIds) {
         diaryMediaMapper.delete(new LambdaQueryWrapper<DiaryMedia>().eq(DiaryMedia::getDiaryId, diaryId));
@@ -290,22 +290,26 @@ public class DiaryServiceImpl implements DiaryService {
     private Diary requireOwnedDiary(Long userId, Long diaryId, boolean includeDeleted) {
         Diary diary = diaryMapper.selectById(diaryId);
         if (diary == null || !diary.getUserId().equals(userId) || (!includeDeleted && diary.getDeletedAt() != null)) {
-            throw new DiaryException("日记不存在");
+            throw new DiaryException("日记不存在或无权限访问");
         }
         return diary;
     }
 
     /**
-     * 组装前端真正需要的日记详情对象。
+     * 组装前端需要的日记详情对象。
      */
     private DiaryVO buildVO(Diary diary, User user) {
         List<String> mediaPaths = diaryMediaMapper.selectList(new LambdaQueryWrapper<DiaryMedia>()
                         .eq(DiaryMedia::getDiaryId, diary.getId())
                         .orderByAsc(DiaryMedia::getSortOrder))
-                .stream().map(DiaryMedia::getFilePath).toList();
+                .stream()
+                .map(DiaryMedia::getFilePath)
+                .toList();
         List<Long> tagIds = diaryTagRelMapper.selectList(new LambdaQueryWrapper<DiaryTagRel>()
                         .eq(DiaryTagRel::getDiaryId, diary.getId()))
-                .stream().map(DiaryTagRel::getTagId).toList();
+                .stream()
+                .map(DiaryTagRel::getTagId)
+                .toList();
 
         return DiaryVO.builder()
                 .id(diary.getId())
@@ -333,7 +337,7 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     /**
-     * 根据生日和记录日期动态计算“记于 22 岁 1 月 10 天”这样的展示文案。
+     * 计算“记于 22 岁 1 月 10 天”这一类年龄文案。
      */
     private String buildAgeLabel(User user, LocalDate recordDate) {
         if (user == null || user.getBirthday() == null || recordDate == null || user.getBirthday().isAfter(recordDate)) {

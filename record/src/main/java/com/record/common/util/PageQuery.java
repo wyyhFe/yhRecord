@@ -13,3 +13,4 @@ public class PageQuery {
     @Max(100)
     private long size = 10;
 }
+

@@ -12,3 +12,4 @@ public class OfficialMessageResponse {
     @JsonProperty("msgid")
     private Long msgId;
 }
+

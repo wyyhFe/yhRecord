@@ -1,11 +1,11 @@
 package com.record.modules.ledger.service;
 
-import com.record.modules.ledger.dto.CreateBookRequest;
-import com.record.modules.ledger.dto.CreateLedgerEntryRequest;
-import com.record.modules.ledger.dto.UpdateLedgerEntryRequest;
-import com.record.modules.ledger.vo.LedgerBookVO;
-import com.record.modules.ledger.vo.LedgerEntryVO;
-import com.record.modules.ledger.vo.YearStatisticsVO;
+import com.record.modules.ledger.model.dto.CreateBookRequest;
+import com.record.modules.ledger.model.dto.CreateLedgerEntryRequest;
+import com.record.modules.ledger.model.dto.UpdateLedgerEntryRequest;
+import com.record.modules.ledger.model.vo.LedgerBookVO;
+import com.record.modules.ledger.model.vo.LedgerEntryVO;
+import com.record.modules.ledger.model.vo.YearStatisticsVO;
 
 import java.util.List;
 
@@ -18,3 +18,4 @@ public interface LedgerService {
     List<LedgerEntryVO> monthEntries(Long userId, Integer year, Integer month, Long bookId);
     YearStatisticsVO yearStatistics(Long userId, Integer year);
 }
+

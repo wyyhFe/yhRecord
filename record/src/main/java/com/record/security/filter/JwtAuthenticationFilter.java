@@ -19,6 +19,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * JWT 认证过滤器。
+ * 用于校验访问令牌，并检查当前登录会话是否仍然有效。
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -58,13 +62,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String authorization = request.getHeader("Authorization");
         if (authorization == null || !authorization.startsWith("Bearer ")) {
-            throw new AuthException("缺少登录凭证");
+            throw new AuthException("缺少认证令牌");
         }
+
         String token = authorization.substring(7);
         Claims claims = jwtTokenProvider.parseToken(token);
         if (!"access".equals(claims.get("typ", String.class))) {
-            throw new AuthException("Token 类型错误");
+            throw new AuthException("令牌类型错误");
         }
+
         Long userId = ((Number) claims.get("uid")).longValue();
         String openId = claims.get("openid", String.class);
         String sessionId = claims.get("sid", String.class);
@@ -72,6 +78,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (currentSession == null || !currentSession.equals(sessionId)) {
             throw new AuthException("登录状态已失效");
         }
+
         UserContext.set(userId, openId, sessionId);
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                 userId, null, AuthorityUtils.NO_AUTHORITIES

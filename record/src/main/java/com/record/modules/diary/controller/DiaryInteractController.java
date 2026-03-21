@@ -2,7 +2,7 @@ package com.record.modules.diary.controller;
 
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
-import com.record.modules.diary.dto.DiaryCommentRequest;
+import com.record.modules.diary.model.dto.DiaryCommentRequest;
 import com.record.modules.diary.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

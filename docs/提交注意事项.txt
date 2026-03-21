@@ -5,3 +5,8 @@
 4）提交前先按模块归类改动并给我预览提交说明
 5）我确认后再 git add、git commit、git push
 6）默认全部中文
+7）不要超过7行
+
+署名情况：
+作者：wyh <wyyh2004@gmail.com>
+协作署名：Codex <noreply@openai.com> 

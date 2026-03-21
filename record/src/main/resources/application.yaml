@@ -1,120 +1,123 @@
-# 项目公共配置。
-# 这里放所有环境都通用的默认值，生产环境请优先通过环境变量覆盖。
-
+﻿# 项目公共配置。
+# 这里存放所有环境共用的默认值，生产环境优先通过环境变量覆盖。
 server:
-  # 后端服务端口。
   port: 8080
 
 spring:
   application:
-    # Spring Boot 应用名称。
     name: record
   profiles:
-    # 默认启用 dev，本地启动最省事；生产环境通过 SPRING_PROFILES_ACTIVE=prod 切换。
     active: ${SPRING_PROFILES_ACTIVE:dev}
   jackson:
-    # 空字段不返回，减小接口响应体积。
     default-property-inclusion: non_null
-    # 统一的时间序列化格式。
     date-format: yyyy-MM-dd HH:mm:ss
-    # 后端统一按上海时区处理时间。
     time-zone: Asia/Shanghai
 
 mybatis-plus:
-  # Mapper XML 扫描位置。
   mapper-locations: classpath*:/mapper/**/*.xml
   configuration:
-    # 数据库下划线字段自动映射到 Java 驼峰字段。
     map-underscore-to-camel-case: true
-    # 开发期打印 SQL，便于排查接口问题。
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
-      # 雪花算法主键，避免依赖数据库自增。
       id-type: assign_id
 
 app:
   security:
     jwt:
-      # JWT 签发者标识。
       issuer: life-record
-      # JWT 密钥，生产必须改成高强度随机值。
       secret: ${APP_JWT_SECRET:change-me-change-me-change-me-change-me}
-      # accessToken 有效期，单位分钟。
       access-token-expire-minutes: 120
-      # refreshToken 有效期，单位天。
       refresh-token-expire-days: 30
   wechat:
-    # 小程序 AppID，用于 wx.login 后端换取 openid。
-    app-id: ${WECHAT_APP_ID:your-app-id}
-    # 小程序 AppSecret，必须和 AppID 成对使用。
-    app-secret: ${WECHAT_APP_SECRET:your-app-secret}
-    # 微信 code2Session 接口地址。
+    app-id: ${WECHAT_APP_ID:wxc881594b9650474f}
+    app-secret: ${WECHAT_APP_SECRET:dc5e4819af366f49a71214eda8b28015}
     code2session-url: https://api.weixin.qq.com/sns/jscode2session
   map:
-    # 当前地图服务提供商，首版按腾讯地图实现。
     provider: tencent
-    # 腾讯位置服务 key，用于逆地理编码。
-    api-key: ${TENCENT_MAP_API_KEY:your-tencent-map-key}
-    # 腾讯逆地理编码接口地址。
+    api-key: ${TENCENT_MAP_API_KEY:DWUBZ-T4VKJ-7XCFD-XLNNS-SLNVF-JKBFJ}
     reverse-geocode-url: https://apis.map.qq.com/ws/geocoder/v1/
   file:
-    # 文件大小上限，单位 MB。
     max-size-mb: 50
-    # 允许上传的图片后缀。
     allowed-image-suffixes:
       - jpg
       - jpeg
       - png
       - webp
-    # 允许上传的视频后缀。
     allowed-video-suffixes:
       - mp4
       - mov
       - m4v
-    # 允许保存的 OSS 相对路径前缀，避免前端乱传路径。
     allowed-path-prefixes:
       - diary/
       - ledger/
       - avatar/
   reminder:
     mini-program:
-      # 小程序全局 access_token 获取地址。
       token-url: https://api.weixin.qq.com/cgi-bin/token
-      # 小程序订阅消息发送地址。
       send-url: https://api.weixin.qq.com/cgi-bin/message/subscribe/send
-      # “写日记提醒”订阅消息模板 ID。
-      diary-template-id: ${MP_DIARY_TEMPLATE_ID:your-mini-program-diary-template-id}
-      # “纪念日提醒”订阅消息模板 ID。
-      memorial-template-id: ${MP_MEMORIAL_TEMPLATE_ID:your-mini-program-memorial-template-id}
-      # 日记提醒点击后跳转的小程序页面路径。
+      diary-template-id: ${MP_DIARY_TEMPLATE_ID:92IzmSxsaJOMB3wn3aBoq1iMd13BnnocRgviQDr9CB0}
+      ledger-template-id: ${MP_LEDGER_TEMPLATE_ID:yU7oLAS9IHfH6AAhBS3vQ2h3oAN1cg_sSyO3xIdi4zc}
+      ledger-monthly-template-id: ${MP_LEDGER_MONTHLY_TEMPLATE_ID:XrzRcRmTmZ8qV-QS8_MmJGfRjnmmI5fIBMDYE-Sp4tk}
+      memorial-template-id: ${MP_MEMORIAL_TEMPLATE_ID:fcH_35MlCXOIOVVX130DlfckwMLuwz74OnZxLwV4Z7k}
       diary-page: ${MP_DIARY_PAGE:pages/diary/index}
-      # 纪念日提醒点击后跳转的小程序页面路径。
+      ledger-page: ${MP_LEDGER_PAGE:pages/ledger/index}
+      ledger-monthly-page: ${MP_LEDGER_MONTHLY_PAGE:pages/ledger/index}
       memorial-page: ${MP_MEMORIAL_PAGE:pages/memory/index}
-      # 小程序消息状态，可选 developer / trial / formal。
       state: ${MP_MESSAGE_STATE:formal}
-      # 模板消息语言，通常用 zh_CN。
       lang: ${MP_MESSAGE_LANG:zh_CN}
+      diary-fields:
+        title-field: ${MP_DIARY_TITLE_FIELD:thing1}
+        content-field: ${MP_DIARY_CONTENT_FIELD:thing2}
+        date-field: ${MP_DIARY_DATE_FIELD:date3}
+      ledger-fields:
+        time-field: ${MP_LEDGER_TIME_FIELD:time1}
+        content-field: ${MP_LEDGER_CONTENT_FIELD:thing3}
+        today-expense-field: ${MP_LEDGER_TODAY_EXPENSE_FIELD:amount15}
+        today-income-field: ${MP_LEDGER_TODAY_INCOME_FIELD:amount17}
+        total-expense-field: ${MP_LEDGER_TOTAL_EXPENSE_FIELD:amount5}
+      ledger-monthly-fields:
+        book-name-field: ${MP_LEDGER_MONTHLY_BOOK_NAME_FIELD:thing5}
+        month-field: ${MP_LEDGER_MONTHLY_MONTH_FIELD:thing3}
+        last-month-expense-field: ${MP_LEDGER_MONTHLY_EXPENSE_FIELD:amount1}
+        last-month-income-field: ${MP_LEDGER_MONTHLY_INCOME_FIELD:amount2}
+        remark-field: ${MP_LEDGER_MONTHLY_REMARK_FIELD:thing4}
+      memorial-fields:
+        time-field: ${MP_MEMORIAL_TIME_FIELD:time2}
+        remark-field: ${MP_MEMORIAL_REMARK_FIELD:thing4}
+        name-field: ${MP_MEMORIAL_NAME_FIELD:thing5}
     official-account:
-      # 公众号 AppID，作为扩展提醒通道使用。
-      app-id: ${OA_APP_ID:your-official-account-app-id}
-      # 公众号 AppSecret。
-      app-secret: ${OA_APP_SECRET:your-official-account-app-secret}
-      # 公众号 access_token 获取地址。
+      app-id: ${OA_APP_ID:wxe0b2c126bb08961c}
+      app-secret: ${OA_APP_SECRET:7c7db12875ab6c4eafabf87d66bf6dd8}
       token-url: https://api.weixin.qq.com/cgi-bin/token
-      # 公众号模板消息发送地址。
       send-url: https://api.weixin.qq.com/cgi-bin/message/template/send
-      # “写日记提醒”公众号模板 ID。
-      diary-template-id: ${OA_DIARY_TEMPLATE_ID:your-official-account-diary-template-id}
-      # “纪念日提醒”公众号模板 ID。
-      memorial-template-id: ${OA_MEMORIAL_TEMPLATE_ID:your-official-account-memorial-template-id}
+      diary-template-id: ${OA_DIARY_TEMPLATE_ID:}
+      ledger-template-id: ${OA_LEDGER_TEMPLATE_ID:}
+      ledger-monthly-template-id: ${OA_LEDGER_MONTHLY_TEMPLATE_ID:}
+      memorial-template-id: ${OA_MEMORIAL_TEMPLATE_ID:}
+      diary-fields:
+        title-field: ${OA_DIARY_TITLE_FIELD:thing1}
+        content-field: ${OA_DIARY_CONTENT_FIELD:thing2}
+        date-field: ${OA_DIARY_DATE_FIELD:date3}
+      ledger-fields:
+        time-field: ${OA_LEDGER_TIME_FIELD:time1}
+        content-field: ${OA_LEDGER_CONTENT_FIELD:thing3}
+        today-expense-field: ${OA_LEDGER_TODAY_EXPENSE_FIELD:amount15}
+        today-income-field: ${OA_LEDGER_TODAY_INCOME_FIELD:amount17}
+        total-expense-field: ${OA_LEDGER_TOTAL_EXPENSE_FIELD:amount5}
+      ledger-monthly-fields:
+        book-name-field: ${OA_LEDGER_MONTHLY_BOOK_NAME_FIELD:thing5}
+        month-field: ${OA_LEDGER_MONTHLY_MONTH_FIELD:thing3}
+        last-month-expense-field: ${OA_LEDGER_MONTHLY_EXPENSE_FIELD:amount1}
+        last-month-income-field: ${OA_LEDGER_MONTHLY_INCOME_FIELD:amount2}
+        remark-field: ${OA_LEDGER_MONTHLY_REMARK_FIELD:thing4}
+      memorial-fields:
+        time-field: ${OA_MEMORIAL_TIME_FIELD:time2}
+        remark-field: ${OA_MEMORIAL_REMARK_FIELD:thing4}
+        name-field: ${OA_MEMORIAL_NAME_FIELD:thing5}
 
 alioss:
-  # OSS 地域节点。
   endpoint: ${ALIOSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
-  # OSS 存储桶名称。
   bucket-name: ${ALIOSS_BUCKET_NAME:wyhosskey}
-  # OSS AccessKey ID。
   access-key-id: ${ALIOSS_ACCESS_KEY_ID:your-access-key-id}
-  # OSS AccessKey Secret。
   access-key-secret: ${ALIOSS_ACCESS_KEY_SECRET:your-access-key-secret}

@@ -4,19 +4,22 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.CommonStatus;
 import com.record.common.enums.TagModuleType;
 import com.record.common.exception.TagException;
-import com.record.modules.tag.dto.CreateFromTemplateRequest;
-import com.record.modules.tag.dto.CreateTagRequest;
-import com.record.modules.tag.dto.UpdateTagRequest;
-import com.record.modules.tag.entity.TagTemplate;
-import com.record.modules.tag.entity.UserTag;
 import com.record.modules.tag.mapper.TagTemplateMapper;
 import com.record.modules.tag.mapper.UserTagMapper;
+import com.record.modules.tag.model.dto.CreateFromTemplateRequest;
+import com.record.modules.tag.model.dto.CreateTagRequest;
+import com.record.modules.tag.model.dto.UpdateTagRequest;
+import com.record.modules.tag.model.entity.TagTemplate;
+import com.record.modules.tag.model.entity.UserTag;
+import com.record.modules.tag.model.vo.TagVO;
 import com.record.modules.tag.service.TagService;
-import com.record.modules.tag.vo.TagVO;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * 标签服务实现。
+ */
 @Service
 public class TagServiceImpl implements TagService {
 
@@ -34,13 +37,15 @@ public class TagServiceImpl implements TagService {
                         .eq(moduleType != null, TagTemplate::getModuleType, moduleType)
                         .eq(TagTemplate::getStatus, CommonStatus.ENABLED)
                         .orderByAsc(TagTemplate::getSortOrder))
-                .stream().map(item -> TagVO.builder()
+                .stream()
+                .map(item -> TagVO.builder()
                         .id(item.getId())
                         .name(item.getName())
                         .color(item.getColor())
                         .icon(item.getIcon())
                         .moduleType(item.getModuleType())
-                        .build()).toList();
+                        .build())
+                .toList();
     }
 
     @Override
@@ -48,7 +53,9 @@ public class TagServiceImpl implements TagService {
         return userTagMapper.selectList(new LambdaQueryWrapper<UserTag>()
                         .eq(UserTag::getUserId, userId)
                         .eq(moduleType != null, UserTag::getModuleType, moduleType))
-                .stream().map(this::toVO).toList();
+                .stream()
+                .map(this::toVO)
+                .toList();
     }
 
     @Override
@@ -69,6 +76,7 @@ public class TagServiceImpl implements TagService {
         if (template == null) {
             throw new TagException("标签模板不存在");
         }
+
         UserTag tag = new UserTag();
         tag.setUserId(userId);
         tag.setTemplateId(template.getId());
@@ -96,14 +104,20 @@ public class TagServiceImpl implements TagService {
         userTagMapper.deleteById(id);
     }
 
+    /**
+     * 校验标签是否存在且属于当前用户。
+     */
     private UserTag requireOwnedTag(Long userId, Long id) {
         UserTag tag = userTagMapper.selectById(id);
         if (tag == null || !tag.getUserId().equals(userId)) {
-            throw new TagException("标签不存在");
+            throw new TagException("标签不存在或无权限操作");
         }
         return tag;
     }
 
+    /**
+     * 将实体转换为接口返回对象。
+     */
     private TagVO toVO(UserTag item) {
         return TagVO.builder()
                 .id(item.getId())

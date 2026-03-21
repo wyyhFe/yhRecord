@@ -1,11 +1,12 @@
 {
   "name": "Life Record",
-  "appid": "__UNI__LIFERECORD",
-  "description": "生活记录小程序",
+  "appid": "wxc881594b9650474f",
+  "description": "Life record mini program",
   "versionName": "1.0.0",
   "versionCode": "100",
+  "transformPx": false,
   "mp-weixin": {
-    "appid": "touristappid",
+    "appid": "wxc881594b9650474f",
     "setting": {
       "urlCheck": false,
       "es6": true,

@@ -1,7 +1,7 @@
 package com.record.modules.recycle.service;
 
 import com.record.common.enums.ResourceType;
-import com.record.modules.recycle.vo.RecycleBinItemVO;
+import com.record.modules.recycle.model.vo.RecycleBinItemVO;
 
 import java.util.List;
 
@@ -13,3 +13,4 @@ public interface RecycleBinService {
     void forceDelete(Long userId, Long recycleId);
     void purgeExpired();
 }
+

@@ -15,6 +15,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * JWT 令牌工具。
+ * 负责生成访问令牌、刷新令牌，并解析令牌里的载荷数据。
+ */
 @Component
 public class JwtTokenProvider {
 
@@ -46,7 +50,7 @@ public class JwtTokenProvider {
                     .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception ex) {
-            throw new AuthException("Token 非法或已过期");
+            throw new AuthException("令牌非法或已过期");
         }
     }
 

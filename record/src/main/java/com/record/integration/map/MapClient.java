@@ -6,6 +6,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+/**
+ * 地图服务客户端。
+ */
 @Component
 public class MapClient {
 

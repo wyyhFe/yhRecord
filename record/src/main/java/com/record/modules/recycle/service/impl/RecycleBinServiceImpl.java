@@ -2,10 +2,10 @@ package com.record.modules.recycle.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.ResourceType;
-import com.record.modules.recycle.entity.RecycleBinRecord;
+import com.record.modules.recycle.model.entity.RecycleBinRecord;
 import com.record.modules.recycle.mapper.RecycleBinRecordMapper;
 import com.record.modules.recycle.service.RecycleBinService;
-import com.record.modules.recycle.vo.RecycleBinItemVO;
+import com.record.modules.recycle.model.vo.RecycleBinItemVO;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -72,3 +72,4 @@ public class RecycleBinServiceImpl implements RecycleBinService {
                 .lt(RecycleBinRecord::getExpireAt, LocalDateTime.now()));
     }
 }
+

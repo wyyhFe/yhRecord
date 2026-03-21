@@ -2,19 +2,19 @@ package com.record.modules.ledger.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.exception.LedgerException;
-import com.record.modules.ledger.dto.CreateBookRequest;
-import com.record.modules.ledger.dto.CreateLedgerEntryRequest;
-import com.record.modules.ledger.dto.UpdateLedgerEntryRequest;
-import com.record.modules.ledger.entity.LedgerBook;
-import com.record.modules.ledger.entity.LedgerEntry;
-import com.record.modules.ledger.entity.LedgerEntryTagRel;
 import com.record.modules.ledger.mapper.LedgerBookMapper;
 import com.record.modules.ledger.mapper.LedgerEntryMapper;
 import com.record.modules.ledger.mapper.LedgerEntryTagRelMapper;
+import com.record.modules.ledger.model.dto.CreateBookRequest;
+import com.record.modules.ledger.model.dto.CreateLedgerEntryRequest;
+import com.record.modules.ledger.model.dto.UpdateLedgerEntryRequest;
+import com.record.modules.ledger.model.entity.LedgerBook;
+import com.record.modules.ledger.model.entity.LedgerEntry;
+import com.record.modules.ledger.model.entity.LedgerEntryTagRel;
+import com.record.modules.ledger.model.vo.LedgerBookVO;
+import com.record.modules.ledger.model.vo.LedgerEntryVO;
+import com.record.modules.ledger.model.vo.YearStatisticsVO;
 import com.record.modules.ledger.service.LedgerService;
-import com.record.modules.ledger.vo.LedgerBookVO;
-import com.record.modules.ledger.vo.LedgerEntryVO;
-import com.record.modules.ledger.vo.YearStatisticsVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 记账服务实现。
+ */
 @Service
 public class LedgerServiceImpl implements LedgerService {
 
@@ -128,7 +131,7 @@ public class LedgerServiceImpl implements LedgerService {
 
     private void validateAmount(BigDecimal amount) {
         if (amount.scale() > 2) {
-            throw new LedgerException("金额最多保留两位小数");
+            throw new LedgerException("金额最多只能保留两位小数");
         }
     }
 
@@ -158,7 +161,7 @@ public class LedgerServiceImpl implements LedgerService {
     private LedgerEntry requireOwnedEntry(Long userId, Long entryId) {
         LedgerEntry entry = ledgerEntryMapper.selectById(entryId);
         if (entry == null || !entry.getUserId().equals(userId)) {
-            throw new LedgerException("账单不存在");
+            throw new LedgerException("账单不存在或无权限访问");
         }
         return entry;
     }

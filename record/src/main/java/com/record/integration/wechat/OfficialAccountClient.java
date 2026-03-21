@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 公众号模板消息客户端。
- * 公众号提醒是扩展通道，依赖额外的公众号 openid 绑定能力。
  */
 @Component
 public class OfficialAccountClient {
@@ -32,9 +31,6 @@ public class OfficialAccountClient {
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
-    /**
-     * 发送公众号模板消息。
-     */
     public void sendTemplateMessage(OfficialMessageRequest request) {
         String accessToken = getAccessToken();
         String url = UriComponentsBuilder.fromHttpUrl(appProperties.getReminder().getOfficialAccount().getSendUrl())
@@ -54,9 +50,6 @@ public class OfficialAccountClient {
         }
     }
 
-    /**
-     * 获取并缓存公众号 access_token。
-     */
     private String getAccessToken() {
         String token = stringRedisTemplate.opsForValue().get(RedisKeyConstants.OFFICIAL_ACCESS_TOKEN);
         if (token != null && !token.isBlank()) {
@@ -70,7 +63,7 @@ public class OfficialAccountClient {
                 .toUriString();
         WechatAccessTokenResponse response = restTemplate.getForObject(url, WechatAccessTokenResponse.class);
         if (response == null || response.getAccessToken() == null || response.getAccessToken().isBlank()) {
-            throw new AuthException("公众号 access_token 获取失败");
+            throw new AuthException("获取公众号 access_token 失败");
         }
 
         long expireSeconds = response.getExpiresIn() == null ? 7200L : response.getExpiresIn();

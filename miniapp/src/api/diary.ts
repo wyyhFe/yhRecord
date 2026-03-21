@@ -4,8 +4,7 @@ import type { DiaryItem } from '@/types/domain'
 import type { CreateDiaryPayload } from '@/types/diary'
 
 /**
- * 日记列表查询。
- * 当前支持关键字和可见范围两个常用过滤条件。
+ * 查询日记列表。
  */
 export function fetchDiaryList(params?: {
   keyword?: string
@@ -35,7 +34,7 @@ export function createDiary(data: CreateDiaryPayload) {
 }
 
 /**
- * 更新指定日记。
+ * 更新日记。
  */
 export function updateDiary(id: number, data: CreateDiaryPayload) {
   return request<DiaryItem>({
@@ -46,11 +45,21 @@ export function updateDiary(id: number, data: CreateDiaryPayload) {
 }
 
 /**
- * 获取单篇日记详情。
+ * 查询日记详情。
  */
 export function fetchDiaryDetail(id: number) {
   return request<DiaryItem>({
     url: `/diaries/detail/${id}`,
     method: 'GET'
+  })
+}
+
+/**
+ * 软删除日记，删除后进入回收站。
+ */
+export function deleteDiary(id: number) {
+  return request<void>({
+    url: `/diaries/delete/${id}`,
+    method: 'DELETE'
   })
 }

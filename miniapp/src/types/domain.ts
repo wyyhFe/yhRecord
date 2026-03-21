@@ -1,6 +1,5 @@
 /**
  * 用户个人资料。
- * 个人中心、首页欢迎区等位置都会复用这组字段。
  */
 export interface UserProfile {
   id: number
@@ -12,8 +11,7 @@ export interface UserProfile {
 }
 
 /**
- * 日记列表项 / 日记详情的基础结构。
- * 当前前端直接复用一套类型，避免列表和详情字段重复定义。
+ * 日记列表页和详情页复用的数据结构。
  */
 export interface DiaryItem {
   id: number
@@ -66,7 +64,6 @@ export interface CheckinTask {
 
 /**
  * 日历某一天的摘要状态。
- * 首页日历条和月历页都会用这个结构。
  */
 export interface DaySummary {
   date: string

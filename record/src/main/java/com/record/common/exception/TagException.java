@@ -6,3 +6,4 @@ public class TagException extends BusinessException {
         super(ErrorCode.TAG_ERROR, message);
     }
 }
+

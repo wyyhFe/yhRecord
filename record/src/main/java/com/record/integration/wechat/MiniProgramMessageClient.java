@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 小程序订阅消息客户端。
- * 负责缓存 access_token 并调用微信小程序订阅消息发送接口。
  */
 @Component
 public class MiniProgramMessageClient {
@@ -32,9 +31,6 @@ public class MiniProgramMessageClient {
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
-    /**
-     * 发送小程序订阅消息。
-     */
     public void sendSubscribeMessage(MiniProgramMessageRequest request) {
         String accessToken = getAccessToken();
         String url = UriComponentsBuilder.fromHttpUrl(appProperties.getReminder().getMiniProgram().getSendUrl())
@@ -54,9 +50,6 @@ public class MiniProgramMessageClient {
         }
     }
 
-    /**
-     * 获取并缓存小程序全局 access_token。
-     */
     private String getAccessToken() {
         String token = stringRedisTemplate.opsForValue().get(RedisKeyConstants.MINI_PROGRAM_ACCESS_TOKEN);
         if (token != null && !token.isBlank()) {
@@ -70,7 +63,7 @@ public class MiniProgramMessageClient {
                 .toUriString();
         WechatAccessTokenResponse response = restTemplate.getForObject(url, WechatAccessTokenResponse.class);
         if (response == null || response.getAccessToken() == null || response.getAccessToken().isBlank()) {
-            throw new AuthException("小程序 access_token 获取失败");
+            throw new AuthException("获取小程序 access_token 失败");
         }
 
         long expireSeconds = response.getExpiresIn() == null ? 7200L : response.getExpiresIn();

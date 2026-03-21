@@ -4,10 +4,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.context.UserContext;
 import com.record.common.enums.VisibilityType;
 import com.record.common.model.ApiResponse;
-import com.record.modules.diary.dto.CreateDiaryRequest;
-import com.record.modules.diary.dto.UpdateDiaryRequest;
+import com.record.modules.diary.model.dto.CreateDiaryRequest;
+import com.record.modules.diary.model.dto.UpdateDiaryRequest;
+import com.record.modules.diary.model.vo.DiaryVO;
 import com.record.modules.diary.service.DiaryService;
-import com.record.modules.diary.vo.DiaryVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,10 +22,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 日记主控制器。
- * 负责日记的新建、编辑、列表、详情、软删除、恢复和彻底删除。
+ * 日记基础接口。
  */
-@Tag(name = "日记")
+@Tag(name = "日记管理")
 @RestController
 @RequestMapping("/diaries")
 public class DiaryController {
@@ -48,10 +47,7 @@ public class DiaryController {
         return ApiResponse.success(diaryService.update(UserContext.getUserId(), id, request));
     }
 
-    /**
-     * 列表查询支持分页、可见范围、标签和关键字搜索。
-     */
-    @Operation(summary = "日记列表")
+    @Operation(summary = "分页查询日记")
     @GetMapping("/list")
     public ApiResponse<Page<DiaryVO>> list(@RequestParam(defaultValue = "1") long current,
                                            @RequestParam(defaultValue = "10") long size,
@@ -61,7 +57,7 @@ public class DiaryController {
         return ApiResponse.success(diaryService.list(UserContext.getUserId(), current, size, visibility, tagId, keyword));
     }
 
-    @Operation(summary = "日记详情")
+    @Operation(summary = "查询日记详情")
     @GetMapping("/detail/{id}")
     public ApiResponse<DiaryVO> detail(@PathVariable Long id) {
         return ApiResponse.success(diaryService.detail(UserContext.getUserId(), id));
@@ -81,7 +77,7 @@ public class DiaryController {
         return ApiResponse.success();
     }
 
-    @Operation(summary = "彻底删除日记")
+    @Operation(summary = "强制删除日记")
     @DeleteMapping("/force-delete/{id}")
     public ApiResponse<Void> forceDelete(@PathVariable Long id) {
         diaryService.forceDelete(UserContext.getUserId(), id);

@@ -6,6 +6,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+/**
+ * 微信登录客户端。
+ */
 @Component
 public class WechatAuthClient {
 
@@ -17,6 +20,7 @@ public class WechatAuthClient {
         this.appProperties = appProperties;
     }
 
+    /** 调用 code2Session 接口，用前端传来的 code 换取 openid 和 session_key。 */
     public WechatCode2SessionResponse code2Session(String code) {
         String url = UriComponentsBuilder.fromHttpUrl(appProperties.getWechat().getCode2sessionUrl())
                 .queryParam("appid", appProperties.getWechat().getAppId())

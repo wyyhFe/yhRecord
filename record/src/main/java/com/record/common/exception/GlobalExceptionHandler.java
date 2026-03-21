@@ -31,3 +31,4 @@ public class GlobalExceptionHandler {
         return ApiResponse.failure(ErrorCode.SYSTEM_ERROR.getCode(), ex.getMessage());
     }
 }
+

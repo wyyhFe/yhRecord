@@ -6,3 +6,4 @@ public class LocationException extends BusinessException {
         super(ErrorCode.LOCATION_ERROR, message);
     }
 }
+

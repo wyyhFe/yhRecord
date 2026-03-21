@@ -14,3 +14,4 @@ public class RecordApplication {
         SpringApplication.run(RecordApplication.class, args);
     }
 }
+

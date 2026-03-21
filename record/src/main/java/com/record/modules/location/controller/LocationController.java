@@ -1,10 +1,10 @@
 package com.record.modules.location.controller;
 
 import com.record.common.model.ApiResponse;
-import com.record.modules.location.dto.ReverseGeocodeRequest;
-import com.record.modules.location.dto.ValidatePathRequest;
+import com.record.modules.location.model.dto.ReverseGeocodeRequest;
+import com.record.modules.location.model.dto.ValidatePathRequest;
+import com.record.modules.location.model.vo.LocationVO;
 import com.record.modules.location.service.LocationService;
-import com.record.modules.location.vo.LocationVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -17,9 +17,9 @@ import java.util.Map;
 
 /**
  * 定位辅助接口。
- * 提供逆地理编码和 OSS 路径校验两类能力。
+ * 提供逆地理编码和 OSS 路径校验能力。
  */
-@Tag(name = "定位")
+@Tag(name = "定位辅助")
 @RestController
 @RequestMapping("/locations")
 public class LocationController {
@@ -31,7 +31,7 @@ public class LocationController {
     }
 
     /**
-     * 根据经纬度解析地址。
+     * 根据经纬度解析结构化地址。
      */
     @Operation(summary = "逆地理编码")
     @PostMapping("/reverse-geocode")
@@ -40,7 +40,7 @@ public class LocationController {
     }
 
     /**
-     * 校验文件路径是否合法。
+     * 校验前端上传的 OSS 相对路径是否允许落库。
      */
     @Operation(summary = "校验文件路径")
     @PostMapping("/validate")

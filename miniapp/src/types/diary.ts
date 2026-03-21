@@ -1,6 +1,5 @@
 /**
  * 日记附件提交结构。
- * 与后端 mediaList 字段保持一致。
  */
 export interface DiaryMediaInput {
   mediaType: 'IMAGE' | 'VIDEO'
@@ -10,7 +9,6 @@ export interface DiaryMediaInput {
 
 /**
  * 日记定位信息提交结构。
- * sourceType 需要与后端 LocationSourceType 枚举保持一致。
  */
 export interface DiaryLocationInput {
   locationName?: string

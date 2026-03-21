@@ -1,12 +1,11 @@
 package com.record.common.enums;
 
 /**
- * 日记定位来源。
- * CURRENT 表示当前位置，MANUAL 表示用户手动选点。
+ * 定位来源。
  */
 public enum LocationSourceType {
-    /** 通过当前定位能力获取。 */
+    /** 当前定位。 */
     CURRENT,
-    /** 用户在地图上手动选择。 */
+    /** 手动选点。 */
     MANUAL
 }

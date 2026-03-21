@@ -2,10 +2,10 @@ package com.record.modules.diary.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.enums.VisibilityType;
-import com.record.modules.diary.dto.CreateDiaryRequest;
-import com.record.modules.diary.dto.DiaryCommentRequest;
-import com.record.modules.diary.dto.UpdateDiaryRequest;
-import com.record.modules.diary.vo.DiaryVO;
+import com.record.modules.diary.model.dto.CreateDiaryRequest;
+import com.record.modules.diary.model.dto.DiaryCommentRequest;
+import com.record.modules.diary.model.dto.UpdateDiaryRequest;
+import com.record.modules.diary.model.vo.DiaryVO;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,3 +24,4 @@ public interface DiaryService {
     void comment(Long userId, Long diaryId, DiaryCommentRequest request);
     List<String> comments(Long userId, Long diaryId);
 }
+

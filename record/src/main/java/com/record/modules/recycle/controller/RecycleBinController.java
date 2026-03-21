@@ -3,8 +3,8 @@ package com.record.modules.recycle.controller;
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
 import com.record.modules.diary.service.DiaryService;
+import com.record.modules.recycle.model.vo.RecycleBinItemVO;
 import com.record.modules.recycle.service.RecycleBinService;
-import com.record.modules.recycle.vo.RecycleBinItemVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  * 回收站接口。
- * 当前首版先打通日记资源的恢复和彻底删除。
+ * 当前首版先按日记资源打通恢复和彻底删除链路。
  */
 @Tag(name = "回收站")
 @RestController
@@ -35,16 +35,16 @@ public class RecycleBinController {
     }
 
     /**
-     * 查询回收站列表。
+     * 查询当前用户的回收站列表。
      */
-    @Operation(summary = "回收站列表")
+    @Operation(summary = "查询回收站列表")
     @GetMapping("/list")
     public ApiResponse<List<RecycleBinItemVO>> list() {
         return ApiResponse.success(recycleBinService.list(UserContext.getUserId()));
     }
 
     /**
-     * 恢复已删除资源。
+     * 恢复回收站中的资源。
      */
     @Operation(summary = "恢复资源")
     @PostMapping("/restore/{recycleId}")
@@ -55,7 +55,7 @@ public class RecycleBinController {
     }
 
     /**
-     * 彻底删除资源。
+     * 彻底删除回收站中的资源。
      */
     @Operation(summary = "彻底删除资源")
     @DeleteMapping("/force-delete/{recycleId}")

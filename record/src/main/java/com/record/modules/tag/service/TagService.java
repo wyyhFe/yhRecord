@@ -1,10 +1,10 @@
 package com.record.modules.tag.service;
 
 import com.record.common.enums.TagModuleType;
-import com.record.modules.tag.dto.CreateFromTemplateRequest;
-import com.record.modules.tag.dto.CreateTagRequest;
-import com.record.modules.tag.dto.UpdateTagRequest;
-import com.record.modules.tag.vo.TagVO;
+import com.record.modules.tag.model.dto.CreateFromTemplateRequest;
+import com.record.modules.tag.model.dto.CreateTagRequest;
+import com.record.modules.tag.model.dto.UpdateTagRequest;
+import com.record.modules.tag.model.vo.TagVO;
 
 import java.util.List;
 
@@ -16,3 +16,4 @@ public interface TagService {
     TagVO update(Long userId, Long id, UpdateTagRequest request);
     void delete(Long userId, Long id);
 }
+

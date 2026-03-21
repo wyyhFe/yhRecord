@@ -6,7 +6,7 @@ import { tokenStorage } from './storage'
 
 /**
  * 项目统一请求参数。
- * 默认所有接口都走登录态，只有显式传 `withAuth: false` 才跳过 token 注入。
+ * 默认所有接口都带登录态，只有显式传 `withAuth: false` 才跳过 token 注入。
  */
 interface RequestOptions<T = unknown> extends AxiosRequestConfig<T> {
   withAuth?: boolean
@@ -59,7 +59,7 @@ async function refreshSessionToken(refreshTokenValue: string) {
 
   const result = response.data
   if (!result || result.code !== 0 || !result.data) {
-    throw new Error(result?.message || '刷新登录态失败')
+    throw new Error(result?.message || '刷新登录状态失败')
   }
 
   tokenStorage.setAccessToken(result.data.accessToken)
@@ -76,6 +76,7 @@ service.interceptors.request.use((config) => {
   if (withAuth && token) {
     nextConfig.headers.Authorization = `Bearer ${token}`
   }
+
   return nextConfig
 })
 
@@ -122,11 +123,14 @@ service.interceptors.response.use(
 export async function request<T = unknown>(options: RequestOptions) {
   const response = await service.request<ApiResponse<T>, AxiosResponse<ApiResponse<T>>>(options)
   const result = response.data
+
   if (!result) {
-    throw new Error('Empty response')
+    throw new Error('响应为空')
   }
+
   if (result.code !== 0) {
-    throw new Error(result.message || 'Request failed')
+    throw new Error(result.message || '请求失败')
   }
+
   return result.data
 }

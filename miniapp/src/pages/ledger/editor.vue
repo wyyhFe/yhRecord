@@ -52,10 +52,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/AppHero.vue'
-import SectionBlock from '@/components/business/SectionBlock.vue'
-import ChoiceChips from '@/components/business/ChoiceChips.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
+import AppHero from '@/components/business/app-hero'
+import SectionBlock from '@/components/business/section-block'
+import ChoiceChips from '@/components/business/choice-chips'
+import BaseButton from '@/components/base/base-button'
 import { createLedgerEntry } from '@/api/ledger-form'
 import { fetchBooks, type LedgerBook } from '@/api/books'
 

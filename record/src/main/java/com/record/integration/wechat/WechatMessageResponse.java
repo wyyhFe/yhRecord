@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 /**
- * 微信消息发送通用响应。
+ * 微信消息发送响应。
  */
 @Data
 public class WechatMessageResponse {

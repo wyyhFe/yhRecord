@@ -2,22 +2,19 @@ import { request } from '@/utils/request'
 
 /**
  * 提醒设置响应结构。
- * 字段和后端 ReminderSettingVO 保持一致。
  */
 export interface ReminderSetting {
   id: number
   diaryReminderEnabled: boolean
-  diaryReminderTime?: string
   miniProgramReminderEnabled: boolean
   officialAccountReminderEnabled: boolean
 }
 
 /**
- * 保存提醒设置时提交给后端的参数结构。
+ * 保存提醒设置请求体。
  */
 export interface SaveReminderSettingPayload {
   diaryReminderEnabled: boolean
-  diaryReminderTime?: string
   miniProgramReminderEnabled: boolean
   officialAccountReminderEnabled: boolean
 }

@@ -15,3 +15,4 @@ public class BaseEntity {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }
+

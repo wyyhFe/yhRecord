@@ -37,9 +37,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/AppHero.vue'
-import SectionBlock from '@/components/business/SectionBlock.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
+import AppHero from '@/components/business/app-hero'
+import SectionBlock from '@/components/business/section-block'
+import BaseButton from '@/components/base/base-button'
 import { createCheckinTask } from '@/api/checkin-form'
 
 const submitting = ref(false)

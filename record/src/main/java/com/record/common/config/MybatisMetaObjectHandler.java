@@ -20,3 +20,4 @@ public class MybatisMetaObjectHandler implements MetaObjectHandler {
         this.strictUpdateFill(metaObject, "updatedAt", LocalDateTime.class, LocalDateTime.now());
     }
 }
+

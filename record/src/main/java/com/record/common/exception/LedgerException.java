@@ -6,3 +6,4 @@ public class LedgerException extends BusinessException {
         super(ErrorCode.LEDGER_ERROR, message);
     }
 }
+

@@ -6,3 +6,4 @@ public class MemorialException extends BusinessException {
         super(ErrorCode.MEMORIAL_ERROR, message);
     }
 }
+

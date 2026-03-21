@@ -3,17 +3,20 @@ package com.record.modules.memorial.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.CommonStatus;
 import com.record.common.exception.MemorialException;
-import com.record.modules.memorial.dto.CreateMemorialDayRequest;
-import com.record.modules.memorial.dto.UpdateMemorialDayRequest;
-import com.record.modules.memorial.entity.MemorialDay;
 import com.record.modules.memorial.mapper.MemorialDayMapper;
+import com.record.modules.memorial.model.dto.CreateMemorialDayRequest;
+import com.record.modules.memorial.model.dto.UpdateMemorialDayRequest;
+import com.record.modules.memorial.model.entity.MemorialDay;
+import com.record.modules.memorial.model.vo.MemorialDayVO;
 import com.record.modules.memorial.service.MemorialDayService;
-import com.record.modules.memorial.vo.MemorialDayVO;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * 纪念日服务实现。
+ */
 @Service
 public class MemorialDayServiceImpl implements MemorialDayService {
 
@@ -37,7 +40,9 @@ public class MemorialDayServiceImpl implements MemorialDayService {
         return memorialDayMapper.selectList(new LambdaQueryWrapper<MemorialDay>()
                         .eq(MemorialDay::getUserId, userId)
                         .orderByAsc(MemorialDay::getMemorialDate))
-                .stream().map(this::toVO).toList();
+                .stream()
+                .map(this::toVO)
+                .toList();
     }
 
     @Override
@@ -56,8 +61,12 @@ public class MemorialDayServiceImpl implements MemorialDayService {
 
     @Override
     public List<MemorialDayVO> listByDate(Long userId, LocalDate date) {
-        return memorialDayMapper.selectList(new LambdaQueryWrapper<MemorialDay>().eq(MemorialDay::getUserId, userId))
-                .stream().filter(item -> isSameDay(item, date)).map(this::toVO).toList();
+        return memorialDayMapper.selectList(new LambdaQueryWrapper<MemorialDay>()
+                        .eq(MemorialDay::getUserId, userId))
+                .stream()
+                .filter(item -> isSameDay(item, date))
+                .map(this::toVO)
+                .toList();
     }
 
     private void fill(MemorialDay memorialDay, Long userId, CreateMemorialDayRequest request) {
@@ -73,7 +82,7 @@ public class MemorialDayServiceImpl implements MemorialDayService {
     private MemorialDay requireOwned(Long userId, Long id) {
         MemorialDay memorialDay = memorialDayMapper.selectById(id);
         if (memorialDay == null || !memorialDay.getUserId().equals(userId)) {
-            throw new MemorialException("纪念日不存在");
+            throw new MemorialException("纪念日不存在或无权访问");
         }
         return memorialDay;
     }

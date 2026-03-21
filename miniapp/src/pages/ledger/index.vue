@@ -3,15 +3,15 @@
     <AppHero
       eyebrow="记账本"
       title="钱花到哪里，一眼就知道"
-      description="按账本、月份和标签做汇总，账单列表和新增入口都已经准备好联调。"
+      description="页面查询负责按月份查看当前账单，模板通知负责单独发送月报提醒，两者是独立模块。"
       badge="Ledger"
     />
 
-    <SectionBlock title="本月概览" subtitle="收入支出与结余放在同一块">
+    <SectionBlock title="本月概览" subtitle="收入、支出与结余放在同一块展示">
       <MetricGrid :items="metricItems" />
     </SectionBlock>
 
-    <SectionBlock title="最近流水" subtitle="保留备注与图片入口">
+    <SectionBlock title="最近流水" subtitle="页面查询模块，支持按当前月份查看账单列表">
       <view class="mb-[18rpx]">
         <BaseButton @tap="goEditor">新增一笔账单</BaseButton>
       </view>
@@ -31,7 +31,7 @@
       </view>
       <EmptyState
         v-else
-        icon="💰"
+        icon="💵"
         title="账本还没有流水"
         description="先记录第一笔支出或收入，后面的统计才会真正有意义。"
       />
@@ -43,20 +43,17 @@
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/AppHero.vue'
-import SectionBlock from '@/components/business/SectionBlock.vue'
-import MetricGrid from '@/components/business/MetricGrid.vue'
-import BaseCard from '@/components/base/BaseCard.vue'
-import EmptyState from '@/components/business/EmptyState.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
+import AppHero from '@/components/business/app-hero'
+import SectionBlock from '@/components/business/section-block'
+import MetricGrid from '@/components/business/metric-grid'
+import BaseCard from '@/components/base/base-card'
+import EmptyState from '@/components/business/empty-state'
+import BaseButton from '@/components/base/base-button'
 import { fetchMonthLedger } from '@/api/ledger'
 import type { LedgerEntry } from '@/types/domain'
 
 const entries = ref<LedgerEntry[]>([])
 
-/**
- * 记账首页把流水推导成三块最常看的统计信息。
- */
 const metricItems = computed(() => {
   const expense = entries.value
     .filter((item) => item.type === 'EXPENSE')
@@ -75,9 +72,6 @@ function goEditor() {
   uni.navigateTo({ url: '/pages/ledger/editor' })
 }
 
-/**
- * 每次页面回显时重新请求本月账单，确保新增后能立即看到结果。
- */
 async function init() {
   const now = new Date()
   try {

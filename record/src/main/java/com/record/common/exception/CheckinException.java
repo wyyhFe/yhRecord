@@ -6,3 +6,4 @@ public class CheckinException extends BusinessException {
         super(ErrorCode.CHECKIN_ERROR, message);
     }
 }
+

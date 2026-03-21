@@ -2,8 +2,8 @@ package com.record.modules.tag.controller;
 
 import com.record.common.enums.TagModuleType;
 import com.record.common.model.ApiResponse;
+import com.record.modules.tag.model.vo.TagVO;
 import com.record.modules.tag.service.TagService;
-import com.record.modules.tag.vo.TagVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,10 +27,7 @@ public class TagTemplateController {
         this.tagService = tagService;
     }
 
-    /**
-     * 查询标签模板列表。
-     */
-    @Operation(summary = "标签模板列表")
+    @Operation(summary = "查询标签模板")
     @GetMapping("/list")
     public ApiResponse<List<TagVO>> list(@RequestParam(required = false) TagModuleType moduleType) {
         return ApiResponse.success(tagService.listTemplates(moduleType));

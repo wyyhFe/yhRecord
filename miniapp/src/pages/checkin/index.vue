@@ -7,7 +7,7 @@
       badge="Checkin"
     />
 
-    <SectionBlock title="我的任务" subtitle="今天先完成最重要的一件">
+    <SectionBlock title="我的任务" subtitle="今天先完成最重要的一项">
       <view class="mb-[18rpx]">
         <BaseButton @tap="goCreate">创建打卡任务</BaseButton>
       </view>
@@ -40,11 +40,11 @@
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/AppHero.vue'
-import SectionBlock from '@/components/business/SectionBlock.vue'
-import BaseCard from '@/components/base/BaseCard.vue'
-import EmptyState from '@/components/business/EmptyState.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
+import AppHero from '@/components/business/app-hero'
+import SectionBlock from '@/components/business/section-block'
+import BaseCard from '@/components/base/base-card'
+import EmptyState from '@/components/business/empty-state'
+import BaseButton from '@/components/base/base-button'
 import { fetchCheckinTasks } from '@/api/checkin'
 import type { CheckinTask } from '@/types/domain'
 
@@ -54,9 +54,6 @@ function goCreate() {
   uni.navigateTo({ url: '/pages/checkin/editor' })
 }
 
-/**
- * 打卡首页展示的是任务列表，不是具体记录明细。
- */
 async function init() {
   try {
     tasks.value = await fetchCheckinTasks()

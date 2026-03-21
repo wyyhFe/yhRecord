@@ -3,7 +3,7 @@
     <AppHero
       eyebrow="写日记"
       :title="isEdit ? '修改这篇日记' : '记录这一天的样子'"
-      description="正文、照片、天气、心情、标签、提醒和位置一起保存，尽量把记录入口做得顺手。"
+      description="正文、照片、天气、心情、标签、单篇提醒和位置一起保存，让记录入口更顺手。"
       :badge="isEdit ? 'Edit' : 'Create'"
     />
 
@@ -39,7 +39,7 @@
       </view>
     </SectionBlock>
 
-    <SectionBlock title="天气和心情" subtitle="常用项用选择，保留手填空间">
+    <SectionBlock title="天气和心情" subtitle="常用选项优先，保留手动填写空间">
       <view class="glass-panel px-[24rpx] py-[24rpx]">
         <view class="text-[24rpx] text-[#7f7366]">天气</view>
         <ChoiceChips v-model="form.weather" :items="weatherOptions" />
@@ -48,7 +48,7 @@
       </view>
     </SectionBlock>
 
-    <SectionBlock title="标签" subtitle="标签来自后台配置和个人自定义">
+    <SectionBlock title="标签" subtitle="标签来自后台模板和个人扩展标签">
       <view v-if="tagOptions.length" class="glass-panel px-[24rpx] py-[24rpx]">
         <ChoiceChips v-model="selectedTagIds" :items="tagOptions" multiple />
       </view>
@@ -56,11 +56,11 @@
         v-else
         icon="🏷️"
         title="暂时没有可选标签"
-        description="等标签接口返回后，这里会展示后台模板和你的自定义标签。"
+        description="可以先去标签管理页创建标签，再回来选择。"
       />
     </SectionBlock>
 
-    <SectionBlock title="提醒" subtitle="当天未记录时，可按设定时间提醒">
+    <SectionBlock title="单篇提醒" subtitle="这里是单篇日记提醒，不影响全局每天 22:00 的固定提醒规则">
       <ReminderSwitch
         :enabled="reminderEnabled"
         :time-value="reminderTime"
@@ -88,17 +88,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/AppHero.vue'
-import SectionBlock from '@/components/business/SectionBlock.vue'
-import BaseCard from '@/components/base/BaseCard.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
-import PhotoPicker, { type SelectedPhoto } from '@/components/business/PhotoPicker.vue'
-import LocationPicker from '@/components/business/LocationPicker.vue'
-import ChoiceChips from '@/components/business/ChoiceChips.vue'
-import ReminderSwitch from '@/components/business/ReminderSwitch.vue'
-import EmptyState from '@/components/business/EmptyState.vue'
+import AppHero from '@/components/business/app-hero'
+import SectionBlock from '@/components/business/section-block'
+import BaseCard from '@/components/base/base-card'
+import BaseButton from '@/components/base/base-button'
+import PhotoPicker, { type SelectedPhoto } from '@/components/business/photo-picker'
+import LocationPicker from '@/components/business/location-picker'
+import ChoiceChips from '@/components/business/choice-chips'
+import ReminderSwitch from '@/components/business/reminder-switch'
+import EmptyState from '@/components/business/empty-state'
 import { createDiary, fetchDiaryDetail, updateDiary } from '@/api/diary'
-import { fetchDiaryTags } from '@/api/tag'
+import { fetchUserTags } from '@/api/tag'
 import { uploadImageToOss } from '@/utils/upload'
 import { VISIBILITY_OPTIONS } from '@/config/app'
 import type { CreateDiaryPayload } from '@/types/diary'
@@ -154,11 +154,12 @@ function onVisibilityChange(event: { detail: { value: string } }) {
 
 /**
  * 上传单张图片，并把上传状态同步回本地列表。
- * 这样失败时可以精准重试，不会影响其他图片。
+ * 这样失败时可以精确重试，不会影响其他图片。
  */
 async function uploadOne(index: number) {
   const current = photos.value[index]
   if (!current) return
+
   current.status = 'uploading'
   try {
     const ossPath = current.ossPath || await uploadImageToOss({ filePath: current.localPath, dir: 'diary/' })
@@ -180,7 +181,7 @@ async function retryUpload(index: number) {
 }
 
 /**
- * 日记提醒时间最终按后端需要的完整日期时间字符串提交。
+ * 单篇日记提醒最终按后端需要的完整日期时间字符串提交。
  */
 function buildRemindAt() {
   if (!reminderEnabled.value || !reminderTime.value) return undefined
@@ -242,7 +243,7 @@ async function submitDiary() {
  */
 async function initTags() {
   try {
-    const tags = await fetchDiaryTags()
+    const tags = await fetchUserTags('DIARY')
     tagOptions.value = tags.map((item) => ({
       label: item.name,
       value: item.id

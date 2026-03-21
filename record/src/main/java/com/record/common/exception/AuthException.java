@@ -6,3 +6,4 @@ public class AuthException extends BusinessException {
         super(ErrorCode.AUTH_ERROR, message);
     }
 }
+

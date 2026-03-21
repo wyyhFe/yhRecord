@@ -3,14 +3,14 @@ package com.record.modules.checkin.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.CommonStatus;
 import com.record.common.exception.CheckinException;
-import com.record.modules.checkin.dto.CheckinRequest;
-import com.record.modules.checkin.dto.CreateCheckinTaskRequest;
-import com.record.modules.checkin.entity.CheckinRecord;
-import com.record.modules.checkin.entity.CheckinTask;
 import com.record.modules.checkin.mapper.CheckinRecordMapper;
 import com.record.modules.checkin.mapper.CheckinTaskMapper;
+import com.record.modules.checkin.model.dto.CheckinRequest;
+import com.record.modules.checkin.model.dto.CreateCheckinTaskRequest;
+import com.record.modules.checkin.model.entity.CheckinRecord;
+import com.record.modules.checkin.model.entity.CheckinTask;
+import com.record.modules.checkin.model.vo.CheckinTaskVO;
 import com.record.modules.checkin.service.CheckinService;
-import com.record.modules.checkin.vo.CheckinTaskVO;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -18,6 +18,9 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * 打卡服务实现。
+ */
 @Service
 public class CheckinServiceImpl implements CheckinService {
 
@@ -45,7 +48,9 @@ public class CheckinServiceImpl implements CheckinService {
     public List<CheckinTaskVO> listTasks(Long userId) {
         return checkinTaskMapper.selectList(new LambdaQueryWrapper<CheckinTask>()
                         .eq(CheckinTask::getUserId, userId))
-                .stream().map(this::toVO).toList();
+                .stream()
+                .map(this::toVO)
+                .toList();
     }
 
     @Override
@@ -54,6 +59,7 @@ public class CheckinServiceImpl implements CheckinService {
         if (task == null || !task.getUserId().equals(userId)) {
             throw new CheckinException("打卡任务不存在");
         }
+
         LocalDate checkinDate = request.getCheckinDate() == null ? LocalDate.now() : request.getCheckinDate();
         Long count = checkinRecordMapper.selectCount(new LambdaQueryWrapper<CheckinRecord>()
                 .eq(CheckinRecord::getTaskId, taskId)
@@ -62,6 +68,7 @@ public class CheckinServiceImpl implements CheckinService {
         if (count > 0) {
             throw new CheckinException("同一天不能重复打卡");
         }
+
         CheckinRecord record = new CheckinRecord();
         record.setTaskId(taskId);
         record.setUserId(userId);
@@ -76,7 +83,10 @@ public class CheckinServiceImpl implements CheckinService {
         List<Long> taskIds = checkinRecordMapper.selectList(new LambdaQueryWrapper<CheckinRecord>()
                         .eq(CheckinRecord::getUserId, userId)
                         .eq(CheckinRecord::getCheckinDate, date))
-                .stream().map(CheckinRecord::getTaskId).distinct().toList();
+                .stream()
+                .map(CheckinRecord::getTaskId)
+                .distinct()
+                .toList();
         if (taskIds.isEmpty()) {
             return List.of();
         }

@@ -1,10 +1,12 @@
 package com.record.security.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.record.common.exception.ErrorCode;
 import com.record.common.model.ApiResponse;
 import com.record.security.filter.JwtAuthenticationFilter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,6 +15,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * 安全配置。
+ */
 @Configuration
 public class SecurityConfig {
 
@@ -27,17 +32,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/wx-login", "/auth/refresh", "/doc.html", "/swagger-ui/**",
                                 "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
-                            response.setStatus(200);
+                            response.setStatus(HttpStatus.UNAUTHORIZED.value());
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.getWriter().write(objectMapper.writeValueAsString(
-                                    ApiResponse.failure(40100, "未登录或登录已失效")
-                            ));
-                        })
-                )
+                                    ApiResponse.failure(ErrorCode.UNAUTHORIZED.getCode(), "未登录或登录已失效")));
+                        }))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
