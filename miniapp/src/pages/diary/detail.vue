@@ -1,51 +1,71 @@
 <template>
-  <AppPage>
-    <AppHero
-      eyebrow="日记详情"
-      :title="detail?.title || '正在加载...'"
-      :description="detail?.ageLabel || '把当天的内容和照片完整保留下来。'"
-      badge="Detail"
-    />
+  <view class="page-shell-safe">
+    <view class="section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">{{ detail?.title || '正在加载...' }}</view>
+          <view class="section-copy__desc">
+            {{ detail?.ageLabel || '把这一天的内容和照片完整保留下来。' }}
+          </view>
+        </view>
+        <u-tag text="日记" type="warning" plain shape="circle" />
+      </view>
+    </view>
 
-    <SectionBlock title="正文">
-      <BaseCard>
-        <view class="text-[28rpx] leading-[1.8] text-ink">{{ detail?.content || '暂无内容' }}</view>
-      </BaseCard>
-    </SectionBlock>
+    <view class="page-section section-shell">
+      <view class="content-block">
+        <view class="content-block__title">正文</view>
+        <view class="content-block__body">
+          {{ detail?.content || '暂无内容' }}
+        </view>
+      </view>
+    </view>
 
-    <SectionBlock title="照片" subtitle="保留当天上传的图片内容">
-      <view v-if="detail?.mediaPaths?.length" class="grid grid-cols-3 gap-[16rpx]">
+    <view class="page-section section-shell">
+      <view class="section-copy">
+        <view class="section-copy__title">照片</view>
+        <view class="section-copy__desc">保留当天上传的图片内容。</view>
+      </view>
+      <view v-if="detail?.mediaPaths?.length" class="detail-media-grid">
         <image
           v-for="path in detail.mediaPaths"
           :key="path"
           :src="resolveImage(path)"
           mode="aspectFill"
-          class="h-[180rpx] w-full rounded-[24rpx]"
+          class="detail-media-grid__image"
         />
       </view>
-      <EmptyState v-else icon="🖼️" title="这篇日记还没有照片" description="后续可在编辑页里继续补充图片。" />
-    </SectionBlock>
-
-    <SectionBlock title="补充信息">
-      <SettingList :items="infoItems" />
-    </SectionBlock>
-
-    <view class="mt-[32rpx] grid grid-cols-2 gap-[20rpx]">
-      <BaseButton @tap="goEdit">编辑这篇日记</BaseButton>
-      <BaseButton @tap="removeDiary">删除到回收站</BaseButton>
+      <view v-else class="note-card">
+        这篇日记还没有照片，后续可以在编辑页里继续补充图片。
+      </view>
     </view>
-  </AppPage>
+
+    <view class="page-section section-shell overflow-hidden">
+      <view class="section-copy">
+        <view class="section-copy__title">补充信息</view>
+      </view>
+      <u-cell-group :border="false">
+        <u-cell-item
+          v-for="item in infoItems"
+          :key="item.title"
+          :title="item.title"
+          :label="item.description"
+          :value="item.value"
+        />
+      </u-cell-group>
+    </view>
+
+    <view class="action-grid-2">
+      <u-button type="primary" shape="circle" color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)" @click="goEdit">
+        编辑这篇日记
+      </u-button>
+      <u-button type="error" shape="circle" plain @click="removeDiary">删除到回收站</u-button>
+    </view>
+  </view>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/app-hero'
-import SectionBlock from '@/components/business/section-block'
-import BaseCard from '@/components/base/base-card'
-import BaseButton from '@/components/base/base-button'
-import EmptyState from '@/components/business/empty-state'
-import SettingList from '@/components/business/setting-list'
 import { deleteDiary, fetchDiaryDetail } from '@/api/diary'
 import { OSS_BASE_URL } from '@/config/app'
 import type { DiaryItem } from '@/types/domain'
@@ -57,7 +77,7 @@ const infoItems = computed(() => [
   { title: '日期', description: '记录发生在哪一天', value: detail.value?.recordDate || '--' },
   { title: '天气', description: '当天的天气情况', value: detail.value?.weather || '--' },
   { title: '心情', description: '写下那一刻的状态', value: detail.value?.mood || '--' },
-  { title: '位置', description: '如果有位置，会展示在这里', value: detail.value?.locationName || '--' }
+  { title: '位置', description: '如果有位置，会显示在这里', value: detail.value?.locationName || '--' }
 ])
 
 function resolveImage(path: string) {
@@ -70,6 +90,7 @@ function goEdit() {
 
 async function removeDiary() {
   if (!diaryId.value) return
+
   const result = await uni.showModal({
     title: '确认删除',
     content: '删除后会进入回收站，并保留 15 天。'
@@ -77,7 +98,7 @@ async function removeDiary() {
   if (!result.confirm) return
 
   await deleteDiary(Number(diaryId.value))
-  uni.showToast({ title: '已移入回收站', icon: 'success' })
+  uni.$feedback.success('已移入回收站')
   setTimeout(() => {
     uni.navigateBack()
   }, 600)
@@ -94,3 +115,18 @@ async function init() {
 
 init().catch(() => undefined)
 </script>
+
+<style scoped lang="scss">
+.detail-media-grid {
+  margin-top: 18rpx;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.detail-media-grid__image {
+  width: 100%;
+  height: 180rpx;
+  border-radius: 24rpx;
+}
+</style>

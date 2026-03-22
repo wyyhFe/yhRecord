@@ -1,13 +1,17 @@
 <template>
-  <view class="flex flex-wrap gap-[14rpx]">
+  <view class="choice-chip-group">
     <view
       v-for="item in items"
       :key="item.value"
-      class="rounded-full px-[20rpx] py-[12rpx] text-[24rpx]"
-      :class="isSelected(item.value) ? 'bg-[#c47c52] text-white' : 'glass-panel text-[#7d6c5b]'"
+      class="choice-chip-group__item"
       @tap="toggle(item.value)"
     >
-      {{ item.label }}
+      <u-tag
+        :text="item.label"
+        shape="circle"
+        :plain="!isSelected(item.value)"
+        :type="isSelected(item.value) ? 'warning' : 'info'"
+      />
     </view>
   </view>
 </template>
@@ -36,11 +40,27 @@ function toggle(value: string | number) {
   if (props.multiple) {
     const current = Array.isArray(props.modelValue) ? [...props.modelValue] : []
     const index = current.indexOf(value)
-    if (index >= 0) current.splice(index, 1)
-    else current.push(value)
+    if (index >= 0) {
+      current.splice(index, 1)
+    } else {
+      current.push(value)
+    }
     emit('update:modelValue', current)
     return
   }
+
   emit('update:modelValue', props.modelValue === value ? undefined : value)
 }
 </script>
+
+<style scoped lang="scss">
+.choice-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.choice-chip-group__item {
+  display: inline-flex;
+}
+</style>

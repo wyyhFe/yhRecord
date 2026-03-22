@@ -10,9 +10,11 @@ import lombok.Data;
 @Data
 @Schema(description = "创建账本请求体")
 public class CreateBookRequest {
+
     @Schema(description = "账本名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "生活开销")
     @NotBlank
     private String name;
+
     @Schema(description = "账本描述", example = "用于记录日常生活支出")
     private String description;
 }

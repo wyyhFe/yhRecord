@@ -5,9 +5,23 @@ export interface UserProfile {
   id: number
   nickname: string
   avatarPath?: string
+  gender?: 'UNKNOWN' | 'MALE' | 'FEMALE'
+  officialAccountOpenid?: string
   signature?: string
   birthday?: string
   diaryCount: number
+}
+
+/**
+ * 更新用户资料请求体。
+ */
+export interface UserProfileUpdatePayload {
+  nickname?: string
+  avatarPath?: string
+  gender?: 'UNKNOWN' | 'MALE' | 'FEMALE'
+  officialAccountOpenid?: string
+  birthday?: string
+  signature?: string
 }
 
 /**
@@ -33,7 +47,6 @@ export interface DiaryItem {
   latitude?: number
   longitude?: number
   locationSourceType?: 'CURRENT' | 'MANUAL'
-  remindAt?: string
   tags?: Array<{
     id: number
     name: string
@@ -41,18 +54,46 @@ export interface DiaryItem {
 }
 
 /**
+ * 记账流水标签。
+ */
+export interface LedgerTag {
+  id: number
+  name: string
+  color?: string
+}
+
+/**
  * 记账流水简要信息。
  */
 export interface LedgerEntry {
   id: number
+  bookId?: number
   type: 'INCOME' | 'EXPENSE'
   amount: number
   entryDate: string
   remark?: string
+  imagePath?: string
+  tagIds?: number[]
+  tags?: LedgerTag[]
 }
 
 /**
- * 打卡任务列表项。
+ * 年度标签统计。
+ */
+export interface LedgerYearStatisticItem {
+  tagId: number
+  tagName?: string
+  amount: number
+  ratio: number
+}
+
+export interface LedgerYearStatistics {
+  year: number
+  items: LedgerYearStatisticItem[]
+}
+
+/**
+ * 打卡任务列表页。
  */
 export interface CheckinTask {
   id: number

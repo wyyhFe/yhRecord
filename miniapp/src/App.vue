@@ -12,6 +12,8 @@ onShow(() => {
 </script>
 
 <style lang="scss">
+@import 'uview-pro/index.scss';
+
 page {
   min-height: 100%;
   background:

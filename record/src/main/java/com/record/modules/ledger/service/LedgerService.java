@@ -11,11 +11,16 @@ import java.util.List;
 
 public interface LedgerService {
     LedgerBookVO createBook(Long userId, CreateBookRequest request);
-    List<LedgerBookVO> listBooks(Long userId);
-    LedgerEntryVO createEntry(Long userId, CreateLedgerEntryRequest request);
-    LedgerEntryVO updateEntry(Long userId, Long entryId, UpdateLedgerEntryRequest request);
-    void deleteEntry(Long userId, Long entryId);
-    List<LedgerEntryVO> monthEntries(Long userId, Integer year, Integer month, Long bookId);
-    YearStatisticsVO yearStatistics(Long userId, Integer year);
-}
 
+    List<LedgerBookVO> listBooks(Long userId);
+
+    LedgerEntryVO createEntry(Long userId, CreateLedgerEntryRequest request);
+
+    LedgerEntryVO updateEntry(Long userId, Long entryId, UpdateLedgerEntryRequest request);
+
+    void deleteEntry(Long userId, Long entryId);
+
+    List<LedgerEntryVO> monthEntries(Long userId, Integer year, Integer month, Long bookId);
+
+    YearStatisticsVO yearStatistics(Long userId, Integer year, Long bookId);
+}

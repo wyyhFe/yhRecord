@@ -46,9 +46,6 @@ public class Diary extends BaseEntity {
     @Schema(description = "可见范围", example = "PRIVATE")
     private VisibilityType visibility;
 
-    @Schema(description = "单篇提醒时间", example = "2026-03-21T21:00:00")
-    private LocalDateTime remindAt;
-
     @Schema(description = "地点名称", example = "深圳湾公园")
     private String locationName;
 

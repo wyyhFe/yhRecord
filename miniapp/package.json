@@ -4,10 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:mp-weixin": "uni -p mp-weixin",
-    "build:mp-weixin": "uni build -p mp-weixin",
+    "clean:mp-output": "node scripts/clean-mp-output.mjs",
+    "dev:mp-weixin": "npm run clean:mp-output && uni -p mp-weixin",
+    "build:mp-weixin": "npm run clean:mp-output && uni build -p mp-weixin && npm run sanitize:mp-output",
     "dev:h5": "uni",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "sanitize:mp-output": "node scripts/sanitize-mp-output.mjs"
   },
   "dependencies": {
     "@dcloudio/uni-app": "^3.0.0-4050420250228001",
@@ -19,18 +21,21 @@
     "axios-miniprogram-adapter": "^0.3.0",
     "luch-request": "^3.1.1",
     "pinia": "^2.1.7",
+    "uview-pro": "^0.5.13",
     "vue": "^3.4.21"
   },
   "devDependencies": {
     "@dcloudio/types": "^3.4.14",
     "@dcloudio/vite-plugin-uni": "^3.0.0-alpha-5000420260319001",
     "@types/node": "^22.13.10",
+    "@unocss/preset-uno": "^66.6.7",
+    "@unocss/transformer-directives": "^66.6.7",
     "@vitejs/plugin-vue": "^5.2.4",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.3",
     "sass": "^1.98.0",
-    "tailwindcss": "^3.4.17",
     "typescript": "^5.6.3",
+    "unocss": "^66.6.7",
     "vite": "^5.4.14",
     "vue-tsc": "^2.2.8"
   }

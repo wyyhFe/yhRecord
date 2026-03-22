@@ -1,85 +1,193 @@
 <template>
-  <AppPage>
-    <AppHero
-      :eyebrow="greeting"
-      title="把一天认真记录下来"
-      description="日记、记账、打卡和回忆被组织到同一条时间轴里，信息会更安静，也更清楚。"
-      badge="V1"
-    />
+  <view class="page-shell-safe">
+    <view class="page-head">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="page-head__eyebrow">{{ greeting }}</view>
+          <view class="page-head__title">把一天认真记录下来</view>
+          <view class="page-head__desc">
+            日记、记账、打卡和回忆会落在同一条时间线上，今天的变化和过去的痕迹都能快速串起来。
+          </view>
+        </view>
+        <u-tag text="首页" type="warning" plain shape="circle" />
+      </view>
+    </view>
 
-    <SectionBlock title="今日概览" subtitle="先看今天记录状态，再决定从哪里开始">
-      <MetricGrid :items="metrics" />
-    </SectionBlock>
+    <view class="page-section section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">今日概览</view>
+          <view class="section-copy__desc">先看今天的记录状态，再决定从哪里开始。</view>
+        </view>
+        <u-icon name="calendar" size="42" color="#c47c52" />
+      </view>
 
-    <SectionBlock title="最近七天" subtitle="日记和打卡共用同一条日历状态条">
-      <StatusCalendarStrip :items="calendarItems" />
-    </SectionBlock>
+      <view class="metric-grid">
+        <view v-for="item in metrics" :key="item.label" class="metric-card">
+          <view class="metric-card__label">{{ item.label }}</view>
+          <view class="metric-card__value">{{ item.value }}</view>
+          <view class="metric-card__hint">{{ item.hint }}</view>
+        </view>
+      </view>
+    </view>
 
-    <SectionBlock title="快速入口" subtitle="常用动作尽量一步完成">
-      <ActionGrid :items="quickActions" />
-    </SectionBlock>
+    <view class="page-section section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">最近七天</view>
+          <view class="section-copy__desc">日记和打卡共用一条状态带。</view>
+        </view>
+      </view>
+
+      <view class="block-stack home-status-strip">
+        <view v-for="item in calendarItems" :key="item.date" class="home-status-item">
+          <view class="home-status-item__date">{{ item.date.slice(5) }}</view>
+          <view
+            class="home-status-item__badge"
+            :class="item.hasDiary ? 'home-status-item__badge--done' : 'home-status-item__badge--todo'"
+          >
+            {{ item.hasDiary ? '有日记' : '未写日记' }}
+          </view>
+          <view class="home-status-item__hint">
+            {{ item.hasCheckin ? '已打卡' : '未打卡' }}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="page-section section-shell overflow-hidden">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">快速入口</view>
+          <view class="section-copy__desc">高频动作尽量一步完成。</view>
+        </view>
+      </view>
+
+      <u-cell-group :border="false">
+        <u-cell-item
+          v-for="item in quickActions"
+          :key="item.key"
+          :title="item.title"
+          :label="item.description"
+          :border-bottom="true"
+          arrow
+          @click="handleQuickAction(item.key, item.path)"
+        />
+      </u-cell-group>
+    </view>
+
+    <view v-if="!hasToken" class="page-section section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">登录调试</view>
+          <view class="section-copy__desc">先用固定按钮验证微信登录链路，不依赖弹层是否正常显示。</view>
+        </view>
+      </view>
+
+      <view class="action-stack">
+        <u-button
+          type="primary"
+          shape="circle"
+          color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+          @click="showLoginSheet = true"
+        >
+          打开登录弹层
+        </u-button>
+        <u-button shape="circle" plain @click="debugWechatLogin">直接测试微信登录</u-button>
+      </view>
+    </view>
 
     <LoginSheet v-model="showLoginSheet" @success="handleLoginSuccess" />
-  </AppPage>
+  </view>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/app-hero'
-import SectionBlock from '@/components/business/section-block'
-import MetricGrid from '@/components/business/metric-grid'
-import StatusCalendarStrip from '@/components/business/status-calendar-strip'
-import ActionGrid from '@/components/business/action-grid'
-import LoginSheet from '@/components/business/login-sheet'
+import LoginSheet from '@/components/business/login-sheet/index.vue'
 import { useGreeting } from '@/composables/useGreeting'
+import { wxLogin } from '@/api/auth'
 import { fetchCalendarSummary } from '@/api/calendar'
 import type { DaySummary } from '@/types/domain'
 import { tokenStorage } from '@/utils/storage'
+import { getLastLedgerBook } from '@/utils/ledger-book'
 
 const greeting = useGreeting()
 const calendarItems = ref<DaySummary[]>([])
 const showLoginSheet = ref(false)
+const hasToken = computed(() => Boolean(tokenStorage.getAccessToken()))
 
 const quickActions = [
-  { title: '写日记', description: '记录天气、心情、图片与位置。' },
-  { title: '记一笔', description: '把收入支出和标签统计同步起来。' },
-  { title: '打卡任务', description: '把重复动作固定成习惯节律。' },
-  { title: '去年今日', description: '快速回看同一天的内容。' }
+  {
+    key: 'diary',
+    title: '写日记',
+    description: '记录天气、心情、图片和位置。',
+    path: '/pages/diary/editor'
+  },
+  {
+    key: 'ledger',
+    title: '记一笔',
+    description: '优先进入最近使用的账本，没有账本就先去账本管理。',
+    path: '/pages/ledger/index'
+  },
+  {
+    key: 'checkin',
+    title: '打卡任务',
+    description: '把重复动作固定成习惯节律。',
+    path: '/pages/checkin/editor'
+  },
+  {
+    key: 'memory',
+    title: '去年今日',
+    description: '快速回看同一天的内容。',
+    path: '/pages/memory/index'
+  }
 ]
 
 const metrics = computed(() => {
   const today = calendarItems.value.at(-1)
   return [
-    { label: '日记', value: today?.hasDiary ? '已记录' : '待记录', hint: `数量 ${today?.diaryCount ?? 0}` },
-    { label: '打卡', value: today?.hasCheckin ? '已完成' : '待打卡', hint: `次数 ${today?.checkinCount ?? 0}` },
-    { label: '回忆', value: `${calendarItems.value.filter((item) => item.hasDiary).length}`, hint: '近七天有日记' }
+    {
+      label: '日记',
+      value: today?.hasDiary ? '已记录' : '待记录',
+      hint: `数量 ${today?.diaryCount ?? 0}`
+    },
+    {
+      label: '打卡',
+      value: today?.hasCheckin ? '已完成' : '待完成',
+      hint: `次数 ${today?.checkinCount ?? 0}`
+    },
+    {
+      label: '回忆',
+      value: `${calendarItems.value.filter((item) => item.hasDiary).length}`,
+      hint: '近七天有日记'
+    }
   ]
 })
 
-/**
- * 首页允许未登录浏览，但需要登录时会主动弹出登录面板。
- */
 function syncLoginSheet() {
-  const hasToken = Boolean(tokenStorage.getAccessToken())
-  showLoginSheet.value = !hasToken
+  const hasAccessToken = Boolean(tokenStorage.getAccessToken())
+  showLoginSheet.value = !hasAccessToken
   console.log('[home] sync login sheet', {
-    hasToken,
+    hasToken: hasAccessToken,
     showLoginSheet: showLoginSheet.value
   })
 }
 
+function buildFallbackSummary() {
+  calendarItems.value = Array.from({ length: 7 }).map((_, index) => ({
+    date: `2026-03-${String(index + 14).padStart(2, '0')}`,
+    hasDiary: index % 2 === 0,
+    diaryCount: index % 2 === 0 ? 1 : 0,
+    hasCheckin: index % 3 !== 0,
+    checkinCount: index % 3 !== 0 ? 1 : 0,
+    memorialCount: 0
+  }))
+}
+
 async function loadSummary() {
   if (!tokenStorage.getAccessToken()) {
-    calendarItems.value = Array.from({ length: 7 }).map((_, index) => ({
-      date: `2026-03-${String(index + 14).padStart(2, '0')}`,
-      hasDiary: index % 2 === 0,
-      diaryCount: index % 2 === 0 ? 1 : 0,
-      hasCheckin: index % 3 !== 0,
-      checkinCount: index % 3 !== 0 ? 1 : 0,
-      memorialCount: 0
-    }))
+    buildFallbackSummary()
     return
   }
 
@@ -88,20 +196,44 @@ async function loadSummary() {
     const result = await fetchCalendarSummary(now.getFullYear(), now.getMonth() + 1)
     calendarItems.value = result.days.slice(-7)
   } catch {
-    calendarItems.value = Array.from({ length: 7 }).map((_, index) => ({
-      date: `2026-03-${String(index + 14).padStart(2, '0')}`,
-      hasDiary: index % 2 === 0,
-      diaryCount: index % 2 === 0 ? 1 : 0,
-      hasCheckin: index % 3 !== 0,
-      checkinCount: index % 3 !== 0 ? 1 : 0,
-      memorialCount: 0
-    }))
+    buildFallbackSummary()
   }
 }
 
 function handleLoginSuccess() {
   syncLoginSheet()
   loadSummary()
+}
+
+async function debugWechatLogin() {
+  try {
+    const loginRes = await uni.login({ provider: 'weixin' })
+    console.log('[home] debug wechat login code', loginRes.code)
+    const result = await wxLogin(loginRes.code || '')
+    tokenStorage.setAccessToken(result.accessToken)
+    tokenStorage.setRefreshToken(result.refreshToken)
+    uni.$feedback.success('微信登录成功')
+    handleLoginSuccess()
+  } catch (error) {
+    console.error('[home] debug wechat login failed', error)
+    uni.$feedback.error(error)
+  }
+}
+
+function handleQuickAction(key: string, path: string) {
+  if (key === 'ledger') {
+    const lastBook = getLastLedgerBook()
+    if (lastBook) {
+      uni.navigateTo({
+        url: `/pages/ledger/index?bookId=${lastBook.id}&bookName=${encodeURIComponent(lastBook.name)}&openEntry=1`
+      })
+      return
+    }
+    uni.navigateTo({ url: '/pages/ledger/books' })
+    return
+  }
+
+  uni.navigateTo({ url: path })
 }
 
 onShow(() => {
@@ -114,3 +246,52 @@ onLoad(() => {
   loadSummary()
 })
 </script>
+
+<style scoped lang="scss">
+.home-status-strip {
+  display: flex;
+  gap: 12rpx;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.home-status-item {
+  flex: 0 0 auto;
+  min-width: 144rpx;
+  padding: 20rpx 18rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1rpx solid rgba(196, 124, 82, 0.08);
+}
+
+.home-status-item__date {
+  color: #1e293b;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.home-status-item__badge {
+  margin-top: 12rpx;
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+}
+
+.home-status-item__badge--done {
+  background: #e6f5ea;
+  color: #287d49;
+}
+
+.home-status-item__badge--todo {
+  background: #fdf1e6;
+  color: #b06a42;
+}
+
+.home-status-item__hint {
+  margin-top: 12rpx;
+  color: #8a735f;
+  font-size: 22rpx;
+}
+</style>

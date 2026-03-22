@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 @TableName("checkin_record")
 @Schema(description = "打卡记录")
 public class CheckinRecord extends BaseEntity {
+
     @TableId
     @Schema(description = "打卡记录 ID", example = "1")
     private Long id;

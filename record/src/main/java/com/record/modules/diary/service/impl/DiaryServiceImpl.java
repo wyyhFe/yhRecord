@@ -243,8 +243,6 @@ public class DiaryServiceImpl implements DiaryService {
         diary.setWeather(request.getWeather());
         diary.setMood(request.getMood());
         diary.setVisibility(request.getVisibility());
-        diary.setRemindAt(request.getRemindAt());
-
         DiaryLocationDTO location = request.getLocation();
         if (location != null) {
             diary.setLocationName(location.getLocationName());
@@ -256,13 +254,26 @@ public class DiaryServiceImpl implements DiaryService {
             diary.setLongitude(location.getLongitude());
             diary.setLocationSourceType(location.getSourceType());
 
-            if ((location.getAddress() == null || location.getAddress().isBlank())
-                    && location.getLatitude() != null && location.getLongitude() != null) {
+            boolean needGeoFill =
+                    (location.getAddress() == null || location.getAddress().isBlank())
+                            || (location.getProvince() == null || location.getProvince().isBlank())
+                            || (location.getCity() == null || location.getCity().isBlank())
+                            || (location.getDistrict() == null || location.getDistrict().isBlank());
+
+            if (needGeoFill && location.getLatitude() != null && location.getLongitude() != null) {
                 var geo = locationService.reverseGeocode(location.getLatitude(), location.getLongitude());
-                diary.setAddress(geo.getAddress());
-                diary.setProvince(geo.getProvince());
-                diary.setCity(geo.getCity());
-                diary.setDistrict(geo.getDistrict());
+                if (diary.getAddress() == null || diary.getAddress().isBlank()) {
+                    diary.setAddress(geo.getAddress());
+                }
+                if (diary.getProvince() == null || diary.getProvince().isBlank()) {
+                    diary.setProvince(geo.getProvince());
+                }
+                if (diary.getCity() == null || diary.getCity().isBlank()) {
+                    diary.setCity(geo.getCity());
+                }
+                if (diary.getDistrict() == null || diary.getDistrict().isBlank()) {
+                    diary.setDistrict(geo.getDistrict());
+                }
             }
         }
     }
@@ -336,7 +347,6 @@ public class DiaryServiceImpl implements DiaryService {
                 .weather(diary.getWeather())
                 .mood(diary.getMood())
                 .visibility(diary.getVisibility())
-                .remindAt(diary.getRemindAt())
                 .locationName(diary.getLocationName())
                 .address(diary.getAddress())
                 .province(diary.getProvince())

@@ -31,7 +31,6 @@ export interface CreateDiaryPayload {
   weather?: string
   mood?: string
   visibility: 'PRIVATE' | 'SHARED' | 'PUBLIC'
-  remindAt?: string
   location?: DiaryLocationInput
   mediaList: DiaryMediaInput[]
   tagIds?: number[]

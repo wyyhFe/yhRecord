@@ -1,42 +1,47 @@
 <template>
-  <AppPage>
-    <AppHero
-      eyebrow="回收站"
-      title="已删除内容"
-      description="删除后的日记会在这里保留 15 天，你可以恢复或彻底删除。"
-      badge="Recycle"
-    />
+  <view class="page-shell-safe">
+    <view class="section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">已删除内容</view>
+          <view class="section-copy__desc">删除后的日记会在这里保留 15 天，你可以恢复或彻底删除。</view>
+        </view>
+        <u-tag text="回收" type="warning" plain shape="circle" />
+      </view>
+    </view>
 
-    <SectionBlock title="回收站列表" subtitle="这里只展示已软删除的内容">
-      <view v-if="items.length" class="space-y-[20rpx]">
-        <view v-for="item in items" :key="item.id" class="glass-panel px-[24rpx] py-[24rpx]">
-          <view class="flex items-start justify-between gap-[20rpx]">
+    <view class="page-section">
+      <view v-if="items.length" class="list-stack">
+        <view v-for="item in items" :key="item.id" class="list-card">
+          <view class="list-card__head">
             <view>
-              <view class="text-[28rpx] font-semibold text-ink">{{ formatResourceType(item.resourceType) }}</view>
-              <view class="mt-[8rpx] text-[22rpx] text-[#7f7366]">删除时间：{{ item.deletedAt }}</view>
-              <view class="mt-[6rpx] text-[22rpx] text-[#7f7366]">到期时间：{{ item.expireAt }}</view>
+              <view class="list-card__title">{{ formatResourceType(item.resourceType) }}</view>
+              <view class="list-card__meta">删除时间：{{ item.deletedAt }}</view>
+              <view class="list-card__meta">到期时间：{{ item.expireAt }}</view>
             </view>
-            <view class="text-[22rpx] text-[#a56d4b]">ID {{ item.resourceId }}</view>
+            <view class="list-card__aside">ID {{ item.resourceId }}</view>
           </view>
 
-          <view class="mt-[20rpx] grid grid-cols-2 gap-[16rpx]">
-            <BaseButton @tap="restore(item)">恢复</BaseButton>
-            <BaseButton @tap="forceDelete(item)">彻底删除</BaseButton>
+          <view class="action-grid-2">
+            <u-button type="primary" shape="circle" color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)" @click="restore(item)">
+              恢复
+            </u-button>
+            <u-button type="error" shape="circle" plain @click="forceDelete(item)">彻底删除</u-button>
           </view>
         </view>
       </view>
-      <EmptyState v-else icon="🗑️" title="回收站是空的" description="还没有进入回收站的内容。" />
-    </SectionBlock>
-  </AppPage>
+      <EmptyStateCard
+        v-else
+        title="回收站是空的"
+        description="还没有进入回收站的内容。"
+      />
+    </view>
+  </view>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/app-hero'
-import SectionBlock from '@/components/business/section-block'
-import EmptyState from '@/components/business/empty-state'
-import BaseButton from '@/components/base/base-button'
+import EmptyStateCard from '@/components/business/empty-state-card'
 import {
   fetchRecycleBinList,
   forceDeleteRecycleBinItem,
@@ -57,7 +62,7 @@ async function loadRecycleBin() {
 
 async function restore(item: RecycleBinItem) {
   await restoreRecycleBinItem(item.id, item.resourceId)
-  uni.showToast({ title: '已恢复', icon: 'success' })
+  uni.$feedback.success('已恢复')
   await loadRecycleBin()
 }
 
@@ -69,7 +74,7 @@ async function forceDelete(item: RecycleBinItem) {
   if (!result.confirm) return
 
   await forceDeleteRecycleBinItem(item.id, item.resourceId)
-  uni.showToast({ title: '已彻底删除', icon: 'success' })
+  uni.$feedback.success('已彻底删除')
   await loadRecycleBin()
 }
 

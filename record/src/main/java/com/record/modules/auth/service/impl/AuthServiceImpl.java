@@ -13,6 +13,7 @@ import com.record.modules.user.model.entity.UserSession;
 import com.record.modules.user.service.UserService;
 import com.record.security.service.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -87,14 +88,7 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getOpenid(), sessionId);
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), user.getOpenid(), sessionId);
 
-        userSessionMapper.delete(new LambdaQueryWrapper<UserSession>().eq(UserSession::getUserId, user.getId()));
-
-        UserSession userSession = new UserSession();
-        userSession.setUserId(user.getId());
-        userSession.setSessionId(sessionId);
-        userSession.setRefreshToken(refreshToken);
-        userSession.setRefreshExpireAt(LocalDateTime.now().plusDays(30));
-        userSessionMapper.insert(userSession);
+        upsertUserSession(user.getId(), sessionId, refreshToken);
 
         stringRedisTemplate.opsForValue().set(RedisKeyConstants.USER_SESSION + user.getId(), sessionId, 30, TimeUnit.DAYS);
         return AuthTokenVO.builder()
@@ -104,5 +98,45 @@ public class AuthServiceImpl implements AuthService {
                 .refreshToken(refreshToken)
                 .sessionId(sessionId)
                 .build();
+    }
+
+    /**
+     * 单设备登录场景下，每个用户只保留一条会话记录。
+     * 如果用户重复点击登录或短时间并发登录，优先更新旧记录，避免唯一索引冲突。
+     */
+    private void upsertUserSession(Long userId, String sessionId, String refreshToken) {
+        LocalDateTime refreshExpireAt = LocalDateTime.now().plusDays(30);
+        UserSession existing = userSessionMapper.selectOne(new LambdaQueryWrapper<UserSession>()
+                .eq(UserSession::getUserId, userId)
+                .last("LIMIT 1"));
+
+        if (existing != null) {
+            existing.setSessionId(sessionId);
+            existing.setRefreshToken(refreshToken);
+            existing.setRefreshExpireAt(refreshExpireAt);
+            userSessionMapper.updateById(existing);
+            return;
+        }
+
+        UserSession userSession = new UserSession();
+        userSession.setUserId(userId);
+        userSession.setSessionId(sessionId);
+        userSession.setRefreshToken(refreshToken);
+        userSession.setRefreshExpireAt(refreshExpireAt);
+
+        try {
+            userSessionMapper.insert(userSession);
+        } catch (DuplicateKeyException exception) {
+            UserSession duplicated = userSessionMapper.selectOne(new LambdaQueryWrapper<UserSession>()
+                    .eq(UserSession::getUserId, userId)
+                    .last("LIMIT 1"));
+            if (duplicated == null) {
+                throw exception;
+            }
+            duplicated.setSessionId(sessionId);
+            duplicated.setRefreshToken(refreshToken);
+            duplicated.setRefreshExpireAt(refreshExpireAt);
+            userSessionMapper.updateById(duplicated);
+        }
     }
 }

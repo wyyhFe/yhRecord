@@ -1,5 +1,8 @@
 import { request } from '@/utils/request'
 
+export type TagModuleType = 'DIARY' | 'LEDGER'
+export type LedgerTagType = 'EXPENSE' | 'INCOME'
+
 /**
  * 用户标签结构。
  */
@@ -9,15 +12,17 @@ export interface TagItem {
   name: string
   color?: string
   icon?: string
-  moduleType: 'DIARY' | 'LEDGER'
+  moduleType: TagModuleType
+  ledgerType?: LedgerTagType
 }
 
 /**
  * 查询当前用户标签。
  */
-export function fetchUserTags(moduleType: 'DIARY' | 'LEDGER' = 'DIARY') {
+export function fetchUserTags(moduleType: TagModuleType = 'DIARY', ledgerType?: LedgerTagType) {
+  const suffix = ledgerType ? `&ledgerType=${ledgerType}` : ''
   return request<TagItem[]>({
-    url: `/tags/list?moduleType=${moduleType}`,
+    url: `/tags/list?moduleType=${moduleType}${suffix}`,
     method: 'GET'
   })
 }
@@ -25,9 +30,10 @@ export function fetchUserTags(moduleType: 'DIARY' | 'LEDGER' = 'DIARY') {
 /**
  * 查询系统标签模板。
  */
-export function fetchTagTemplates(moduleType: 'DIARY' | 'LEDGER' = 'DIARY') {
+export function fetchTagTemplates(moduleType: TagModuleType = 'DIARY', ledgerType?: LedgerTagType) {
+  const suffix = ledgerType ? `&ledgerType=${ledgerType}` : ''
   return request<TagItem[]>({
-    url: `/tag-templates/list?moduleType=${moduleType}`,
+    url: `/tag-templates/list?moduleType=${moduleType}${suffix}`,
     method: 'GET'
   })
 }
@@ -35,7 +41,7 @@ export function fetchTagTemplates(moduleType: 'DIARY' | 'LEDGER' = 'DIARY') {
 /**
  * 基于模板创建用户标签。
  */
-export function createTagFromTemplate(templateId: number, moduleType: 'DIARY' | 'LEDGER' = 'DIARY') {
+export function createTagFromTemplate(templateId: number, moduleType: TagModuleType = 'DIARY') {
   return request<TagItem>({
     url: '/tags/create-from-template',
     method: 'POST',
@@ -53,7 +59,8 @@ export function createTag(data: {
   name: string
   color?: string
   icon?: string
-  moduleType: 'DIARY' | 'LEDGER'
+  moduleType: TagModuleType
+  ledgerType?: LedgerTagType
 }) {
   return request<TagItem>({
     url: '/tags/create',

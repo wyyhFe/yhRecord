@@ -1,32 +1,34 @@
 <template>
-  <view class="page-shell flex min-h-screen flex-col justify-between">
-    <view class="pt-[80rpx]">
-      <view class="text-[24rpx] uppercase tracking-[6rpx] text-[#9b866d]">Life Record</view>
-      <view class="mt-[16rpx] text-[56rpx] font-bold leading-[1.15] text-ink">让记录变成一种长期关系</view>
-      <view class="mt-[18rpx] text-[26rpx] leading-[1.7] text-[#72675c]">
+  <view class="page-shell-safe login-page">
+    <view class="login-page__hero">
+      <view class="login-page__brand">Life Record</view>
+      <view class="login-page__title">让记录变成一种长期关系</view>
+      <view class="login-page__desc">
         使用微信身份进入，不打断后端 OpenID 登录链路。前端只负责拿到 code，再交给后端管理登录会话。
       </view>
     </view>
 
-    <view class="mb-[80rpx]">
-      <BaseButton :disabled="loading" @tap="handleLogin">
+    <view class="login-page__actions">
+      <u-button
+        type="primary"
+        shape="circle"
+        color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+        :loading="loading"
+        @click="handleLogin"
+      >
         {{ loading ? '登录中...' : '微信登录' }}
-      </BaseButton>
+      </u-button>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import BaseButton from '@/components/base/base-button'
 import { wxLogin } from '@/api/auth'
 import { tokenStorage } from '@/utils/storage'
 
 const loading = ref(false)
 
-/**
- * 登录页只做一件事：调用 `uni.login` 拿到 code，再交给后端换取业务 token。
- */
 async function handleLogin() {
   loading.value = true
   try {
@@ -34,15 +36,53 @@ async function handleLogin() {
     const result = await wxLogin(loginRes.code || '')
     tokenStorage.setAccessToken(result.accessToken)
     tokenStorage.setRefreshToken(result.refreshToken)
-    uni.switchTab({ url: '/pages/home/index' })
+    uni.$feedback.success('登录成功')
+    setTimeout(() => {
+      uni.reLaunch({ url: '/pages/home/index' })
+    }, 300)
   } catch (error) {
-    uni.showToast({
-      title: '登录失败',
-      icon: 'none'
-    })
-    console.error(error)
+    uni.$feedback.error(error)
   } finally {
     loading.value = false
   }
 }
 </script>
+
+<style scoped lang="scss">
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.login-page__hero {
+  padding-top: 80rpx;
+}
+
+.login-page__brand {
+  color: #9b866d;
+  font-size: 24rpx;
+  letter-spacing: 6rpx;
+  text-transform: uppercase;
+}
+
+.login-page__title {
+  margin-top: 16rpx;
+  color: #2b2118;
+  font-size: 56rpx;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.login-page__desc {
+  margin-top: 18rpx;
+  color: #72675c;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.login-page__actions {
+  margin-bottom: 80rpx;
+}
+</style>

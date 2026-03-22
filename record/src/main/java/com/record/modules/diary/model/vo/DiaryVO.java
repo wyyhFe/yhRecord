@@ -7,12 +7,10 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
  * 日记返回对象。
- * 列表页和详情页复用这一套结构。
  */
 @Data
 @Builder
@@ -39,9 +37,6 @@ public class DiaryVO {
 
     @Schema(description = "可见范围", example = "PRIVATE")
     private VisibilityType visibility;
-
-    @Schema(description = "提醒时间", example = "2026-03-21 21:00:00")
-    private LocalDateTime remindAt;
 
     @Schema(description = "地点名称", example = "深圳湾公园")
     private String locationName;
@@ -73,7 +68,7 @@ public class DiaryVO {
     @Schema(description = "评论数", example = "2")
     private Integer commentCount;
 
-    @Schema(description = "年龄文案", example = "记于22岁1月10天")
+    @Schema(description = "年龄文案", example = "记于22岁1个月10天")
     private String ageLabel;
 
     @Schema(description = "附件路径列表")

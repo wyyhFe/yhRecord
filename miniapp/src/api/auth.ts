@@ -2,7 +2,7 @@ import { request } from '@/utils/request'
 
 /**
  * 登录接口返回的会话信息。
- * 前端拿到它之后会把 accessToken、refreshToken、sessionId 存入本地。
+ * 前端拿到后会把 accessToken、refreshToken、sessionId 存入本地。
  */
 export interface LoginResult {
   userId: number
@@ -14,7 +14,7 @@ export interface LoginResult {
 
 /**
  * 小程序登录。
- * 前端先调用 uni.login 拿 code，再把 code 传给后端换取业务 token。
+ * 前端先调用 `uni.login` 获取 code，再把 code 传给后端换取业务 token。
  */
 export function wxLogin(code: string) {
   return request<LoginResult>({
@@ -27,7 +27,7 @@ export function wxLogin(code: string) {
 
 /**
  * 手动刷新 token。
- * 正常情况下请求层会自动调用，这里保留给业务层显式使用。
+ * 正常情况下请求层会自动调用，这里同时保留给业务层显式使用。
  */
 export function refreshToken(refreshTokenValue: string) {
   return request<LoginResult>({

@@ -1,86 +1,150 @@
 <template>
-  <AppPage>
-    <AppHero
-      eyebrow="标签管理"
-      title="系统模板 + 我的标签"
-      description="先使用后台提供的基类模板，再扩展成自己的个性标签。"
-      badge="Tag"
-    />
+  <view class="page-shell-safe">
+    <view class="section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">{{ pageTitle }}</view>
+          <view class="section-copy__desc">{{ pageDesc }}</view>
+        </view>
+        <u-tag :text="moduleType === 'LEDGER' ? '记账标签' : '日记标签'" type="warning" plain shape="circle" />
+      </view>
+    </view>
 
-    <SectionBlock title="新建自定义标签" subtitle="如果模板里没有合适的，可以直接新增自己的标签">
-      <view class="glass-panel px-[24rpx] py-[24rpx]">
-        <view class="grid grid-cols-2 gap-[16rpx]">
-          <BaseButton @tap="createCustomTag">新增日记标签</BaseButton>
-          <BaseButton @tap="loadData">刷新列表</BaseButton>
+    <view v-if="moduleType === 'LEDGER'" class="page-section section-shell">
+      <view class="block-stack">
+        <view class="field-label">标签类型</view>
+        <ChoiceChips v-model="ledgerType" :items="ledgerTypeOptions" />
+      </view>
+    </view>
+
+    <view class="page-section section-shell">
+      <view class="section-copy">
+        <view class="section-copy__title">新建自定义标签</view>
+        <view class="section-copy__desc">如果模板里没有合适的，可以直接新增自己的标签。</view>
+      </view>
+      <view class="action-grid-2">
+        <u-button type="primary" shape="circle" color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)" @click="createCustomTag">
+          新增标签
+        </u-button>
+        <u-button shape="circle" plain @click="loadData">刷新列表</u-button>
+      </view>
+    </view>
+
+    <view class="page-section">
+      <view class="section-shell">
+        <view class="section-copy">
+          <view class="section-copy__title">系统模板</view>
+          <view class="section-copy__desc">点击即可基于模板创建自己的标签。</view>
         </view>
       </view>
-    </SectionBlock>
 
-    <SectionBlock title="系统模板" subtitle="点击即可基于模板创建自己的标签">
-      <view v-if="templates.length" class="space-y-[16rpx]">
-        <view v-for="item in templates" :key="item.id" class="glass-panel px-[24rpx] py-[24rpx]">
-          <view class="flex items-center justify-between gap-[16rpx]">
+      <view v-if="templates.length" class="list-stack">
+        <view v-for="item in templates" :key="item.id" class="list-card">
+          <view class="list-card__head">
             <view>
-              <view class="text-[28rpx] font-semibold text-ink">{{ item.name }}</view>
-              <view class="mt-[8rpx] text-[22rpx] text-[#7f7366]">模块：{{ item.moduleType }} {{ item.color ? `· 颜色：${item.color}` : '' }}</view>
-            </view>
-            <BaseButton @tap="useTemplate(item.id)">使用模板</BaseButton>
-          </view>
-        </view>
-      </view>
-      <EmptyState v-else icon="🏷️" title="暂无模板" description="后台还没有配置可用标签模板。" />
-    </SectionBlock>
-
-    <SectionBlock title="我的标签" subtitle="这里展示当前用户已经扩展或新建的标签">
-      <view v-if="tags.length" class="space-y-[16rpx]">
-        <view v-for="item in tags" :key="item.id" class="glass-panel px-[24rpx] py-[24rpx]">
-          <view class="flex items-center justify-between gap-[16rpx]">
-            <view>
-              <view class="text-[28rpx] font-semibold text-ink">{{ item.name }}</view>
-              <view class="mt-[8rpx] text-[22rpx] text-[#7f7366]">
-                {{ item.templateId ? '来源：模板扩展' : '来源：自定义创建' }}
+              <view class="list-card__title">{{ item.name }}</view>
+              <view class="list-card__meta">
+                {{ item.moduleType === 'LEDGER' ? ledgerTypeText(item.ledgerType) : '日记标签模板' }}
               </view>
             </view>
-            <BaseButton @tap="removeTag(item.id)">删除</BaseButton>
+            <u-button size="small" shape="circle" plain @click="useTemplate(item.id)">使用模板</u-button>
           </view>
         </view>
       </view>
-      <EmptyState v-else icon="🧷" title="还没有标签" description="先从模板创建，或者直接新增自己的标签。" />
-    </SectionBlock>
-  </AppPage>
+      <EmptyStateCard
+        v-else
+        class="page-section"
+        title="暂无模板"
+        description="后台还没有配置可用标签模板。"
+      />
+    </view>
+
+    <view class="page-section">
+      <view class="section-shell">
+        <view class="section-copy">
+          <view class="section-copy__title">我的标签</view>
+          <view class="section-copy__desc">这里展示当前用户已经扩展或新建的标签。</view>
+        </view>
+      </view>
+
+      <view v-if="tags.length" class="list-stack">
+        <view v-for="item in tags" :key="item.id" class="list-card">
+          <view class="list-card__head">
+            <view>
+              <view class="list-card__title">{{ item.name }}</view>
+              <view class="list-card__meta">
+                {{ item.templateId ? '来源：模板扩展' : '来源：自定义创建' }}
+                <text v-if="moduleType === 'LEDGER'"> · {{ ledgerTypeText(item.ledgerType) }}</text>
+              </view>
+            </view>
+            <u-button size="small" shape="circle" plain type="error" @click="removeTag(item.id)">删除</u-button>
+          </view>
+        </view>
+      </view>
+      <EmptyStateCard
+        v-else
+        class="page-section"
+        title="还没有标签"
+        description="先从模板创建，或者直接新增自己的标签。"
+      />
+    </view>
+  </view>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/app-hero'
-import SectionBlock from '@/components/business/section-block'
-import EmptyState from '@/components/business/empty-state'
-import BaseButton from '@/components/base/base-button'
+import { computed, ref, watch } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import ChoiceChips from '@/components/business/choice-chips'
+import EmptyStateCard from '@/components/business/empty-state-card'
 import {
   createTag,
   createTagFromTemplate,
   deleteTag,
   fetchTagTemplates,
   fetchUserTags,
-  type TagItem
+  type LedgerTagType,
+  type TagItem,
+  type TagModuleType
 } from '@/api/tag'
 
 const templates = ref<TagItem[]>([])
 const tags = ref<TagItem[]>([])
+const moduleType = ref<TagModuleType>('DIARY')
+const ledgerType = ref<LedgerTagType>('EXPENSE')
+
+const ledgerTypeOptions = [
+  { label: '支出标签', value: 'EXPENSE' },
+  { label: '收入标签', value: 'INCOME' }
+]
+
+const pageTitle = computed(() => (moduleType.value === 'LEDGER' ? '记账标签管理' : '日记标签管理'))
+const pageDesc = computed(() =>
+  moduleType.value === 'LEDGER'
+    ? '按支出和收入分别维护记账标签，方便筛选和记一笔时快速选择。'
+    : '先使用后台提供的基础模板，再扩展成自己的个性标签。'
+)
+
+function currentLedgerType() {
+  return moduleType.value === 'LEDGER' ? ledgerType.value : undefined
+}
+
+function ledgerTypeText(type?: LedgerTagType) {
+  if (type === 'INCOME') return '收入标签'
+  return '支出标签'
+}
 
 async function loadData() {
   const [templateList, tagList] = await Promise.all([
-    fetchTagTemplates('DIARY'),
-    fetchUserTags('DIARY')
+    fetchTagTemplates(moduleType.value, currentLedgerType()),
+    fetchUserTags(moduleType.value, currentLedgerType())
   ])
   templates.value = templateList
   tags.value = tagList
 }
 
 async function useTemplate(templateId: number) {
-  await createTagFromTemplate(templateId, 'DIARY')
-  uni.showToast({ title: '已从模板创建', icon: 'success' })
+  await createTagFromTemplate(templateId, moduleType.value)
+  uni.$feedback.success('已从模板创建')
   await loadData()
 }
 
@@ -89,7 +153,7 @@ async function createCustomTag() {
     title: '新增标签',
     content: '请输入标签名称',
     editable: true,
-    placeholderText: '例如：旅行'
+    placeholderText: moduleType.value === 'LEDGER' ? '例如：餐饮、工资、报销' : '例如：旅行、生活'
   })
 
   const name = result.content?.trim()
@@ -97,9 +161,10 @@ async function createCustomTag() {
 
   await createTag({
     name,
-    moduleType: 'DIARY'
+    moduleType: moduleType.value,
+    ledgerType: currentLedgerType()
   })
-  uni.showToast({ title: '标签已创建', icon: 'success' })
+  uni.$feedback.success('标签已创建')
   await loadData()
 }
 
@@ -111,11 +176,23 @@ async function removeTag(id: number) {
   if (!result.confirm) return
 
   await deleteTag(id)
-  uni.showToast({ title: '已删除', icon: 'success' })
+  uni.$feedback.success('已删除')
   await loadData()
 }
 
-onMounted(() => {
+watch(ledgerType, () => {
+  if (moduleType.value === 'LEDGER') {
+    loadData().catch(() => undefined)
+  }
+})
+
+onLoad((query) => {
+  if (query?.moduleType === 'LEDGER') {
+    moduleType.value = 'LEDGER'
+  }
+  if (query?.ledgerType === 'INCOME') {
+    ledgerType.value = 'INCOME'
+  }
   loadData().catch(() => undefined)
 })
 </script>

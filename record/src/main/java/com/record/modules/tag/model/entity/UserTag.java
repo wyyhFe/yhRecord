@@ -2,6 +2,7 @@ package com.record.modules.tag.model.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.record.common.enums.LedgerTagType;
 import com.record.common.enums.TagModuleType;
 import com.record.common.model.BaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -38,4 +39,7 @@ public class UserTag extends BaseEntity {
 
     @Schema(description = "所属模块", example = "DIARY")
     private TagModuleType moduleType;
+
+    @Schema(description = "记账标签类型，仅 LEDGER 模块使用", example = "EXPENSE")
+    private LedgerTagType ledgerType;
 }

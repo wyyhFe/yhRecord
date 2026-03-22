@@ -10,14 +10,18 @@ export function fetchDiaryList(params?: {
   keyword?: string
   visibility?: 'PRIVATE' | 'SHARED' | 'PUBLIC'
 }) {
-  const query = new URLSearchParams({
-    current: '1',
-    size: '10'
-  })
-  if (params?.keyword) query.set('keyword', params.keyword)
-  if (params?.visibility) query.set('visibility', params.visibility)
+  // 小程序运行环境没有 URLSearchParams，这里手动拼接查询串。
+  const queryEntries: Array<[string, string]> = [
+    ['current', '1'],
+    ['size', '10']
+  ]
+  if (params?.keyword) queryEntries.push(['keyword', params.keyword])
+  if (params?.visibility) queryEntries.push(['visibility', params.visibility])
+  const query = queryEntries
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+    .join('&')
   return request<Pagination<DiaryItem>>({
-    url: `/diaries/list?${query.toString()}`,
+    url: `/diaries/list?${query}`,
     method: 'GET'
   })
 }

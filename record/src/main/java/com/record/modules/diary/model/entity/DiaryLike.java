@@ -7,12 +7,13 @@ import lombok.Data;
 
 /**
  * 日记点赞记录。
- * 通过 diaryId + userId 控制同一用户对同一篇日记只点赞一次。
+ * 同一用户对同一篇日记只允许点赞一次。
  */
 @Data
 @TableName("diary_like")
 @Schema(description = "日记点赞记录")
 public class DiaryLike {
+
     @TableId
     @Schema(description = "主键 ID", example = "1")
     private Long id;

@@ -16,6 +16,10 @@ interface ImportMeta {
   readonly env: ImportMetaEnv
 }
 
+interface Uni {
+  $feedback: import('./src/plugins/feedback').FeedbackApi
+}
+
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'
   const component: DefineComponent<{}, {}, any>

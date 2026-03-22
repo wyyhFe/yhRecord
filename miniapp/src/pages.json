@@ -1,6 +1,9 @@
 {
   "easycom": {
-    "autoscan": true
+    "autoscan": true,
+    "custom": {
+      "^u-(.*)": "uview-pro/components/u-$1/u-$1.vue"
+    }
   },
   "globalStyle": {
     "navigationBarTitleText": "Life Record",
@@ -21,10 +24,6 @@
       {
         "pagePath": "pages/diary/index",
         "text": "日记"
-      },
-      {
-        "pagePath": "pages/ledger/index",
-        "text": "记账"
       },
       {
         "pagePath": "pages/checkin/index",
@@ -68,9 +67,9 @@
       }
     },
     {
-      "path": "pages/ledger/editor",
+      "path": "pages/ledger/books",
       "style": {
-        "navigationBarTitleText": "新增账单"
+        "navigationBarTitleText": "账本管理"
       }
     },
     {
@@ -98,9 +97,27 @@
       }
     },
     {
+      "path": "pages/profile/edit",
+      "style": {
+        "navigationBarTitleText": "编辑个人信息"
+      }
+    },
+    {
       "path": "pages/profile/reminder",
       "style": {
         "navigationBarTitleText": "提醒设置"
+      }
+    },
+    {
+      "path": "pages/profile/recycle/index",
+      "style": {
+        "navigationBarTitleText": "回收站"
+      }
+    },
+    {
+      "path": "pages/profile/tags/index",
+      "style": {
+        "navigationBarTitleText": "标签管理"
       }
     },
     {

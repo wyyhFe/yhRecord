@@ -2,6 +2,7 @@ package com.record.modules.tag.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.CommonStatus;
+import com.record.common.enums.LedgerTagType;
 import com.record.common.enums.TagModuleType;
 import com.record.common.exception.TagException;
 import com.record.modules.tag.mapper.TagTemplateMapper;
@@ -32,27 +33,23 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public List<TagVO> listTemplates(TagModuleType moduleType) {
+    public List<TagVO> listTemplates(TagModuleType moduleType, LedgerTagType ledgerType) {
         return tagTemplateMapper.selectList(new LambdaQueryWrapper<TagTemplate>()
                         .eq(moduleType != null, TagTemplate::getModuleType, moduleType)
+                        .eq(ledgerType != null, TagTemplate::getLedgerType, ledgerType)
                         .eq(TagTemplate::getStatus, CommonStatus.ENABLED)
                         .orderByAsc(TagTemplate::getSortOrder))
                 .stream()
-                .map(item -> TagVO.builder()
-                        .id(item.getId())
-                        .name(item.getName())
-                        .color(item.getColor())
-                        .icon(item.getIcon())
-                        .moduleType(item.getModuleType())
-                        .build())
+                .map(this::toVO)
                 .toList();
     }
 
     @Override
-    public List<TagVO> listUserTags(Long userId, TagModuleType moduleType) {
+    public List<TagVO> listUserTags(Long userId, TagModuleType moduleType, LedgerTagType ledgerType) {
         return userTagMapper.selectList(new LambdaQueryWrapper<UserTag>()
                         .eq(UserTag::getUserId, userId)
-                        .eq(moduleType != null, UserTag::getModuleType, moduleType))
+                        .eq(moduleType != null, UserTag::getModuleType, moduleType)
+                        .eq(ledgerType != null, UserTag::getLedgerType, ledgerType))
                 .stream()
                 .map(this::toVO)
                 .toList();
@@ -60,7 +57,8 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public TagVO create(Long userId, CreateTagRequest request) {
-        ensureUniqueName(userId, request.getModuleType(), request.getName(), null);
+        validateLedgerType(request.getModuleType(), request.getLedgerType());
+        ensureUniqueName(userId, request.getModuleType(), request.getLedgerType(), request.getName(), null);
 
         UserTag tag = new UserTag();
         tag.setUserId(userId);
@@ -68,6 +66,7 @@ public class TagServiceImpl implements TagService {
         tag.setColor(request.getColor());
         tag.setIcon(request.getIcon());
         tag.setModuleType(request.getModuleType());
+        tag.setLedgerType(request.getLedgerType());
         userTagMapper.insert(tag);
         return toVO(tag);
     }
@@ -80,7 +79,7 @@ public class TagServiceImpl implements TagService {
         }
 
         String finalName = request.getName() != null ? request.getName() : template.getName();
-        ensureUniqueName(userId, template.getModuleType(), finalName, null);
+        ensureUniqueName(userId, template.getModuleType(), template.getLedgerType(), finalName, null);
 
         UserTag tag = new UserTag();
         tag.setUserId(userId);
@@ -89,6 +88,7 @@ public class TagServiceImpl implements TagService {
         tag.setColor(request.getColor() != null ? request.getColor() : template.getColor());
         tag.setIcon(request.getIcon() != null ? request.getIcon() : template.getIcon());
         tag.setModuleType(template.getModuleType());
+        tag.setLedgerType(template.getLedgerType());
         userTagMapper.insert(tag);
         return toVO(tag);
     }
@@ -96,10 +96,13 @@ public class TagServiceImpl implements TagService {
     @Override
     public TagVO update(Long userId, Long id, UpdateTagRequest request) {
         UserTag tag = requireOwnedTag(userId, id);
-        ensureUniqueName(userId, tag.getModuleType(), request.getName(), id);
+        LedgerTagType nextLedgerType = request.getLedgerType() != null ? request.getLedgerType() : tag.getLedgerType();
+        validateLedgerType(tag.getModuleType(), nextLedgerType);
+        ensureUniqueName(userId, tag.getModuleType(), nextLedgerType, request.getName(), id);
         tag.setName(request.getName());
         tag.setColor(request.getColor());
         tag.setIcon(request.getIcon());
+        tag.setLedgerType(nextLedgerType);
         userTagMapper.updateById(tag);
         return toVO(tag);
     }
@@ -108,6 +111,15 @@ public class TagServiceImpl implements TagService {
     public void delete(Long userId, Long id) {
         requireOwnedTag(userId, id);
         userTagMapper.deleteById(id);
+    }
+
+    private void validateLedgerType(TagModuleType moduleType, LedgerTagType ledgerType) {
+        if (moduleType == TagModuleType.LEDGER && ledgerType == null) {
+            throw new TagException("记账标签必须指定收入或支出类型");
+        }
+        if (moduleType != TagModuleType.LEDGER && ledgerType != null) {
+            throw new TagException("只有记账标签才能设置收入或支出类型");
+        }
     }
 
     /**
@@ -122,25 +134,27 @@ public class TagServiceImpl implements TagService {
     }
 
     /**
-     * 同一用户在同一模块下不允许使用重复标签名。
+     * 同一用户在同一模块和同一记账类型下不允许使用重复标签名。
      */
-    private void ensureUniqueName(Long userId, TagModuleType moduleType, String name, Long excludeId) {
+    private void ensureUniqueName(Long userId,
+                                  TagModuleType moduleType,
+                                  LedgerTagType ledgerType,
+                                  String name,
+                                  Long excludeId) {
         if (name == null || name.isBlank()) {
             return;
         }
         Long count = userTagMapper.selectCount(new LambdaQueryWrapper<UserTag>()
                 .eq(UserTag::getUserId, userId)
                 .eq(UserTag::getModuleType, moduleType)
+                .eq(UserTag::getLedgerType, ledgerType)
                 .eq(UserTag::getName, name)
                 .ne(excludeId != null, UserTag::getId, excludeId));
         if (count != null && count > 0) {
-            throw new TagException("同一模块下标签名称不能重复");
+            throw new TagException("同一分类下标签名称不能重复");
         }
     }
 
-    /**
-     * 将实体转换为接口返回对象。
-     */
     private TagVO toVO(UserTag item) {
         return TagVO.builder()
                 .id(item.getId())
@@ -149,6 +163,18 @@ public class TagServiceImpl implements TagService {
                 .color(item.getColor())
                 .icon(item.getIcon())
                 .moduleType(item.getModuleType())
+                .ledgerType(item.getLedgerType())
+                .build();
+    }
+
+    private TagVO toVO(TagTemplate item) {
+        return TagVO.builder()
+                .id(item.getId())
+                .name(item.getName())
+                .color(item.getColor())
+                .icon(item.getIcon())
+                .moduleType(item.getModuleType())
+                .ledgerType(item.getLedgerType())
                 .build();
     }
 }

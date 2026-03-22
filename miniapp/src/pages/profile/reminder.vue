@@ -1,64 +1,53 @@
 <template>
-  <AppPage>
-    <AppHero
-      eyebrow="提醒设置"
-      title="统一管理提醒通道"
-      description="全局日记提醒固定为每天晚上 22:00。这里只负责保存开关和申请订阅授权。"
-      badge="Reminder"
-    />
-
-    <SectionBlock title="日记提醒" subtitle="每天晚上 22:00 检查，当天未写日记时才发送提醒">
-      <view class="glass-panel px-[24rpx] py-[24rpx]">
-        <view class="flex items-center justify-between">
-          <view class="pr-[24rpx]">
-            <view class="text-[28rpx] font-semibold text-ink">固定提醒时间</view>
-            <view class="mt-[8rpx] text-[22rpx] text-[#7f7366]">当前统一为每天 22:00，不再支持单独修改时间。</view>
-          </view>
-          <view class="rounded-full bg-[#f2dfcb] px-[22rpx] py-[10rpx] text-[22rpx] text-[#8d5a3e]">22:00</view>
+  <view class="page-shell-safe">
+    <view class="section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">固定提醒时间</view>
+          <view class="section-copy__desc">当前统一为每天 22:00，不再支持单独修改全局提醒时间。</view>
         </view>
+        <u-tag text="22:00" plain shape="circle" type="warning" />
       </view>
-    </SectionBlock>
-
-    <SectionBlock title="小程序订阅消息" subtitle="开启时会请求微信订阅授权，消息会进入微信服务通知">
-      <view class="glass-panel px-[24rpx] py-[24rpx]">
-        <view class="flex items-center justify-between">
-          <view class="pr-[24rpx]">
-            <view class="text-[28rpx] font-semibold text-ink">小程序提醒</view>
-            <view class="mt-[8rpx] text-[22rpx] text-[#7f7366]">
-              会一次性申请日记提醒、纪念日提醒、每日记账提醒和记账月报通知四个模板的订阅授权。
-            </view>
-          </view>
-          <switch :checked="form.miniProgramReminderEnabled" color="#c47c52" @change="onMiniProgramSwitch" />
-        </view>
-      </view>
-    </SectionBlock>
-
-    <SectionBlock title="公众号模板消息" subtitle="扩展提醒通道，依赖公众号 openid 绑定能力">
-      <view class="glass-panel px-[24rpx] py-[24rpx]">
-        <view class="flex items-center justify-between">
-          <view class="pr-[24rpx]">
-            <view class="text-[28rpx] font-semibold text-ink">公众号提醒</view>
-            <view class="mt-[8rpx] text-[22rpx] text-[#7f7366]">
-              首发以小程序订阅消息为主，公众号模板消息作为补充通道保留。
-            </view>
-          </view>
-          <switch :checked="form.officialAccountReminderEnabled" color="#c47c52" @change="onOfficialSwitch" />
-        </view>
-      </view>
-    </SectionBlock>
-
-    <view class="mt-[32rpx]">
-      <BaseButton :disabled="submitting" @tap="submit">保存提醒设置</BaseButton>
     </view>
-  </AppPage>
+
+    <view class="page-section section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">小程序订阅消息</view>
+          <view class="section-copy__desc">开启时会请求微信订阅授权，消息会进入微信服务通知。</view>
+          <view class="list-card__meta">
+            会一次性申请日记提醒、纪念日提醒、每日记账提醒和记账月报提醒四个模板。
+          </view>
+        </view>
+        <switch :checked="form.miniProgramReminderEnabled" color="#c47c52" @change="onMiniProgramSwitch" />
+      </view>
+    </view>
+
+    <view class="page-section section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">公众号模板消息</view>
+          <view class="section-copy__desc">作为扩展提醒通道保留，依赖公众号 openid 绑定能力。</view>
+        </view>
+        <switch :checked="form.officialAccountReminderEnabled" color="#c47c52" @change="onOfficialSwitch" />
+      </view>
+    </view>
+
+    <u-button
+      class="primary-action"
+      type="primary"
+      shape="circle"
+      color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+      :loading="submitting"
+      @click="submit"
+    >
+      {{ submitting ? '保存中...' : '保存提醒设置' }}
+    </u-button>
+  </view>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/app-hero'
-import SectionBlock from '@/components/business/section-block'
-import BaseButton from '@/components/base/base-button'
+import { onMounted, reactive, ref } from 'vue'
 import {
   MP_DIARY_TEMPLATE_ID,
   MP_LEDGER_MONTHLY_TEMPLATE_ID,
@@ -74,12 +63,14 @@ const form = reactive({
   officialAccountReminderEnabled: false
 })
 
-function onOfficialSwitch(event: any) {
-  form.officialAccountReminderEnabled = Boolean(event?.detail?.value)
+function onOfficialSwitch(event: Event) {
+  const payload = event as Event & { detail?: { value?: boolean } }
+  form.officialAccountReminderEnabled = Boolean(payload.detail?.value)
 }
 
-async function onMiniProgramSwitch(event: any) {
-  const nextEnabled = Boolean(event?.detail?.value)
+async function onMiniProgramSwitch(event: Event) {
+  const payload = event as Event & { detail?: { value?: boolean } }
+  const nextEnabled = Boolean(payload.detail?.value)
   if (!nextEnabled) {
     form.miniProgramReminderEnabled = false
     return
@@ -88,7 +79,7 @@ async function onMiniProgramSwitch(event: any) {
   const granted = await requestMiniProgramSubscription()
   form.miniProgramReminderEnabled = granted
   if (!granted) {
-    uni.showToast({ title: '未授权订阅消息', icon: 'none' })
+    uni.$feedback.info('未授权订阅消息')
   }
 }
 
@@ -107,9 +98,9 @@ async function submit() {
       miniProgramReminderEnabled: form.miniProgramReminderEnabled,
       officialAccountReminderEnabled: form.officialAccountReminderEnabled
     })
-    uni.showToast({ title: '提醒设置已保存', icon: 'success' })
+    uni.$feedback.success('提醒设置已保存')
   } catch (error) {
-    uni.showToast({ title: error instanceof Error ? error.message : '保存失败', icon: 'none' })
+    uni.$feedback.error(error)
   } finally {
     submitting.value = false
   }
@@ -159,5 +150,7 @@ async function requestMiniProgramSubscription() {
   })
 }
 
-init()
+onMounted(() => {
+  init()
+})
 </script>

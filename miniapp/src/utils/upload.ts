@@ -27,7 +27,7 @@ export async function uploadImageToOss({ filePath, dir = 'diary/' }: UploadToOss
   const ext = getFileExtension(filePath)
   const key = `${policy.dir}${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`
 
-  await uni.uploadFile({
+  const result = await uni.uploadFile({
     url: policy.host,
     filePath,
     name: 'file',
@@ -40,5 +40,10 @@ export async function uploadImageToOss({ filePath, dir = 'diary/' }: UploadToOss
     }
   })
 
-  return key
+  if (result.statusCode !== 200) {
+    const message = typeof result.data === 'string' ? result.data : '上传到 OSS 失败'
+    throw new Error(message)
+  }
+
+  return `${policy.host}/${key}`
 }

@@ -1,90 +1,1372 @@
+﻿
 <template>
-  <AppPage>
-    <AppHero
-      eyebrow="记账本"
-      title="钱花到哪里，一眼就知道"
-      description="页面查询负责按月份查看当前账单，模板通知负责单独发送月报提醒，两者是独立模块。"
-      badge="Ledger"
-    />
-
-    <SectionBlock title="本月概览" subtitle="收入、支出与结余放在同一块展示">
-      <MetricGrid :items="metricItems" />
-    </SectionBlock>
-
-    <SectionBlock title="最近流水" subtitle="页面查询模块，支持按当前月份查看账单列表">
-      <view class="mb-[18rpx]">
-        <BaseButton @tap="goEditor">新增一笔账单</BaseButton>
+  <view class="page-shell-safe ledger-page">
+    <view class="section-shell">
+      <view class="section-head">
+        <view class="section-copy">
+          <view class="section-copy__title">{{ pageTitle }}</view>
+          <view class="section-copy__desc">
+            按账本查看收支流水，支持年月切换、分类筛选和按天查看列表。
+          </view>
+        </view>
+        <view class="ledger-header-actions">
+          <u-button plain shape="circle" size="mini" :hair-line="false" @click="goLedgerTags">管理标签</u-button>
+          <u-button plain shape="circle" size="mini" :hair-line="false" @click="goBooks">管理账本</u-button>
+        </view>
       </view>
 
-      <view v-if="entries.length" class="flex flex-col gap-[18rpx]">
-        <BaseCard v-for="item in entries" :key="item.id">
-          <view class="flex items-center justify-between">
-            <view>
-              <view class="text-[28rpx] font-semibold text-ink">{{ item.remark || '未命名账单' }}</view>
-              <view class="mt-[8rpx] text-[22rpx] text-[#867868]">{{ item.entryDate }}</view>
+      <view class="metric-grid">
+        <view v-for="item in headerMetrics" :key="item.label" class="metric-card">
+          <view class="metric-card__label">{{ item.label }}</view>
+          <view class="metric-card__value">{{ item.value }}</view>
+          <view class="metric-card__hint">{{ item.hint }}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="page-section section-shell">
+      <view class="ledger-toolbar">
+        <view class="ledger-toolbar__left">
+          <picker
+            mode="multiSelector"
+            :range="[yearOptions, monthOptions]"
+            :value="yearMonthPickerValue"
+            @change="onYearMonthChange"
+          >
+            <view class="ledger-toolbar__chip">{{ currentMonthLabel }}</view>
+          </picker>
+
+          <view class="ledger-toolbar__chip" @tap="openFilterPopup">{{ filterSummaryLabel }}</view>
+        </view>
+
+        <u-subsection
+          :list="viewModeList"
+          :current="viewModeIndex"
+          mode="subsection"
+          active-color="#c47c52"
+          @change="onViewModeChange"
+        />
+      </view>
+    </view>
+
+    <view v-if="viewMode === 'month'" class="page-section">
+      <view v-if="groupedEntries.length" class="ledger-group-stack">
+        <u-card
+          v-for="group in groupedEntries"
+          :key="group.date"
+          :show-head="false"
+          :show-foot="false"
+          :border="false"
+          margin="0 0 24rpx 0"
+          padding="0"
+          :body-style="cardBodyStyle"
+        >
+          <view class="ledger-day-card">
+            <view class="ledger-day-card__head">
+              <view class="ledger-day-card__date">
+                <text class="ledger-day-card__date-main">{{ formatDateTitle(group.date) }}</text>
+                <text class="ledger-day-card__date-sub">{{ formatDateHint(group.date) }}</text>
+              </view>
+              <view class="ledger-day-card__summary">
+                <text class="ledger-day-card__summary-item ledger-day-card__summary-item--expense">
+                  出 {{ group.expense.toFixed(2) }}
+                </text>
+                <text class="ledger-day-card__summary-item ledger-day-card__summary-item--income">
+                  入 {{ group.income.toFixed(2) }}
+                </text>
+              </view>
             </view>
-            <view class="text-[32rpx] font-semibold" :class="item.type === 'EXPENSE' ? 'text-[#c15b52]' : 'text-[#4b6b57]'">
-              {{ item.type === 'EXPENSE' ? '-' : '+' }}{{ item.amount }}
+
+            <view class="ledger-day-card__body">
+              <view
+                v-for="entry in group.entries"
+                :key="entry.id"
+                class="ledger-entry-row"
+                @tap="editEntry(entry)"
+              >
+                <view class="ledger-entry-row__main">
+                  <view class="ledger-entry-row__top">
+                    <u-tag
+                      v-if="entry.tags?.length"
+                      :text="entry.tags[0].name"
+                      plain
+                      shape="circle"
+                      type="warning"
+                      size="mini"
+                    />
+                    <text v-else class="ledger-entry-row__type">{{ entry.type === 'EXPENSE' ? '支出' : '收入' }}</text>
+                    <text class="ledger-entry-row__remark">{{ entry.remark || defaultRemark(entry.type) }}</text>
+                  </view>
+
+                  <view v-if="entry.tags && entry.tags.length > 1" class="ledger-entry-row__tags">
+                    <u-tag
+                      v-for="tag in entry.tags.slice(1)"
+                      :key="tag.id"
+                      :text="tag.name"
+                      plain
+                      shape="circle"
+                      size="mini"
+                    />
+                  </view>
+                </view>
+
+                <view class="ledger-entry-row__aside">
+                  <image
+                    v-if="entry.imagePath"
+                    :src="resolveMediaUrl(entry.imagePath)"
+                    mode="aspectFill"
+                    class="ledger-entry-row__image"
+                  />
+                  <text
+                    class="ledger-entry-row__amount"
+                    :class="entry.type === 'EXPENSE' ? 'ledger-entry-row__amount--expense' : 'ledger-entry-row__amount--income'"
+                  >
+                    {{ entry.type === 'EXPENSE' ? '-' : '+' }}{{ Number(entry.amount).toFixed(2) }}
+                  </text>
+                </view>
+              </view>
             </view>
           </view>
-        </BaseCard>
+        </u-card>
       </view>
-      <EmptyState
+
+      <EmptyStateCard
         v-else
-        icon="💵"
-        title="账本还没有流水"
-        description="先记录第一笔支出或收入，后面的统计才会真正有意义。"
+        title="当前筛选条件下还没有账单"
+        description="切换年月、分类或账本，或者直接新增一笔记录。"
       />
-    </SectionBlock>
-  </AppPage>
+    </view>
+
+    <view v-else class="page-section">
+      <view class="section-shell">
+        <view class="section-head">
+          <view class="section-copy">
+            <view class="section-copy__title">{{ currentYear }} 年统计</view>
+            <view class="section-copy__desc">按月份查看收支情况，并在每个月下面展示支出标签占比。</view>
+          </view>
+        </view>
+
+        <view class="metric-grid">
+          <view class="metric-card">
+            <view class="metric-card__label">月份数</view>
+            <view class="metric-card__value">{{ yearOverview.length }}</view>
+            <view class="metric-card__hint">有记录的月份</view>
+          </view>
+          <view class="metric-card">
+            <view class="metric-card__label">总额</view>
+            <view class="metric-card__value">{{ yearTotalAmount }}</view>
+            <view class="metric-card__hint">全年累计</view>
+          </view>
+          <view class="metric-card">
+            <view class="metric-card__label">账本</view>
+            <view class="metric-card__value">{{ selectedBookName || '--' }}</view>
+            <view class="metric-card__hint">当前视图</view>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="yearOverview.length" class="ledger-group-stack">
+        <u-card
+          v-for="item in yearOverview"
+          :key="item.month"
+          :show-head="false"
+          :show-foot="false"
+          :border="false"
+          margin="0 0 24rpx 0"
+          padding="0"
+          :body-style="cardBodyStyle"
+        >
+          <view class="year-month-card">
+            <view class="year-month-card__head">
+              <view class="year-month-card__title">{{ currentYear }}年{{ item.month }}月</view>
+              <view class="year-month-card__summary">
+                <text class="year-month-card__summary-item year-month-card__summary-item--expense">
+                  出 {{ item.expense.toFixed(2) }}
+                </text>
+                <text class="year-month-card__summary-item year-month-card__summary-item--income">
+                  入 {{ item.income.toFixed(2) }}
+                </text>
+              </view>
+            </view>
+
+            <view class="year-month-card__body">
+              <view class="year-month-card__section-title">支出分布</view>
+              <view v-if="item.distributions.length" class="year-distribution-list">
+                <view v-for="distribution in item.distributions" :key="distribution.label" class="year-distribution-row">
+                  <view class="year-distribution-row__label">{{ distribution.label }}</view>
+                  <view class="year-distribution-row__amount">{{ distribution.amount.toFixed(2) }}</view>
+                  <view class="year-distribution-row__bar">
+                    <view
+                      class="year-distribution-row__bar-fill"
+                      :style="{ width: `${Math.max(distribution.ratio * 100, 3)}%` }"
+                    />
+                  </view>
+                  <view class="year-distribution-row__ratio">{{ formatRatio(distribution.ratio) }}</view>
+                </view>
+              </view>
+              <view v-else class="note-card">这个月没有支出分布数据。</view>
+            </view>
+          </view>
+        </u-card>
+      </view>
+
+      <EmptyStateCard
+        v-else
+        title="这一年还没有统计数据"
+        description="先切回月视图记几笔，年视图会自动生成汇总。"
+      />
+    </view>
+
+    <view class="ledger-page-tabbar">
+      <view class="ledger-page-tabbar__item" @tap="goBooks">
+        <u-icon name="list" size="38" color="#7b6c5a" />
+        <view class="ledger-page-tabbar__text">管理账本</view>
+      </view>
+
+      <view class="ledger-page-tabbar__center" @tap="openCreateEntryPopup">
+        <view class="ledger-page-tabbar__plus">+</view>
+        <view class="ledger-page-tabbar__text ledger-page-tabbar__text--active">记一笔</view>
+      </view>
+
+      <view class="ledger-page-tabbar__item" @tap="shareBook">
+        <u-icon name="share" size="38" color="#7b6c5a" />
+        <view class="ledger-page-tabbar__text">邀请</view>
+      </view>
+    </view>
+    <u-popup v-model="showFilterPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="true">
+      <view class="filter-popup">
+        <view class="filter-popup__head">
+          <view class="filter-popup__title">筛选账单</view>
+        </view>
+
+        <view class="block-stack">
+          <view class="field-label">一级分类</view>
+          <ChoiceChips v-model="pendingTypeFilter" :items="filterTypeOptions" />
+        </view>
+
+        <view v-if="pendingTagOptions.length" class="block-stack">
+          <view class="field-label">二级标签</view>
+          <ChoiceChips v-model="pendingFilterTagId" :items="pendingTagOptions" />
+        </view>
+
+        <view v-else class="note-card filter-popup__empty">
+          当前一级分类下还没有可选标签，可以只按一级分类筛选。
+        </view>
+
+        <view class="action-grid-2">
+          <u-button plain shape="circle" :hair-line="false" @click="resetFilter">重置</u-button>
+          <u-button
+            type="primary"
+            shape="circle"
+            color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+            @click="applyFilter"
+          >
+            应用
+          </u-button>
+        </view>
+      </view>
+    </u-popup>
+
+    <u-popup v-model="showEntryPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="true">
+      <view class="entry-popup">
+        <scroll-view scroll-y class="entry-popup__body">
+          <view class="entry-popup__head">
+            <view class="entry-popup__title">{{ editingEntryId ? '修改账单' : '记一笔' }}</view>
+            <view class="entry-popup__subtitle">金额、日期、标签和备注都在这里完成。</view>
+          </view>
+
+          <view class="entry-popup__section">
+            <view class="entry-popup__row entry-popup__row--top">
+              <ChoiceChips v-model="entryForm.type" :items="typeOptions" />
+              <picker mode="date" :value="entryForm.entryDate" @change="onEntryDateChange">
+                <view class="entry-popup__date">{{ entryForm.entryDate }}</view>
+              </picker>
+            </view>
+
+            <view class="entry-popup__book" @tap="openBookSelector">
+              <text class="entry-popup__book-label">所属账本</text>
+              <text class="entry-popup__book-value">{{ selectedBookLabel }}</text>
+            </view>
+          </view>
+
+          <view class="entry-popup__section">
+            <view class="entry-popup__amount">
+              <text class="entry-popup__amount-symbol">¥</text>
+              <text class="entry-popup__amount-value">{{ displayAmount }}</text>
+            </view>
+          </view>
+
+          <view class="entry-popup__section block-stack">
+            <view class="field-label">记账标签</view>
+            <ChoiceChips v-model="selectedTagIds" :items="popupTagOptions" :multiple="true" />
+          </view>
+
+          <view class="entry-popup__section block-stack">
+            <view class="entry-popup__row entry-popup__row--between entry-popup__row--plain">
+              <view class="field-label">备注</view>
+              <view class="entry-popup__link" @tap="chooseLedgerImage">
+                {{ entryImagePath ? '重新选择图片' : '添加图片' }}
+              </view>
+            </view>
+
+            <view v-if="entryImagePath" class="ledger-entry-image">
+              <image :src="resolveMediaUrl(entryImagePath)" mode="aspectFill" class="ledger-entry-image__img" />
+            </view>
+
+            <u-input
+              v-model="entryForm.remark"
+              placeholder="补充这一笔的备注"
+              :border="true"
+              border-color="#eadfd0"
+              :custom-style="remarkStyle"
+            />
+          </view>
+
+          <view class="entry-popup__section">
+            <view class="entry-keyboard">
+              <view v-for="key in keyboardKeys" :key="key" class="entry-keyboard__key" @tap="tapKeyboard(key)">
+                {{ key }}
+              </view>
+            </view>
+          </view>
+
+          <view class="action-grid-2 entry-popup__actions">
+            <u-button plain shape="circle" :hair-line="false" @click="closeEntryPopup">取消</u-button>
+            <u-button
+              type="primary"
+              shape="circle"
+              color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+              :loading="submitting"
+              @click="submitEntry"
+            >
+              {{ submitting ? '保存中...' : '保存' }}
+            </u-button>
+          </view>
+        </scroll-view>
+      </view>
+    </u-popup>
+  </view>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
-import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/app-hero'
-import SectionBlock from '@/components/business/section-block'
-import MetricGrid from '@/components/business/metric-grid'
-import BaseCard from '@/components/base/base-card'
-import EmptyState from '@/components/business/empty-state'
-import BaseButton from '@/components/base/base-button'
+import { computed, ref, watch } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import ChoiceChips from '@/components/business/choice-chips'
+import EmptyStateCard from '@/components/business/empty-state-card'
+import { API_BASE_URL, OSS_BASE_URL } from '@/config/app'
+import { fetchBooks, type LedgerBook } from '@/api/books'
 import { fetchMonthLedger } from '@/api/ledger'
+import { createLedgerEntry, updateLedgerEntry, type LedgerEntryFormPayload } from '@/api/ledger-form'
+import { fetchUserTags, type TagItem } from '@/api/tag'
 import type { LedgerEntry } from '@/types/domain'
+import { getLastLedgerBook, setLastLedgerBook } from '@/utils/ledger-book'
+import { uploadImageToOss } from '@/utils/upload'
 
+type EntryType = 'EXPENSE' | 'INCOME'
+type ViewMode = 'month' | 'year'
+type TypeFilter = 'ALL' | EntryType
+
+interface YearMonthDistributionItem {
+  label: string
+  amount: number
+  ratio: number
+}
+
+interface YearMonthCard {
+  month: number
+  expense: number
+  income: number
+  distributions: YearMonthDistributionItem[]
+}
+
+const typeOptions = [
+  { label: '支出', value: 'EXPENSE' },
+  { label: '收入', value: 'INCOME' }
+]
+const filterTypeOptions = [
+  { label: '全部', value: 'ALL' },
+  { label: '支出', value: 'EXPENSE' },
+  { label: '收入', value: 'INCOME' }
+]
+const viewModeList = ['月', '年']
+const keyboardKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '删除']
+const cardBodyStyle = {
+  padding: '0',
+  background: '#fffaf4',
+  borderRadius: '28rpx'
+}
+const remarkStyle = {
+  background: '#fcf5ec',
+  borderRadius: '20rpx',
+  padding: '0 22rpx',
+  fontSize: '28rpx',
+  minHeight: '84rpx'
+}
+
+const now = new Date()
 const entries = ref<LedgerEntry[]>([])
+const books = ref<LedgerBook[]>([])
+const allTags = ref<TagItem[]>([])
+const yearOverview = ref<YearMonthCard[]>([])
+const currentYear = ref(now.getFullYear())
+const currentMonth = ref(now.getMonth() + 1)
+const viewMode = ref<ViewMode>('month')
+const typeFilter = ref<TypeFilter>('ALL')
+const selectedFilterTagId = ref<number>()
+const pendingTypeFilter = ref<TypeFilter>('ALL')
+const pendingFilterTagId = ref<number>()
+const selectedBookId = ref<number>()
+const selectedBookName = ref('')
+const selectedTagIds = ref<number[]>([])
+const amountText = ref('')
+const entryImagePath = ref('')
+const showFilterPopup = ref(false)
+const showEntryPopup = ref(false)
+const submitting = ref(false)
+const editingEntryId = ref<number>()
+const pendingOpenEntry = ref(false)
 
-const metricItems = computed(() => {
-  const expense = entries.value
+const entryForm = ref({
+  type: 'EXPENSE' as EntryType,
+  entryDate: new Date().toISOString().slice(0, 10),
+  remark: ''
+})
+
+const yearOptions = computed(() => {
+  const current = now.getFullYear()
+  return Array.from({ length: 8 }, (_, index) => String(current - 5 + index))
+})
+const monthOptions = computed(() => Array.from({ length: 12 }, (_, index) => `${index + 1}月`))
+const yearMonthPickerValue = computed(() => {
+  const yearIndex = Math.max(yearOptions.value.findIndex((item) => Number(item) === currentYear.value), 0)
+  const monthIndex = Math.max(currentMonth.value - 1, 0)
+  return [yearIndex, monthIndex]
+})
+const currentMonthLabel = computed(() => `${currentYear.value}年${String(currentMonth.value).padStart(2, '0')}月`)
+const pageTitle = computed(() => selectedBookName.value || '记账本')
+const displayAmount = computed(() => amountText.value || '0')
+const selectedBookLabel = computed(() => {
+  return books.value.find((item) => item.id === selectedBookId.value)?.name || '请选择账本'
+})
+const viewModeIndex = computed(() => (viewMode.value === 'month' ? 0 : 1))
+const filterTagOptions = computed(() => {
+  if (typeFilter.value === 'ALL') return []
+  return allTags.value.filter((item) => item.ledgerType === typeFilter.value)
+})
+const pendingTagOptions = computed(() => {
+  if (pendingTypeFilter.value === 'ALL') return []
+  return allTags.value
+    .filter((item) => item.ledgerType === pendingTypeFilter.value)
+    .map((item) => ({
+      label: item.name,
+      value: item.id
+    }))
+})
+const popupTagOptions = computed(() => {
+  return allTags.value
+    .filter((item) => item.ledgerType === entryForm.value.type)
+    .map((item) => ({
+      label: item.name,
+      value: item.id
+    }))
+})
+const filterSummaryLabel = computed(() => {
+  if (typeFilter.value === 'ALL') return '全部分类'
+  const typeLabel = typeFilter.value === 'EXPENSE' ? '支出' : '收入'
+  if (!selectedFilterTagId.value) return `${typeLabel} · 全部标签`
+  const tagName = filterTagOptions.value.find((item) => item.id === selectedFilterTagId.value)?.name
+  return `${typeLabel} · ${tagName || '全部标签'}`
+})
+
+const filteredEntries = computed(() => {
+  return entries.value.filter((item) => {
+    if (typeFilter.value !== 'ALL' && item.type !== typeFilter.value) return false
+    if (selectedFilterTagId.value && !item.tagIds?.includes(selectedFilterTagId.value)) return false
+    return true
+  })
+})
+
+const headerMetrics = computed(() => {
+  const expense = filteredEntries.value
     .filter((item) => item.type === 'EXPENSE')
     .reduce((sum, item) => sum + Number(item.amount), 0)
-  const income = entries.value
+  const income = filteredEntries.value
     .filter((item) => item.type === 'INCOME')
     .reduce((sum, item) => sum + Number(item.amount), 0)
+
   return [
-    { label: '支出', value: expense.toFixed(2), hint: '本月总支出' },
-    { label: '收入', value: income.toFixed(2), hint: '本月总收入' },
-    { label: '结余', value: (income - expense).toFixed(2), hint: '收入减支出' }
+    {
+      label: '支出',
+      value: expense.toFixed(2),
+      hint: viewMode.value === 'month' ? '当前月份支出' : '当前筛选结果'
+    },
+    {
+      label: '收入',
+      value: income.toFixed(2),
+      hint: viewMode.value === 'month' ? '当前月份收入' : '当前筛选结果'
+    },
+    {
+      label: '结余',
+      value: (income - expense).toFixed(2),
+      hint: '收入减支出'
+    }
   ]
 })
 
-function goEditor() {
-  uni.navigateTo({ url: '/pages/ledger/editor' })
+const groupedEntries = computed(() => {
+  const map = new Map<string, LedgerEntry[]>()
+  for (const entry of filteredEntries.value) {
+    const list = map.get(entry.entryDate) || []
+    list.push(entry)
+    map.set(entry.entryDate, list)
+  }
+  return Array.from(map.entries())
+    .map(([date, dayEntries]) => ({
+      date,
+      entries: dayEntries,
+      expense: dayEntries.filter((item) => item.type === 'EXPENSE').reduce((sum, item) => sum + Number(item.amount), 0),
+      income: dayEntries.filter((item) => item.type === 'INCOME').reduce((sum, item) => sum + Number(item.amount), 0)
+    }))
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
+})
+
+const yearTotalAmount = computed(() => {
+  return yearOverview.value
+    .reduce((sum, item) => sum + Number(item.expense) + Number(item.income), 0)
+    .toFixed(2)
+})
+
+watch(pendingTypeFilter, (nextType) => {
+  if (nextType === 'ALL') {
+    pendingFilterTagId.value = undefined
+    return
+  }
+  const validIds = new Set(
+    allTags.value.filter((item) => item.ledgerType === nextType).map((item) => item.id)
+  )
+  if (pendingFilterTagId.value && !validIds.has(pendingFilterTagId.value)) {
+    pendingFilterTagId.value = undefined
+  }
+})
+
+watch(
+  () => entryForm.value.type,
+  (nextType) => {
+    const validIds = new Set(allTags.value.filter((item) => item.ledgerType === nextType).map((item) => item.id))
+    selectedTagIds.value = selectedTagIds.value.filter((id) => validIds.has(id))
+  }
+)
+
+function resolveMediaUrl(path?: string) {
+  if (!path) return ''
+  if (/^https?:\/\//.test(path)) return path
+  const normalizedBase = API_BASE_URL.replace(/\/$/, '')
+  if (path.startsWith('/')) {
+    return `${normalizedBase}${path}`
+  }
+  if (/^(diary|ledger|avatar)\//.test(path)) {
+    return `${OSS_BASE_URL.replace(/\/$/, '')}/${path}`
+  }
+  return `${normalizedBase}/${path}`
 }
 
-async function init() {
-  const now = new Date()
-  try {
-    entries.value = await fetchMonthLedger(now.getFullYear(), now.getMonth() + 1)
-  } catch {
-    entries.value = [
-      { id: 1, type: 'EXPENSE', amount: 38.5, entryDate: '2026-03-20', remark: '午餐 + 咖啡' },
-      { id: 2, type: 'INCOME', amount: 8800, entryDate: '2026-03-15', remark: '工资' }
-    ]
+function defaultRemark(type: EntryType) {
+  return type === 'EXPENSE' ? '未命名支出' : '未命名收入'
+}
+
+function formatDateTitle(dateText: string) {
+  const date = new Date(`${dateText}T00:00:00`)
+  return `${date.getMonth() + 1}月${date.getDate()}日`
+}
+
+function formatDateHint(dateText: string) {
+  const target = new Date(`${dateText}T00:00:00`)
+  const today = new Date()
+  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+  const targetOnly = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime()
+  const diffDays = Math.round((todayOnly - targetOnly) / 86400000)
+  if (diffDays === 0) return '今天'
+  if (diffDays === 1) return '昨天'
+  return ''
+}
+
+function formatRatio(ratio: number) {
+  return `${(Number(ratio) * 100).toFixed(1)}%`
+}
+
+function buildYearMonthCard(month: number, monthEntries: LedgerEntry[]): YearMonthCard {
+  const expenseEntries = monthEntries.filter((item) => item.type === 'EXPENSE')
+  const incomeEntries = monthEntries.filter((item) => item.type === 'INCOME')
+  const expense = expenseEntries.reduce((sum, item) => sum + Number(item.amount), 0)
+  const income = incomeEntries.reduce((sum, item) => sum + Number(item.amount), 0)
+
+  const distributionMap = new Map<string, number>()
+  for (const entry of expenseEntries) {
+    const label = entry.tags?.[0]?.name || '未分类'
+    distributionMap.set(label, (distributionMap.get(label) || 0) + Number(entry.amount))
+  }
+
+  const safeExpense = expense > 0 ? expense : 1
+  const distributions = Array.from(distributionMap.entries())
+    .map(([label, amount]) => ({
+      label,
+      amount,
+      ratio: amount / safeExpense
+    }))
+    .sort((a, b) => b.amount - a.amount)
+
+  return {
+    month,
+    expense,
+    income,
+    distributions
   }
 }
 
+function rememberCurrentBook() {
+  if (!selectedBookId.value || !selectedBookName.value) return
+  setLastLedgerBook({ id: selectedBookId.value, name: selectedBookName.value })
+}
+
+function syncPendingFilter() {
+  pendingTypeFilter.value = typeFilter.value
+  pendingFilterTagId.value = selectedFilterTagId.value
+}
+
+function goBooks() {
+  uni.navigateTo({ url: '/pages/ledger/books' })
+}
+
+function goLedgerTags() {
+  uni.navigateTo({ url: '/pages/profile/tags/index?moduleType=LEDGER' })
+}
+
+function shareBook() {
+  uni.$feedback.info('账本邀请功能下一步再接入')
+}
+
+function onYearMonthChange(event: { detail: { value: number[] } }) {
+  const [yearIndex, monthIndex] = event.detail.value
+  currentYear.value = Number(yearOptions.value[yearIndex])
+  currentMonth.value = monthIndex + 1
+  reloadByView()
+}
+
+function openFilterPopup() {
+  syncPendingFilter()
+  showFilterPopup.value = true
+}
+
+function resetFilter() {
+  pendingTypeFilter.value = 'ALL'
+  pendingFilterTagId.value = undefined
+  typeFilter.value = 'ALL'
+  selectedFilterTagId.value = undefined
+  showFilterPopup.value = false
+}
+
+function applyFilter() {
+  typeFilter.value = pendingTypeFilter.value
+  selectedFilterTagId.value = pendingFilterTagId.value
+  showFilterPopup.value = false
+}
+
+function onViewModeChange(index: number) {
+  viewMode.value = index === 0 ? 'month' : 'year'
+  reloadByView()
+}
+
+function resetEntryForm() {
+  editingEntryId.value = undefined
+  entryForm.value = {
+    type: 'EXPENSE',
+    entryDate: new Date().toISOString().slice(0, 10),
+    remark: ''
+  }
+  amountText.value = ''
+  selectedTagIds.value = []
+  entryImagePath.value = ''
+}
+
+function openCreateEntryPopup() {
+  if (!selectedBookId.value) {
+    uni.navigateTo({ url: '/pages/ledger/books' })
+    return
+  }
+  rememberCurrentBook()
+  resetEntryForm()
+  showEntryPopup.value = true
+}
+
+function editEntry(entry: LedgerEntry) {
+  editingEntryId.value = entry.id
+  entryForm.value = {
+    type: entry.type,
+    entryDate: entry.entryDate,
+    remark: entry.remark || ''
+  }
+  amountText.value = Number(entry.amount).toFixed(2).replace(/\.00$/, '')
+  selectedTagIds.value = entry.tagIds?.length
+    ? [...entry.tagIds]
+    : (entry.tags || []).map((item) => item.id)
+  entryImagePath.value = entry.imagePath || ''
+  if (entry.bookId) {
+    selectedBookId.value = entry.bookId
+  }
+  showEntryPopup.value = true
+}
+
+function closeEntryPopup() {
+  showEntryPopup.value = false
+  resetEntryForm()
+}
+
+function normalizeAmount(next: string) {
+  const cleaned = next.replace(/[^\d.]/g, '')
+  const parts = cleaned.split('.')
+  if (parts.length > 2) return amountText.value
+  if (parts[1] && parts[1].length > 2) return `${parts[0]}.${parts[1].slice(0, 2)}`
+  return cleaned
+}
+
+function tapKeyboard(key: string) {
+  if (key === '删除') {
+    amountText.value = amountText.value.slice(0, -1)
+    return
+  }
+  amountText.value = normalizeAmount(`${amountText.value}${key}`)
+}
+
+function onEntryDateChange(event: { detail: { value: string } }) {
+  entryForm.value.entryDate = event.detail.value
+}
+
+function openBookSelector() {
+  if (!books.value.length) {
+    uni.$feedback.info('还没有账本，请先创建账本')
+    return
+  }
+  uni.showActionSheet({
+    itemList: books.value.map((item) => item.name),
+    success: ({ tapIndex }) => {
+      const book = books.value[tapIndex]
+      if (!book) return
+      selectedBookId.value = book.id
+      selectedBookName.value = book.name
+      rememberCurrentBook()
+      reloadByView()
+    }
+  })
+}
+
+async function chooseLedgerImage() {
+  try {
+    const result = await uni.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera']
+    })
+    const filePath = result.tempFilePaths?.[0]
+    if (!filePath) return
+    entryImagePath.value = await uploadImageToOss({
+      filePath,
+      dir: 'ledger/'
+    })
+    uni.$feedback.success('图片已上传')
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '图片上传失败')
+  }
+}
+
+async function submitEntry() {
+  if (!selectedBookId.value) {
+    uni.$feedback.error('请先选择账本')
+    return
+  }
+  if (!amountText.value) {
+    uni.$feedback.error('请先输入金额')
+    return
+  }
+
+  const amount = Number(amountText.value)
+  if (Number.isNaN(amount) || amount <= 0) {
+    uni.$feedback.error('金额必须大于 0')
+    return
+  }
+
+  const payload: LedgerEntryFormPayload = {
+    bookId: selectedBookId.value,
+    type: entryForm.value.type,
+    amount,
+    entryDate: entryForm.value.entryDate,
+    remark: entryForm.value.remark.trim() || undefined,
+    imagePath: entryImagePath.value || undefined,
+    tagIds: selectedTagIds.value
+  }
+
+  submitting.value = true
+  try {
+    if (editingEntryId.value) {
+      await updateLedgerEntry(editingEntryId.value, payload)
+      uni.$feedback.success('账单已更新')
+    } else {
+      await createLedgerEntry(payload)
+      uni.$feedback.success('账单已保存')
+    }
+    rememberCurrentBook()
+    closeEntryPopup()
+    await Promise.all([loadMonthEntries(), viewMode.value === 'year' ? loadYearStats() : Promise.resolve()])
+  } catch (error) {
+    uni.$feedback.error(error, undefined, editingEntryId.value ? '更新失败' : '保存失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
+async function loadBooks() {
+  books.value = await fetchBooks()
+  if (selectedBookId.value) {
+    const target = books.value.find((item) => item.id === selectedBookId.value)
+    if (target) {
+      selectedBookName.value = target.name
+      rememberCurrentBook()
+    }
+  }
+}
+
+async function loadTags() {
+  allTags.value = await fetchUserTags('LEDGER')
+}
+
+async function loadMonthEntries() {
+  entries.value = await fetchMonthLedger(currentYear.value, currentMonth.value, selectedBookId.value)
+}
+
+async function loadYearStats() {
+  const monthList = await Promise.all(
+    Array.from({ length: 12 }, (_, index) => fetchMonthLedger(currentYear.value, index + 1, selectedBookId.value))
+  )
+
+  yearOverview.value = monthList
+    .map((monthEntries, index) => buildYearMonthCard(index + 1, monthEntries))
+    .filter((item) => item.expense > 0 || item.income > 0)
+}
+
+async function reloadByView() {
+  if (viewMode.value === 'month') {
+    await loadMonthEntries()
+    return
+  }
+  await loadYearStats()
+}
+
+onLoad((query) => {
+  if (query?.bookId) selectedBookId.value = Number(query.bookId)
+  if (query?.bookName) selectedBookName.value = decodeURIComponent(String(query.bookName))
+
+  if (!selectedBookId.value) {
+    const lastBook = getLastLedgerBook()
+    if (lastBook) {
+      selectedBookId.value = lastBook.id
+      selectedBookName.value = lastBook.name
+    }
+  }
+
+  if (selectedBookName.value) {
+    rememberCurrentBook()
+    uni.setNavigationBarTitle({ title: selectedBookName.value })
+  }
+
+  if (query?.openEntry === '1') {
+    pendingOpenEntry.value = true
+  }
+})
+
 onShow(() => {
-  init()
+  Promise.all([loadBooks(), loadTags()])
+    .then(async () => {
+      await reloadByView()
+      if (pendingOpenEntry.value && selectedBookId.value) {
+        pendingOpenEntry.value = false
+        openCreateEntryPopup()
+      }
+    })
+    .catch((error) => {
+      uni.$feedback.error(error, undefined, '加载账本数据失败')
+    })
 })
 </script>
+
+<style scoped lang="scss">
+.ledger-page {
+  padding-bottom: 180rpx;
+}
+
+.ledger-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.ledger-toolbar__left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  flex: 1;
+}
+
+.ledger-toolbar__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 68rpx;
+  padding: 0 24rpx;
+  border-radius: 999rpx;
+  background: #fcf5ec;
+  color: #5e4b3a;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.ledger-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12rpx;
+}
+
+.ledger-group-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.ledger-day-card {
+  overflow: hidden;
+  border-radius: 28rpx;
+}
+
+.ledger-day-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 28rpx;
+  border-bottom: 1rpx solid #f0e6da;
+}
+
+.ledger-day-card__date {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.ledger-day-card__date-main {
+  color: #2b2118;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.ledger-day-card__date-sub {
+  color: #8a735f;
+  font-size: 24rpx;
+}
+
+.ledger-day-card__summary {
+  display: flex;
+  gap: 18rpx;
+}
+
+.ledger-day-card__summary-item {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.ledger-day-card__summary-item--expense {
+  color: #d35d56;
+}
+
+.ledger-day-card__summary-item--income {
+  color: #2c9b67;
+}
+
+.ledger-day-card__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.ledger-entry-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 24rpx 28rpx;
+  border-bottom: 1rpx solid #f5ecdf;
+}
+
+.ledger-entry-row:last-child {
+  border-bottom: none;
+}
+
+.ledger-entry-row__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.ledger-entry-row__top {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.ledger-entry-row__type {
+  color: #c47c52;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.ledger-entry-row__remark {
+  color: #4f3f31;
+  font-size: 28rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-entry-row__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 12rpx;
+}
+
+.ledger-entry-row__aside {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.ledger-entry-row__image {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 18rpx;
+  background: #f3eadf;
+}
+
+.ledger-entry-row__amount {
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.ledger-entry-row__amount--expense {
+  color: #111827;
+}
+
+.ledger-entry-row__amount--income {
+  color: #2c9b67;
+}
+
+.year-month-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 28rpx;
+  border-bottom: 1rpx solid #f0e6da;
+}
+
+.year-month-card__title {
+  color: #2b2118;
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.year-month-card__summary {
+  display: flex;
+  gap: 18rpx;
+}
+
+.year-month-card__summary-item {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.year-month-card__summary-item--expense {
+  color: #d35d56;
+}
+
+.year-month-card__summary-item--income {
+  color: #2c9b67;
+}
+
+.year-month-card__body {
+  padding: 24rpx 28rpx 28rpx;
+}
+
+.year-month-card__section-title {
+  margin-bottom: 18rpx;
+  color: #5e4b3a;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.year-distribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.year-distribution-row {
+  display: grid;
+  grid-template-columns: 120rpx 110rpx 1fr 70rpx;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.year-distribution-row__label {
+  color: #2b2118;
+  font-size: 28rpx;
+}
+
+.year-distribution-row__amount {
+  color: #d35d56;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.year-distribution-row__bar {
+  height: 14rpx;
+  overflow: hidden;
+  border-radius: 999rpx;
+  background: #f6ede4;
+}
+
+.year-distribution-row__bar-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #f39b94 0%, #ef6b6b 100%);
+}
+
+.year-distribution-row__ratio {
+  color: #8a735f;
+  font-size: 24rpx;
+  text-align: right;
+}
+
+.ledger-page-tabbar {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 28rpx;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 16rpx 28rpx 10rpx;
+  border-radius: 40rpx;
+  background: rgba(255, 250, 244, 0.96);
+  box-shadow: 0 18rpx 42rpx rgba(67, 41, 26, 0.12);
+}
+
+.ledger-page-tabbar__item,
+.ledger-page-tabbar__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.ledger-page-tabbar__center {
+  transform: translateY(-18rpx);
+}
+
+.ledger-page-tabbar__plus {
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #c47c52 0%, #d7a648 100%);
+  color: #fffaf4;
+  font-size: 52rpx;
+  line-height: 1;
+  box-shadow: 0 16rpx 30rpx rgba(144, 88, 49, 0.2);
+}
+
+.ledger-page-tabbar__text {
+  color: #7b6c5a;
+  font-size: 22rpx;
+}
+
+.ledger-page-tabbar__text--active {
+  color: #c47c52;
+  font-weight: 700;
+}
+
+.filter-popup,
+.entry-popup {
+  background: #fffaf4;
+}
+
+.filter-popup {
+  padding: 28rpx 24rpx calc(28rpx + env(safe-area-inset-bottom));
+}
+
+.filter-popup__head,
+.entry-popup__head {
+  text-align: center;
+}
+
+.filter-popup__title,
+.entry-popup__title {
+  color: #2b2118;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.entry-popup {
+  max-height: 70vh;
+  padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+}
+
+.entry-popup__subtitle {
+  margin-top: 8rpx;
+  color: #8a735f;
+  font-size: 24rpx;
+}
+
+.entry-popup__body {
+  max-height: calc(70vh - 48rpx);
+}
+
+.entry-popup__section {
+  margin-bottom: 18rpx;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f0e6da;
+}
+
+.entry-popup__section:last-child {
+  margin-bottom: 0;
+}
+
+.entry-popup__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.entry-popup__row--top {
+  align-items: flex-start;
+}
+
+.entry-popup__row--between {
+  justify-content: space-between;
+}
+
+.entry-popup__row--plain {
+  margin-bottom: 12rpx;
+}
+
+.entry-popup__date,
+.entry-popup__book {
+  min-height: 76rpx;
+  border-radius: 20rpx;
+  background: #fcf5ec;
+}
+
+.entry-popup__date {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220rpx;
+  padding: 0 20rpx;
+  color: #2b2118;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.entry-popup__book {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  padding: 0 20rpx;
+}
+
+.entry-popup__book-label {
+  color: #8a735f;
+  font-size: 24rpx;
+}
+
+.entry-popup__book-value {
+  color: #2b2118;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.entry-popup__amount {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.entry-popup__amount-symbol {
+  color: #6e5946;
+  font-size: 40rpx;
+  font-weight: 700;
+}
+
+.entry-popup__amount-value {
+  color: #1f2937;
+  font-size: 72rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.entry-popup__link {
+  color: #c47c52;
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.ledger-entry-image {
+  margin-bottom: 12rpx;
+}
+
+.ledger-entry-image__img {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 20rpx;
+  background: #f3eadf;
+}
+
+.entry-keyboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14rpx;
+}
+
+.entry-keyboard__key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 92rpx;
+  border-radius: 20rpx;
+  background: #f5efe7;
+  color: #1f2937;
+  font-size: 40rpx;
+  font-weight: 600;
+}
+
+.entry-popup__actions {
+  margin-top: 20rpx;
+  padding-top: 12rpx;
+}
+
+.filter-popup__empty {
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+</style>

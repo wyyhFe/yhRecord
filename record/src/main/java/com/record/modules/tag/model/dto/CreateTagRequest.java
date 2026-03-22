@@ -1,5 +1,6 @@
 package com.record.modules.tag.model.dto;
 
+import com.record.common.enums.LedgerTagType;
 import com.record.common.enums.TagModuleType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -26,4 +27,7 @@ public class CreateTagRequest {
     @Schema(description = "所属模块", requiredMode = Schema.RequiredMode.REQUIRED, example = "DIARY")
     @NotNull
     private TagModuleType moduleType;
+
+    @Schema(description = "记账标签类型，仅 LEDGER 模块使用", example = "EXPENSE")
+    private LedgerTagType ledgerType;
 }

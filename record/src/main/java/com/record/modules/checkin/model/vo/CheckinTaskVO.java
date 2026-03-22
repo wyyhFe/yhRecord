@@ -31,6 +31,6 @@ public class CheckinTaskVO {
     @Schema(description = "累计打卡次数", example = "12")
     private long totalCount;
 
-    @Schema(description = "最近一次打卡时间", example = "2026-03-21 08:00:00")
+    @Schema(description = "最近一次打卡时间", example = "2026-03-21T08:00:00")
     private LocalDateTime latestCheckedAt;
 }

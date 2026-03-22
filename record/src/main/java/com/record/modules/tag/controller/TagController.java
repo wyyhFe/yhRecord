@@ -1,6 +1,7 @@
 package com.record.modules.tag.controller;
 
 import com.record.common.context.UserContext;
+import com.record.common.enums.LedgerTagType;
 import com.record.common.enums.TagModuleType;
 import com.record.common.model.ApiResponse;
 import com.record.modules.tag.model.dto.CreateFromTemplateRequest;
@@ -39,8 +40,9 @@ public class TagController {
 
     @Operation(summary = "查询用户标签")
     @GetMapping("/list")
-    public ApiResponse<List<TagVO>> list(@RequestParam(required = false) TagModuleType moduleType) {
-        return ApiResponse.success(tagService.listUserTags(UserContext.getUserId(), moduleType));
+    public ApiResponse<List<TagVO>> list(@RequestParam(required = false) TagModuleType moduleType,
+                                         @RequestParam(required = false) LedgerTagType ledgerType) {
+        return ApiResponse.success(tagService.listUserTags(UserContext.getUserId(), moduleType, ledgerType));
     }
 
     @Operation(summary = "创建标签")

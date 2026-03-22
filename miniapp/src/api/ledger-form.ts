@@ -1,9 +1,6 @@
 import { request } from '@/utils/request'
 
-/**
- * 创建记账流水提交结构。
- */
-export interface CreateLedgerEntryPayload {
+export interface LedgerEntryFormPayload {
   bookId: number
   type: 'INCOME' | 'EXPENSE'
   amount: number
@@ -13,13 +10,18 @@ export interface CreateLedgerEntryPayload {
   tagIds?: number[]
 }
 
-/**
- * 创建记账流水。
- */
-export function createLedgerEntry(data: CreateLedgerEntryPayload) {
+export function createLedgerEntry(data: LedgerEntryFormPayload) {
   return request({
     url: '/ledger/entries/create',
     method: 'POST',
+    data
+  })
+}
+
+export function updateLedgerEntry(id: number, data: LedgerEntryFormPayload) {
+  return request({
+    url: `/ledger/entries/update/${id}`,
+    method: 'PUT',
     data
   })
 }

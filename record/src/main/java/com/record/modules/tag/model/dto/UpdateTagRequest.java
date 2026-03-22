@@ -1,5 +1,6 @@
 package com.record.modules.tag.model.dto;
 
+import com.record.common.enums.LedgerTagType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -18,4 +19,7 @@ public class UpdateTagRequest {
 
     @Schema(description = "标签图标", example = "plane")
     private String icon;
+
+    @Schema(description = "记账标签类型，仅 LEDGER 模块使用", example = "EXPENSE")
+    private LedgerTagType ledgerType;
 }

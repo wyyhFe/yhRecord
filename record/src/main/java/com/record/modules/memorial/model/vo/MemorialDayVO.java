@@ -24,7 +24,7 @@ public class MemorialDayVO {
     @Schema(description = "类型", example = "LOVE")
     private String type;
 
-    @Schema(description = "纪念日日期", example = "2026-03-21")
+    @Schema(description = "纪念日期", example = "2026-03-21")
     private LocalDate memorialDate;
 
     @Schema(description = "是否每年重复", example = "true")
@@ -33,6 +33,6 @@ public class MemorialDayVO {
     @Schema(description = "备注", example = "第一次一起去看海")
     private String remark;
 
-    @Schema(description = "提醒时间", example = "2026-03-21 09:00:00")
+    @Schema(description = "提醒时间", example = "2026-03-21T09:00:00")
     private LocalDateTime remindAt;
 }

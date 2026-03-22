@@ -1,65 +1,169 @@
 <template>
-  <AppPage>
-    <AppHero
-      eyebrow="个人中心"
-      :title="profile?.nickname || '还没填写昵称'"
-      :description="profile?.signature || '把生活记录下来，时间会帮你整理它。'"
-      badge="Profile"
-    />
+  <view class="page-shell-safe">
+    <view class="section-shell profile-hero">
+      <view class="profile-hero__main">
+        <view class="profile-hero__avatar">
+          <image
+            v-if="profile?.avatarPath"
+            :src="profile.avatarPath"
+            mode="aspectFill"
+            class="profile-hero__avatar-image"
+          />
+          <view v-else class="profile-hero__avatar-text">{{ avatarText }}</view>
+        </view>
 
-    <SectionBlock title="我的记录" subtitle="把当前账号的核心信息放在一个页面里">
-      <MetricGrid :items="metrics" />
-    </SectionBlock>
+        <view class="profile-hero__copy">
+          <view class="profile-hero__name">{{ profile?.nickname || '还没有填写昵称' }}</view>
+          <view class="profile-hero__signature">
+            {{ profile?.signature || '把生活慢慢记下来，时间会替你整理它。' }}
+          </view>
+          <view class="profile-hero__meta">
+            <view class="profile-hero__meta-item">生日 {{ profile?.birthday || '未设置' }}</view>
+            <view class="profile-hero__meta-item">性别 {{ genderLabel }}</view>
+          </view>
+        </view>
+      </view>
 
-    <SectionBlock title="常用入口" subtitle="回收站、提醒设置和标签管理都放在这里">
-      <SettingList :items="settings" @select="handleSelect" />
-    </SectionBlock>
-  </AppPage>
+      <view class="profile-hero__actions">
+        <u-button plain shape="circle" :hair-line="false" @click="goEditProfile">编辑个人信息</u-button>
+        <u-button
+          type="primary"
+          shape="circle"
+          :hair-line="false"
+          color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+          @click="goDiaryEditor"
+        >
+          去写日记
+        </u-button>
+      </view>
+    </view>
+
+    <view class="page-section section-shell">
+      <view class="section-copy">
+        <view class="section-copy__title">我的记录</view>
+        <view class="section-copy__desc">把当前账号最常用的数据和状态集中放在一个页面里。</view>
+      </view>
+
+      <view class="metric-grid">
+        <view v-for="item in metrics" :key="item.label" class="metric-card">
+          <view class="metric-card__label">{{ item.label }}</view>
+          <view class="metric-card__value">{{ item.value }}</view>
+          <view class="metric-card__hint">{{ item.hint }}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="page-section section-shell overflow-hidden">
+      <view class="section-copy">
+        <view class="section-copy__title">常用入口</view>
+        <view class="section-copy__desc">提醒、标签和回收站都集中放在这里，后面继续扩展也统一放这一组。</view>
+      </view>
+
+      <u-cell-group :border="false">
+        <u-cell-item
+          v-for="item in settings"
+          :key="item.key"
+          :title="item.title"
+          :label="item.description"
+          :value="item.value"
+          arrow
+          :border-bottom="item.key !== settings[settings.length - 1].key"
+          @click="handleSelect(item.key)"
+        />
+      </u-cell-group>
+    </view>
+  </view>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import AppPage from '@/layouts/AppPage.vue'
-import AppHero from '@/components/business/app-hero'
-import SectionBlock from '@/components/business/section-block'
-import MetricGrid from '@/components/business/metric-grid'
-import SettingList, { type SettingItem } from '@/components/business/setting-list'
 import { useAppStore } from '@/stores/app'
 
 const appStore = useAppStore()
 const profile = computed(() => appStore.profile)
 
-/**
- * 个人中心概览数据直接复用全局 profile。
- */
+const avatarText = computed(() => {
+  const name = profile.value?.nickname?.trim()
+  return name ? name.slice(0, 1) : '我'
+})
+
+const genderLabel = computed(() => {
+  if (profile.value?.gender === 'MALE') return '男'
+  if (profile.value?.gender === 'FEMALE') return '女'
+  return '未设置'
+})
+
 const metrics = computed(() => [
-  { label: '日记数', value: String(profile.value?.diaryCount ?? 0), hint: '累计记录内容' },
-  { label: '生日', value: profile.value?.birthday || '--', hint: '用于年龄展示' },
-  { label: '签名', value: profile.value?.signature ? '已设置' : '未设置', hint: '个人状态说明' }
+  {
+    label: '记录天数',
+    value: String(profile.value?.diaryCount ?? 0),
+    hint: '累计写下的日子'
+  },
+  {
+    label: '生日',
+    value: profile.value?.birthday || '--',
+    hint: '用于展示个人资料'
+  },
+  {
+    label: '签名',
+    value: profile.value?.signature ? '已设置' : '未设置',
+    hint: '表达现在的状态'
+  }
 ])
 
-/**
- * 设置入口统一放在列表里，便于后续继续扩展。
- */
-const settings = computed<SettingItem[]>(() => [
-  { key: 'recycle', title: '回收站', description: '删除后的日记会保留 15 天，可恢复或彻底删除。', value: '进入' },
-  { key: 'reminder', title: '提醒设置', description: '统一管理小程序订阅消息和公众号模板消息提醒。', value: '配置' },
-  { key: 'tag', title: '标签管理', description: '先用系统基类模板，再扩展自己的标签。', value: '管理' }
-])
+const settings = [
+  {
+    key: 'profile',
+    title: '编辑个人信息',
+    description: '修改昵称、生日、性别和个性签名。',
+    value: '前往'
+  },
+  {
+    key: 'reminder',
+    title: '提醒设置',
+    description: '统一管理小程序订阅提醒和公众号提醒。',
+    value: '配置'
+  },
+  {
+    key: 'tag',
+    title: '标签管理',
+    description: '基于系统模板扩展自己的日记和记账标签。',
+    value: '管理'
+  },
+  {
+    key: 'recycle',
+    title: '回收站',
+    description: '删除后的日记会暂存在这里，可恢复或彻底删除。',
+    value: '进入'
+  }
+]
 
-function handleSelect(item: SettingItem) {
-  if (item.key === 'recycle') {
-    uni.navigateTo({ url: '/pages/profile/recycle' })
+function goEditProfile() {
+  uni.navigateTo({ url: '/pages/profile/edit' })
+}
+
+function goDiaryEditor() {
+  uni.navigateTo({ url: '/pages/diary/editor' })
+}
+
+function handleSelect(key: string) {
+  if (key === 'profile') {
+    goEditProfile()
     return
   }
 
-  if (item.key === 'reminder') {
+  if (key === 'recycle') {
+    uni.navigateTo({ url: '/pages/profile/recycle/index' })
+    return
+  }
+
+  if (key === 'reminder') {
     uni.navigateTo({ url: '/pages/profile/reminder' })
     return
   }
 
-  if (item.key === 'tag') {
-    uni.navigateTo({ url: '/pages/profile/tags' })
+  if (key === 'tag') {
+    uni.navigateTo({ url: '/pages/profile/tags/index' })
   }
 }
 
@@ -67,3 +171,81 @@ onMounted(() => {
   appStore.loadProfile().catch(() => undefined)
 })
 </script>
+
+<style scoped lang="scss">
+.profile-hero {
+  background:
+    radial-gradient(circle at top right, rgba(234, 201, 160, 0.24), transparent 34%),
+    linear-gradient(135deg, rgba(255, 250, 244, 0.96) 0%, rgba(252, 244, 234, 0.96) 100%);
+}
+
+.profile-hero__main {
+  display: flex;
+  align-items: center;
+  gap: 22rpx;
+}
+
+.profile-hero__avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #c47c52 0%, #d7a648 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14rpx 28rpx rgba(144, 88, 49, 0.18);
+}
+
+.profile-hero__avatar-image {
+  width: 100%;
+  height: 100%;
+}
+
+.profile-hero__avatar-text {
+  color: #fffaf4;
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.profile-hero__copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-hero__name {
+  color: #2b2118;
+  font-size: 38rpx;
+  font-weight: 700;
+}
+
+.profile-hero__signature {
+  margin-top: 10rpx;
+  color: #6d5b4c;
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
+.profile-hero__meta {
+  margin-top: 14rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.profile-hero__meta-item {
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.78);
+  color: #8a735f;
+  font-size: 22rpx;
+}
+
+.profile-hero__actions {
+  margin-top: 24rpx;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+}
+</style>

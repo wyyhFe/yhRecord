@@ -1,5 +1,6 @@
 package com.record.modules.tag.model.vo;
 
+import com.record.common.enums.LedgerTagType;
 import com.record.common.enums.TagModuleType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -30,4 +31,7 @@ public class TagVO {
 
     @Schema(description = "所属模块", example = "DIARY")
     private TagModuleType moduleType;
+
+    @Schema(description = "记账标签类型，仅 LEDGER 模块使用", example = "EXPENSE")
+    private LedgerTagType ledgerType;
 }

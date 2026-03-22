@@ -1,5 +1,5 @@
 import { request } from '@/utils/request'
-import type { UserProfile } from '@/types/domain'
+import type { UserProfile, UserProfileUpdatePayload } from '@/types/domain'
 
 /**
  * 获取当前登录用户资料。
@@ -9,5 +9,16 @@ export function fetchUserProfile() {
   return request<UserProfile>({
     url: '/users/profile',
     method: 'GET'
+  })
+}
+
+/**
+ * 更新当前登录用户资料。
+ */
+export function updateUserProfile(data: UserProfileUpdatePayload) {
+  return request<UserProfile>({
+    url: '/users/profile/update',
+    method: 'PUT',
+    data
   })
 }

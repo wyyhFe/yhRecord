@@ -65,7 +65,8 @@ public class LedgerEntryController {
 
     @Operation(summary = "查询年度统计")
     @GetMapping("/statistics/year")
-    public ApiResponse<YearStatisticsVO> year(@RequestParam Integer year) {
-        return ApiResponse.success(ledgerService.yearStatistics(UserContext.getUserId(), year));
+    public ApiResponse<YearStatisticsVO> year(@RequestParam Integer year,
+                                              @RequestParam(required = false) Long bookId) {
+        return ApiResponse.success(ledgerService.yearStatistics(UserContext.getUserId(), year, bookId));
     }
 }

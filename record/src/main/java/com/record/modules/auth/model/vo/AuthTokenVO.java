@@ -5,12 +5,13 @@ import lombok.Builder;
 import lombok.Data;
 
 /**
- * 登录成功后返回的令牌信息。
+ * 登录成功后的令牌信息。
  */
 @Data
 @Builder
 @Schema(description = "登录成功后的令牌信息")
 public class AuthTokenVO {
+
     @Schema(description = "用户 ID", example = "10001")
     private Long userId;
 

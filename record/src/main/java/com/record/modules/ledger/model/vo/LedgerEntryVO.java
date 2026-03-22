@@ -40,4 +40,21 @@ public class LedgerEntryVO {
 
     @Schema(description = "关联标签 ID 列表")
     private List<Long> tagIds;
+
+    @Schema(description = "关联标签明细")
+    private List<TagItemVO> tags;
+
+    @Data
+    @Builder
+    @Schema(description = "记账标签")
+    public static class TagItemVO {
+        @Schema(description = "标签 ID", example = "1")
+        private Long id;
+
+        @Schema(description = "标签名称", example = "餐饮")
+        private String name;
+
+        @Schema(description = "标签颜色", example = "#FF8A65")
+        private String color;
+    }
 }

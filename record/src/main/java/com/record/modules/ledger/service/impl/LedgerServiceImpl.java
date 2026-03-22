@@ -15,6 +15,8 @@ import com.record.modules.ledger.model.vo.LedgerBookVO;
 import com.record.modules.ledger.model.vo.LedgerEntryVO;
 import com.record.modules.ledger.model.vo.YearStatisticsVO;
 import com.record.modules.ledger.service.LedgerService;
+import com.record.modules.tag.mapper.UserTagMapper;
+import com.record.modules.tag.model.entity.UserTag;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,8 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 记账服务实现。
@@ -33,13 +37,16 @@ public class LedgerServiceImpl implements LedgerService {
     private final LedgerBookMapper ledgerBookMapper;
     private final LedgerEntryMapper ledgerEntryMapper;
     private final LedgerEntryTagRelMapper ledgerEntryTagRelMapper;
+    private final UserTagMapper userTagMapper;
 
     public LedgerServiceImpl(LedgerBookMapper ledgerBookMapper,
                              LedgerEntryMapper ledgerEntryMapper,
-                             LedgerEntryTagRelMapper ledgerEntryTagRelMapper) {
+                             LedgerEntryTagRelMapper ledgerEntryTagRelMapper,
+                             UserTagMapper userTagMapper) {
         this.ledgerBookMapper = ledgerBookMapper;
         this.ledgerEntryMapper = ledgerEntryMapper;
         this.ledgerEntryTagRelMapper = ledgerEntryTagRelMapper;
+        this.userTagMapper = userTagMapper;
     }
 
     @Override
@@ -49,14 +56,23 @@ public class LedgerServiceImpl implements LedgerService {
         book.setName(request.getName());
         book.setDescription(request.getDescription());
         ledgerBookMapper.insert(book);
-        return LedgerBookVO.builder().id(book.getId()).name(book.getName()).description(book.getDescription()).build();
+        return LedgerBookVO.builder()
+                .id(book.getId())
+                .name(book.getName())
+                .description(book.getDescription())
+                .build();
     }
 
     @Override
     public List<LedgerBookVO> listBooks(Long userId) {
-        return ledgerBookMapper.selectList(new LambdaQueryWrapper<LedgerBook>().eq(LedgerBook::getUserId, userId))
+        return ledgerBookMapper.selectList(new LambdaQueryWrapper<LedgerBook>()
+                        .eq(LedgerBook::getUserId, userId))
                 .stream()
-                .map(item -> LedgerBookVO.builder().id(item.getId()).name(item.getName()).description(item.getDescription()).build())
+                .map(item -> LedgerBookVO.builder()
+                        .id(item.getId())
+                        .name(item.getName())
+                        .description(item.getDescription())
+                        .build())
                 .toList();
     }
 
@@ -86,7 +102,8 @@ public class LedgerServiceImpl implements LedgerService {
     @Transactional
     public void deleteEntry(Long userId, Long entryId) {
         requireOwnedEntry(userId, entryId);
-        ledgerEntryTagRelMapper.delete(new LambdaQueryWrapper<LedgerEntryTagRel>().eq(LedgerEntryTagRel::getEntryId, entryId));
+        ledgerEntryTagRelMapper.delete(new LambdaQueryWrapper<LedgerEntryTagRel>()
+                .eq(LedgerEntryTagRel::getEntryId, entryId));
         ledgerEntryMapper.deleteById(entryId);
     }
 
@@ -97,17 +114,20 @@ public class LedgerServiceImpl implements LedgerService {
                         .eq(bookId != null, LedgerEntry::getBookId, bookId)
                         .apply("YEAR(entry_date) = {0}", year)
                         .apply("MONTH(entry_date) = {0}", month)
-                        .orderByDesc(LedgerEntry::getEntryDate))
+                        .orderByDesc(LedgerEntry::getEntryDate)
+                        .orderByDesc(LedgerEntry::getId))
                 .stream()
                 .map(this::toVO)
                 .toList();
     }
 
     @Override
-    public YearStatisticsVO yearStatistics(Long userId, Integer year) {
+    public YearStatisticsVO yearStatistics(Long userId, Integer year, Long bookId) {
         List<LedgerEntry> entries = ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
                 .eq(LedgerEntry::getUserId, userId)
+                .eq(bookId != null, LedgerEntry::getBookId, bookId)
                 .apply("YEAR(entry_date) = {0}", year));
+
         Map<Long, BigDecimal> amountMap = new HashMap<>();
         BigDecimal total = BigDecimal.ZERO;
         for (LedgerEntry entry : entries) {
@@ -121,15 +141,22 @@ public class LedgerServiceImpl implements LedgerService {
                 total = total.add(entry.getAmount());
             }
         }
+
+        Map<Long, UserTag> tagMap = loadTagMap(amountMap.keySet());
         BigDecimal safeTotal = total.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ONE : total;
+
         return YearStatisticsVO.builder()
                 .year(year)
                 .items(amountMap.entrySet().stream()
-                        .map(item -> YearStatisticsVO.TagAmountVO.builder()
-                                .tagId(item.getKey())
-                                .amount(item.getValue())
-                                .ratio(item.getValue().divide(safeTotal, 4, RoundingMode.HALF_UP))
-                                .build())
+                        .map(item -> {
+                            UserTag tag = tagMap.get(item.getKey());
+                            return YearStatisticsVO.TagAmountVO.builder()
+                                    .tagId(item.getKey())
+                                    .tagName(tag != null ? tag.getName() : null)
+                                    .amount(item.getValue())
+                                    .ratio(item.getValue().divide(safeTotal, 4, RoundingMode.HALF_UP))
+                                    .build();
+                        })
                         .toList())
                 .build();
     }
@@ -160,7 +187,8 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     private void replaceTags(Long entryId, List<Long> tagIds) {
-        ledgerEntryTagRelMapper.delete(new LambdaQueryWrapper<LedgerEntryTagRel>().eq(LedgerEntryTagRel::getEntryId, entryId));
+        ledgerEntryTagRelMapper.delete(new LambdaQueryWrapper<LedgerEntryTagRel>()
+                .eq(LedgerEntryTagRel::getEntryId, entryId));
         if (tagIds == null) {
             return;
         }
@@ -186,6 +214,18 @@ public class LedgerServiceImpl implements LedgerService {
                 .stream()
                 .map(LedgerEntryTagRel::getTagId)
                 .toList();
+
+        Map<Long, UserTag> tagMap = loadTagMap(tagIds);
+        List<LedgerEntryVO.TagItemVO> tags = tagIds.stream()
+                .map(tagMap::get)
+                .filter(tag -> tag != null)
+                .map(tag -> LedgerEntryVO.TagItemVO.builder()
+                        .id(tag.getId())
+                        .name(tag.getName())
+                        .color(tag.getColor())
+                        .build())
+                .toList();
+
         return LedgerEntryVO.builder()
                 .id(entry.getId())
                 .bookId(entry.getBookId())
@@ -195,6 +235,21 @@ public class LedgerServiceImpl implements LedgerService {
                 .remark(entry.getRemark())
                 .imagePath(entry.getImagePath())
                 .tagIds(tagIds)
+                .tags(tags)
                 .build();
+    }
+
+    private Map<Long, UserTag> loadTagMap(Iterable<Long> tagIds) {
+        List<Long> ids = new java.util.ArrayList<>();
+        for (Long tagId : tagIds) {
+            if (tagId != null) {
+                ids.add(tagId);
+            }
+        }
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return userTagMapper.selectBatchIds(ids).stream()
+                .collect(Collectors.toMap(UserTag::getId, Function.identity()));
     }
 }
