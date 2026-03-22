@@ -1,59 +1,66 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios'
-import mpAdapter from 'axios-miniprogram-adapter'
+import HttpRequest, { type HttpRequestConfig, type HttpResponse } from 'luch-request'
 import { API_BASE_URL } from '@/config/app'
 import type { ApiResponse } from '@/types/api'
 import { tokenStorage } from './storage'
 
-/**
- * 项目统一请求参数。
- * 默认所有接口都带登录态，只有显式传 `withAuth: false` 才跳过 token 注入。
- */
-interface RequestOptions<T = unknown> extends AxiosRequestConfig<T> {
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+
+interface RequestCustomConfig {
   withAuth?: boolean
+  _retry?: boolean
 }
 
 /**
- * 刷新 token 接口返回的最小结构。
- * 请求层只关心 accessToken 和 refreshToken。
+ * 项目统一请求参数。
+ * 默认所有接口都带登录态，只有显式传入 withAuth: false 才跳过 token 注入。
+ */
+interface RequestOptions<T = unknown> {
+  url: string
+  method?: HttpMethod
+  data?: T
+  header?: Record<string, string>
+  withAuth?: boolean
+  custom?: RequestCustomConfig
+}
+
+/**
+ * 刷新 token 接口最小返回结构。
  */
 interface RefreshTokenResult {
   accessToken: string
   refreshToken: string
 }
 
-/**
- * uni-app 小程序环境下的 axios 实例。
- */
-const service: AxiosInstance = axios.create({
+const http = new HttpRequest({
   baseURL: API_BASE_URL,
   timeout: 15000,
-  adapter: mpAdapter as never
+  header: {
+    'Content-Type': 'application/json'
+  }
 })
 
-// 用一个共享 Promise 串起刷新流程，避免多个 401 同时触发多次 refresh。
 let refreshingPromise: Promise<void> | null = null
 
 /**
- * 跳回登录页前统一清空本地会话。
+ * 登录态失效后统一清空本地会话，并回到首页，由首页承接登录弹层。
  */
 function redirectToLogin() {
   tokenStorage.clearAll()
-  uni.reLaunch({ url: '/pages/auth/login' })
+  uni.reLaunch({ url: '/pages/home/index' })
 }
 
 /**
- * 这里不走 `@/api/auth`，而是直接发原始请求。
- * 目的是切断 `request -> auth api -> request` 的循环依赖。
+ * 刷新 accessToken。
  */
 async function refreshSessionToken(refreshTokenValue: string) {
-  const response = await axios.request<ApiResponse<RefreshTokenResult>>({
-    baseURL: API_BASE_URL,
+  const response = await http.request<ApiResponse<RefreshTokenResult>>({
     url: '/auth/refresh',
     method: 'POST',
-    timeout: 15000,
-    adapter: mpAdapter as never,
     data: {
       refreshToken: refreshTokenValue
+    },
+    custom: {
+      withAuth: false
     }
   })
 
@@ -66,39 +73,65 @@ async function refreshSessionToken(refreshTokenValue: string) {
   tokenStorage.setRefreshToken(result.data.refreshToken)
 }
 
-service.interceptors.request.use((config) => {
-  const nextConfig = { ...config }
-  nextConfig.headers = nextConfig.headers ?? {}
+http.interceptors.request.use((config) => {
+  const nextConfig = config as HttpRequestConfig & {
+    custom?: RequestCustomConfig
+  }
 
-  // 默认所有接口都带 token，只有明确声明 withAuth=false 才跳过。
-  const withAuth = (nextConfig as RequestOptions).withAuth !== false
+  nextConfig.header = {
+    'Content-Type': 'application/json',
+    ...(nextConfig.header ?? {})
+  }
+
+  const withAuth = nextConfig.custom?.withAuth !== false
   const token = tokenStorage.getAccessToken()
   if (withAuth && token) {
-    nextConfig.headers.Authorization = `Bearer ${token}`
+    nextConfig.header.Authorization = `Bearer ${token}`
   }
+
+  console.log('[request] prepare', {
+    url: nextConfig.url,
+    method: nextConfig.method ?? 'GET',
+    withAuth,
+    hasToken: Boolean(token),
+    authorization: nextConfig.header.Authorization
+  })
 
   return nextConfig
 })
 
-service.interceptors.response.use(
+http.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const status = error?.response?.status
-    const originalRequest = error?.config as (RequestOptions & { _retry?: boolean }) | undefined
+    const response = error as HttpResponse<ApiResponse<unknown>>
+    const statusCode = response?.statusCode
+    const config = (response?.config ?? {}) as HttpRequestConfig & {
+      custom?: RequestCustomConfig
+    }
 
-    // 401 时尝试刷新 token，并在成功后自动重放原请求。
-    if (status === 401 && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true
+    if (statusCode === 401 && !config.custom?._retry) {
+      console.warn('[request] got 401, try refresh token', {
+        url: config.url,
+        method: config.method ?? 'GET'
+      })
+
+      config.custom = {
+        ...(config.custom ?? {}),
+        _retry: true,
+        withAuth: config.custom?.withAuth
+      }
+
       const refreshValue = tokenStorage.getRefreshToken()
       if (!refreshValue) {
+        console.warn('[request] no refresh token, redirect to login')
         redirectToLogin()
-        return Promise.reject(new Error('登录已失效'))
+        throw new Error('登录已失效')
       }
 
       if (!refreshingPromise) {
         refreshingPromise = refreshSessionToken(refreshValue)
           .catch((refreshError) => {
-            // refresh 失败时直接清理会话，避免前端继续拿失效状态请求。
+            console.error('[request] refresh token failed', refreshError)
             redirectToLogin()
             throw refreshError
           })
@@ -108,27 +141,54 @@ service.interceptors.response.use(
       }
 
       await refreshingPromise
-      return service.request(originalRequest)
+
+      console.log('[request] replay original request after refresh', {
+        url: config.url,
+        method: config.method ?? 'GET'
+      })
+
+      return http.request(config)
     }
 
-    const message = error?.response?.data?.message || error?.message || '网络异常'
-    return Promise.reject(new Error(message))
+    const message = response?.data?.message || response?.errMsg || '网络异常'
+    console.error('[request] request failed', {
+      url: config.url,
+      method: config.method ?? 'GET',
+      statusCode,
+      message
+    })
+    throw new Error(message)
   }
 )
 
 /**
  * 项目统一请求入口。
- * 这里会自动解包后端统一返回体，只把真正业务数据返回给调用方。
+ * 这里只返回后端 data 字段，业务码非 0 时直接抛错。
  */
 export async function request<T = unknown>(options: RequestOptions) {
-  const response = await service.request<ApiResponse<T>, AxiosResponse<ApiResponse<T>>>(options)
-  const result = response.data
+  const response = await http.request<ApiResponse<T>>({
+    url: options.url,
+    method: options.method,
+    data: options.data as Record<string, unknown> | undefined,
+    header: options.header,
+    custom: {
+      ...(options.custom ?? {}),
+      withAuth: options.withAuth
+    }
+  })
 
+  const result = response.data
   if (!result) {
     throw new Error('响应为空')
   }
 
   if (result.code !== 0) {
+    console.error('[request] business failed', {
+      url: options.url,
+      method: options.method ?? 'GET',
+      code: result.code,
+      message: result.message
+    })
     throw new Error(result.message || '请求失败')
   }
 

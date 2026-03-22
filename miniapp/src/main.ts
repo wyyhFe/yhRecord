@@ -1,7 +1,7 @@
 import { createSSRApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
-import './styles/tailwind.css'
+import './styles/tailwind.safe.css'
 import './styles/theme.scss'
 import { registerRouteGuard } from './utils/auth'
 

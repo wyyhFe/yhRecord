@@ -1,7 +1,7 @@
 import { tokenStorage } from './storage'
 
 // 这些页面允许未登录直接进入。
-const whiteList = ['/pages/auth/login']
+const whiteList = ['/pages/home/index', '/pages/auth/login']
 
 /**
  * 判断目标页面是否需要登录。
@@ -11,10 +11,10 @@ function requiresAuth(url: string) {
 }
 
 /**
- * 统一跳转到登录页。
+ * 统一跳转到首页，由首页承接底部登录弹层。
  */
-function redirectToLogin() {
-  uni.reLaunch({ url: '/pages/auth/login' })
+function redirectToHome() {
+  uni.reLaunch({ url: '/pages/home/index' })
 }
 
 /**
@@ -24,7 +24,11 @@ function buildInterceptor() {
   return {
     invoke(args: { url: string }) {
       if (requiresAuth(args.url) && !tokenStorage.getAccessToken()) {
-        redirectToLogin()
+        uni.showToast({
+          title: '请先登录',
+          icon: 'none'
+        })
+        redirectToHome()
         return false
       }
       return args
@@ -50,6 +54,6 @@ export function ensureEntryAuth() {
   const current = pages[pages.length - 1] as { route?: string } | undefined
   const route = current?.route ? `/${current.route}` : '/pages/home/index'
   if (requiresAuth(route) && !tokenStorage.getAccessToken()) {
-    redirectToLogin()
+    redirectToHome()
   }
 }

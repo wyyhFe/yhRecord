@@ -15,8 +15,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.nio.charset.StandardCharsets;
+
 /**
- * 安全配置。
+ * Spring Security 安全配置。
  */
 @Configuration
 public class SecurityConfig {
@@ -36,6 +38,7 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.getWriter().write(objectMapper.writeValueAsString(
                                     ApiResponse.failure(ErrorCode.UNAUTHORIZED.getCode(), "未登录或登录已失效")));

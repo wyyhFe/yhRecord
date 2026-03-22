@@ -34,3 +34,4 @@ build/
 **/node_modules/
 miniapp/.env.local
 miniapp/.env.*.local
+miniapp/dist/

@@ -1,0 +1,38 @@
+微信登录说明
+
+1. 小程序前端先调用 uni.login 或 wx.login，拿到临时 code。
+
+2. 前端把 code 发送给后端接口：
+   /auth/wx-login
+
+3. 后端在 WechatAuthClient 里调用微信 code2Session 接口。
+   请求参数包括：
+   - appid：小程序 AppID
+   - secret：小程序 AppSecret
+   - js_code：前端传来的 code
+   - grant_type：authorization_code
+
+4. 微信接口会返回：
+   - openid
+   - session_key
+   - errcode
+   - errmsg
+
+5. 为什么代码里要先按 String 读取？
+   因为微信接口有时响应头会标成 text/plain，
+   但响应体内容其实还是 JSON。
+   如果直接让 RestTemplate 反序列化成对象，Spring 可能会报：
+   no suitable HttpMessageConverter found
+
+6. 现在的处理方式：
+   - 先拿原始字符串
+   - 再用 ObjectMapper 手动解析成 WechatCode2SessionResponse
+
+7. 常见报错含义：
+   - 未获取到 openid：说明微信没正确返回用户身份
+   - 接口返回内容无法解析：说明微信返回的内容不是合法 JSON
+   - 微信登录失败: xxx：说明微信接口返回了业务错误，例如 appid、secret 或 code 有问题
+
+8. 这个类只负责“向微信换身份”。
+   真正生成你自己系统里的 accessToken / refreshToken，
+   是在后面的认证服务里做的，不在这个类里。
