@@ -1,8 +1,10 @@
+export type Id = string
+
 /**
  * 用户个人资料。
  */
 export interface UserProfile {
-  id: number
+  id: Id
   nickname: string
   avatarPath?: string
   gender?: 'UNKNOWN' | 'MALE' | 'FEMALE'
@@ -28,7 +30,7 @@ export interface UserProfileUpdatePayload {
  * 日记列表页和详情页复用的数据结构。
  */
 export interface DiaryItem {
-  id: number
+  id: Id
   title: string
   content: string
   recordDate: string
@@ -48,7 +50,7 @@ export interface DiaryItem {
   longitude?: number
   locationSourceType?: 'CURRENT' | 'MANUAL'
   tags?: Array<{
-    id: number
+    id: Id
     name: string
   }>
 }
@@ -57,7 +59,7 @@ export interface DiaryItem {
  * 记账流水标签。
  */
 export interface LedgerTag {
-  id: number
+  id: Id
   name: string
   color?: string
 }
@@ -66,14 +68,14 @@ export interface LedgerTag {
  * 记账流水简要信息。
  */
 export interface LedgerEntry {
-  id: number
-  bookId?: number
+  id: Id
+  bookId?: Id
   type: 'INCOME' | 'EXPENSE'
   amount: number
   entryDate: string
   remark?: string
   imagePath?: string
-  tagIds?: number[]
+  tagIds?: Id[]
   tags?: LedgerTag[]
 }
 
@@ -81,7 +83,7 @@ export interface LedgerEntry {
  * 年度标签统计。
  */
 export interface LedgerYearStatisticItem {
-  tagId: number
+  tagId: Id
   tagName?: string
   amount: number
   ratio: number
@@ -93,14 +95,28 @@ export interface LedgerYearStatistics {
 }
 
 /**
- * 打卡任务列表页。
+ * 打卡任务列表项。
  */
 export interface CheckinTask {
-  id: number
+  id: Id
   name: string
   description?: string
+  startDate?: string
   totalCount: number
   latestCheckedAt?: string
+}
+
+/**
+ * 纪念日信息。
+ */
+export interface MemorialDay {
+  id: Id
+  title: string
+  type: string
+  memorialDate: string
+  annualRepeat: boolean
+  remark?: string
+  remindAt?: string
 }
 
 /**
@@ -113,4 +129,14 @@ export interface DaySummary {
   hasCheckin: boolean
   checkinCount: number
   memorialCount: number
+}
+
+/**
+ * 某一天的聚合详情。
+ */
+export interface CalendarDayDetail {
+  date: string
+  diaries: DiaryItem[]
+  checkins: CheckinTask[]
+  memorialDays: MemorialDay[]
 }

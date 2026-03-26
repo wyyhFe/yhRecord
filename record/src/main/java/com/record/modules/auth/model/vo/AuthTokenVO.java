@@ -1,5 +1,7 @@
 package com.record.modules.auth.model.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +15,7 @@ import lombok.Data;
 public class AuthTokenVO {
 
     @Schema(description = "用户 ID", example = "10001")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long userId;
 
     @Schema(description = "当前登录用户的小程序 openid", example = "o1234567890")

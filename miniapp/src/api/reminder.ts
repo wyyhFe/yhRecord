@@ -1,10 +1,11 @@
 import { request } from '@/utils/request'
+import type { Id } from '@/types/domain'
 
 /**
  * 提醒设置响应结构。
  */
 export interface ReminderSetting {
-  id: number
+  id: Id
   diaryReminderEnabled: boolean
   miniProgramReminderEnabled: boolean
   officialAccountReminderEnabled: boolean

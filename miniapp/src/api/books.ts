@@ -1,10 +1,11 @@
 import { request } from '@/utils/request'
+import type { Id } from '@/types/domain'
 
 /**
  * 账本列表项。
  */
 export interface LedgerBook {
-  id: number
+  id: Id
   name: string
   description?: string
 }

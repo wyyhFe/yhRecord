@@ -1,5 +1,7 @@
 package com.record.modules.ledger.model.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.record.common.enums.LedgerType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -18,9 +20,11 @@ import java.util.List;
 public class LedgerEntryVO {
 
     @Schema(description = "流水 ID", example = "1")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     @Schema(description = "账本 ID", example = "1")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long bookId;
 
     @Schema(description = "收支类型", example = "EXPENSE")
@@ -39,6 +43,7 @@ public class LedgerEntryVO {
     private String imagePath;
 
     @Schema(description = "关联标签 ID 列表")
+    @JsonSerialize(contentUsing = ToStringSerializer.class)
     private List<Long> tagIds;
 
     @Schema(description = "关联标签明细")
@@ -49,6 +54,7 @@ public class LedgerEntryVO {
     @Schema(description = "记账标签")
     public static class TagItemVO {
         @Schema(description = "标签 ID", example = "1")
+        @JsonSerialize(using = ToStringSerializer.class)
         private Long id;
 
         @Schema(description = "标签名称", example = "餐饮")

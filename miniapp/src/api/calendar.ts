@@ -1,5 +1,5 @@
 import { request } from '@/utils/request'
-import type { DaySummary } from '@/types/domain'
+import type { CalendarDayDetail, DaySummary } from '@/types/domain'
 
 /**
  * 月历摘要接口返回结构。
@@ -17,6 +17,26 @@ export interface CalendarSummaryResult {
 export function fetchCalendarSummary(year: number, month: number) {
   return request<CalendarSummaryResult>({
     url: `/calendar/summary?year=${year}&month=${month}`,
+    method: 'GET'
+  })
+}
+
+/**
+ * 获取某一天的聚合详情。
+ */
+export function fetchCalendarDayDetail(date: string) {
+  return request<CalendarDayDetail>({
+    url: `/calendar/day-detail?date=${encodeURIComponent(date)}`,
+    method: 'GET'
+  })
+}
+
+/**
+ * 获取去年今日数据。
+ */
+export function fetchOnThisDay(date: string) {
+  return request<CalendarDayDetail>({
+    url: `/memories/on-this-day?date=${encodeURIComponent(date)}`,
     method: 'GET'
   })
 }

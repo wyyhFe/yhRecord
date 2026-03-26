@@ -106,6 +106,7 @@ import {
   type TagItem,
   type TagModuleType
 } from '@/api/tag'
+import type { Id } from '@/types/domain'
 
 const templates = ref<TagItem[]>([])
 const tags = ref<TagItem[]>([])
@@ -142,7 +143,7 @@ async function loadData() {
   tags.value = tagList
 }
 
-async function useTemplate(templateId: number) {
+async function useTemplate(templateId: Id) {
   await createTagFromTemplate(templateId, moduleType.value)
   uni.$feedback.success('已从模板创建')
   await loadData()
@@ -168,7 +169,7 @@ async function createCustomTag() {
   await loadData()
 }
 
-async function removeTag(id: number) {
+async function removeTag(id: Id) {
   const result = await uni.showModal({
     title: '确认删除',
     content: '删除后该标签不会再出现在你的标签列表中。'

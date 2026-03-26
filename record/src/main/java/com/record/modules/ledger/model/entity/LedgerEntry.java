@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * 记账流水实体。
@@ -44,4 +45,6 @@ public class LedgerEntry extends BaseEntity {
 
     @Schema(description = "图片 OSS 路径", example = "ledger/20260321/demo.jpg")
     private String imagePath;
+
+    private LocalDateTime deletedAt;
 }

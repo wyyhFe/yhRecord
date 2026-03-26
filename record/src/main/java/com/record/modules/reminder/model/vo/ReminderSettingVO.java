@@ -1,5 +1,7 @@
 package com.record.modules.reminder.model.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +15,7 @@ import lombok.Data;
 public class ReminderSettingVO {
 
     @Schema(description = "提醒设置 ID", example = "1")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     @Schema(description = "是否启用日记提醒", example = "true")

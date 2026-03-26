@@ -4,9 +4,11 @@
       <view class="section-head">
         <view class="section-copy">
           <view class="section-copy__title">已删除内容</view>
-          <view class="section-copy__desc">删除后的日记会在这里保留 15 天，你可以恢复或彻底删除。</view>
+          <view class="section-copy__desc">
+            日记和账单删除后会在这里保留 15 天，你可以恢复或彻底删除。
+          </view>
         </view>
-        <u-tag text="回收" type="warning" plain shape="circle" />
+        <u-tag text="回收站" type="warning" plain shape="circle" />
       </view>
     </view>
 
@@ -14,22 +16,37 @@
       <view v-if="items.length" class="list-stack">
         <view v-for="item in items" :key="item.id" class="list-card">
           <view class="list-card__head">
-            <view>
-              <view class="list-card__title">{{ formatResourceType(item.resourceType) }}</view>
-              <view class="list-card__meta">删除时间：{{ item.deletedAt }}</view>
-              <view class="list-card__meta">到期时间：{{ item.expireAt }}</view>
+            <view class="list-card__main">
+              <view class="list-card__title-row">
+                <view class="list-card__title">{{ item.title || formatResourceType(item.resourceType) }}</view>
+                <u-tag
+                  :text="formatResourceType(item.resourceType)"
+                  plain
+                  shape="circle"
+                  type="warning"
+                  size="mini"
+                />
+              </view>
+              <view v-if="item.subtitle" class="list-card__summary">{{ item.subtitle }}</view>
+              <view class="list-card__meta">删除时间：{{ formatDateTime(item.deletedAt) }}</view>
+              <view class="list-card__meta">到期时间：{{ formatDateTime(item.expireAt) }}</view>
             </view>
-            <view class="list-card__aside">ID {{ item.resourceId }}</view>
           </view>
 
           <view class="action-grid-2">
-            <u-button type="primary" shape="circle" color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)" @click="restore(item)">
+            <u-button
+              type="primary"
+              shape="circle"
+              color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+              @click="restore(item)"
+            >
               恢复
             </u-button>
             <u-button type="error" shape="circle" plain @click="forceDelete(item)">彻底删除</u-button>
           </view>
         </view>
       </view>
+
       <EmptyStateCard
         v-else
         title="回收站是空的"
@@ -53,7 +70,13 @@ const items = ref<RecycleBinItem[]>([])
 
 function formatResourceType(type: string) {
   if (type === 'DIARY') return '日记'
+  if (type === 'LEDGER_ENTRY') return '账单'
   return type
+}
+
+function formatDateTime(value: string) {
+  if (!value) return '--'
+  return value.replace('T', ' ').slice(0, 16)
 }
 
 async function loadRecycleBin() {
@@ -82,3 +105,37 @@ onMounted(() => {
   loadRecycleBin().catch(() => undefined)
 })
 </script>
+
+<style scoped lang="scss">
+.list-card__main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.list-card__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.list-card__title {
+  color: #2b2118;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.list-card__summary {
+  color: #5e4b3a;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.list-card__meta {
+  color: #8a735f;
+  font-size: 24rpx;
+}
+</style>

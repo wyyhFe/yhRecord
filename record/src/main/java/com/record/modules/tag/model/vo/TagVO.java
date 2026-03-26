@@ -1,5 +1,7 @@
 package com.record.modules.tag.model.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.record.common.enums.LedgerTagType;
 import com.record.common.enums.TagModuleType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,9 +17,11 @@ import lombok.Data;
 public class TagVO {
 
     @Schema(description = "标签 ID", example = "1")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     @Schema(description = "来源模板 ID", example = "1")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long templateId;
 
     @Schema(description = "标签名称", example = "旅行")

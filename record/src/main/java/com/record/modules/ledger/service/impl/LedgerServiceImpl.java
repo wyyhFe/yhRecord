@@ -1,6 +1,7 @@
 package com.record.modules.ledger.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.record.common.enums.ResourceType;
 import com.record.common.exception.LedgerException;
 import com.record.modules.ledger.mapper.LedgerBookMapper;
 import com.record.modules.ledger.mapper.LedgerEntryMapper;
@@ -15,6 +16,7 @@ import com.record.modules.ledger.model.vo.LedgerBookVO;
 import com.record.modules.ledger.model.vo.LedgerEntryVO;
 import com.record.modules.ledger.model.vo.YearStatisticsVO;
 import com.record.modules.ledger.service.LedgerService;
+import com.record.modules.recycle.service.RecycleBinService;
 import com.record.modules.tag.mapper.UserTagMapper;
 import com.record.modules.tag.model.entity.UserTag;
 import org.springframework.stereotype.Service;
@@ -22,15 +24,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * 记账服务实现。
- */
 @Service
 public class LedgerServiceImpl implements LedgerService {
 
@@ -38,15 +38,18 @@ public class LedgerServiceImpl implements LedgerService {
     private final LedgerEntryMapper ledgerEntryMapper;
     private final LedgerEntryTagRelMapper ledgerEntryTagRelMapper;
     private final UserTagMapper userTagMapper;
+    private final RecycleBinService recycleBinService;
 
     public LedgerServiceImpl(LedgerBookMapper ledgerBookMapper,
                              LedgerEntryMapper ledgerEntryMapper,
                              LedgerEntryTagRelMapper ledgerEntryTagRelMapper,
-                             UserTagMapper userTagMapper) {
+                             UserTagMapper userTagMapper,
+                             RecycleBinService recycleBinService) {
         this.ledgerBookMapper = ledgerBookMapper;
         this.ledgerEntryMapper = ledgerEntryMapper;
         this.ledgerEntryTagRelMapper = ledgerEntryTagRelMapper;
         this.userTagMapper = userTagMapper;
+        this.recycleBinService = recycleBinService;
     }
 
     @Override
@@ -91,7 +94,7 @@ public class LedgerServiceImpl implements LedgerService {
     @Transactional
     public LedgerEntryVO updateEntry(Long userId, Long entryId, UpdateLedgerEntryRequest request) {
         validateAmount(request.getAmount());
-        LedgerEntry entry = requireOwnedEntry(userId, entryId);
+        LedgerEntry entry = requireOwnedEntry(userId, entryId, false);
         fillEntry(entry, userId, request);
         ledgerEntryMapper.updateById(entry);
         replaceTags(entryId, request.getTagIds());
@@ -101,10 +104,29 @@ public class LedgerServiceImpl implements LedgerService {
     @Override
     @Transactional
     public void deleteEntry(Long userId, Long entryId) {
-        requireOwnedEntry(userId, entryId);
+        LedgerEntry entry = requireOwnedEntry(userId, entryId, false);
+        entry.setDeletedAt(LocalDateTime.now());
+        ledgerEntryMapper.updateById(entry);
+        recycleBinService.add(userId, ResourceType.LEDGER_ENTRY, entryId);
+    }
+
+    @Override
+    @Transactional
+    public void restoreEntry(Long userId, Long entryId) {
+        LedgerEntry entry = requireOwnedEntry(userId, entryId, true);
+        entry.setDeletedAt(null);
+        ledgerEntryMapper.updateById(entry);
+        recycleBinService.removeByResource(ResourceType.LEDGER_ENTRY, entryId);
+    }
+
+    @Override
+    @Transactional
+    public void forceDeleteEntry(Long userId, Long entryId) {
+        requireOwnedEntry(userId, entryId, true);
         ledgerEntryTagRelMapper.delete(new LambdaQueryWrapper<LedgerEntryTagRel>()
                 .eq(LedgerEntryTagRel::getEntryId, entryId));
         ledgerEntryMapper.deleteById(entryId);
+        recycleBinService.removeByResource(ResourceType.LEDGER_ENTRY, entryId);
     }
 
     @Override
@@ -112,6 +134,7 @@ public class LedgerServiceImpl implements LedgerService {
         return ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
                         .eq(LedgerEntry::getUserId, userId)
                         .eq(bookId != null, LedgerEntry::getBookId, bookId)
+                        .isNull(LedgerEntry::getDeletedAt)
                         .apply("YEAR(entry_date) = {0}", year)
                         .apply("MONTH(entry_date) = {0}", month)
                         .orderByDesc(LedgerEntry::getEntryDate)
@@ -126,6 +149,7 @@ public class LedgerServiceImpl implements LedgerService {
         List<LedgerEntry> entries = ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
                 .eq(LedgerEntry::getUserId, userId)
                 .eq(bookId != null, LedgerEntry::getBookId, bookId)
+                .isNull(LedgerEntry::getDeletedAt)
                 .apply("YEAR(entry_date) = {0}", year));
 
         Map<Long, BigDecimal> amountMap = new HashMap<>();
@@ -161,18 +185,15 @@ public class LedgerServiceImpl implements LedgerService {
                 .build();
     }
 
-    /**
-     * 金额必须为正数，且最多保留两位小数。
-     */
     private void validateAmount(BigDecimal amount) {
         if (amount == null) {
-            throw new LedgerException("金额不能为空");
+            throw new LedgerException("Amount is required");
         }
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new LedgerException("金额必须大于 0");
+            throw new LedgerException("Amount must be greater than 0");
         }
         if (amount.scale() > 2) {
-            throw new LedgerException("金额最多只能保留两位小数");
+            throw new LedgerException("Amount must keep at most 2 decimal places");
         }
     }
 
@@ -184,6 +205,7 @@ public class LedgerServiceImpl implements LedgerService {
         entry.setEntryDate(request.getEntryDate());
         entry.setRemark(request.getRemark());
         entry.setImagePath(request.getImagePath());
+        entry.setDeletedAt(null);
     }
 
     private void replaceTags(Long entryId, List<Long> tagIds) {
@@ -200,10 +222,10 @@ public class LedgerServiceImpl implements LedgerService {
         }
     }
 
-    private LedgerEntry requireOwnedEntry(Long userId, Long entryId) {
+    private LedgerEntry requireOwnedEntry(Long userId, Long entryId, boolean includeDeleted) {
         LedgerEntry entry = ledgerEntryMapper.selectById(entryId);
-        if (entry == null || !entry.getUserId().equals(userId)) {
-            throw new LedgerException("账单不存在或无权限访问");
+        if (entry == null || !entry.getUserId().equals(userId) || (!includeDeleted && entry.getDeletedAt() != null)) {
+            throw new LedgerException("Ledger entry not found");
         }
         return entry;
     }

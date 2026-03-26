@@ -1,8 +1,11 @@
 package com.record.modules.recycle.controller;
 
 import com.record.common.context.UserContext;
+import com.record.common.enums.ResourceType;
 import com.record.common.model.ApiResponse;
 import com.record.modules.diary.service.DiaryService;
+import com.record.modules.ledger.service.LedgerService;
+import com.record.modules.recycle.model.entity.RecycleBinRecord;
 import com.record.modules.recycle.model.vo.RecycleBinItemVO;
 import com.record.modules.recycle.service.RecycleBinService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,51 +20,64 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * 回收站接口。
- * 当前首版先按日记资源打通恢复和彻底删除链路。
- */
-@Tag(name = "回收站")
+@Tag(name = "Recycle Bin")
 @RestController
 @RequestMapping("/recycle-bin")
 public class RecycleBinController {
 
     private final RecycleBinService recycleBinService;
     private final DiaryService diaryService;
+    private final LedgerService ledgerService;
 
-    public RecycleBinController(RecycleBinService recycleBinService, DiaryService diaryService) {
+    public RecycleBinController(RecycleBinService recycleBinService,
+                                DiaryService diaryService,
+                                LedgerService ledgerService) {
         this.recycleBinService = recycleBinService;
         this.diaryService = diaryService;
+        this.ledgerService = ledgerService;
     }
 
-    /**
-     * 查询当前用户的回收站列表。
-     */
-    @Operation(summary = "查询回收站列表")
+    @Operation(summary = "List recycle bin items")
     @GetMapping("/list")
     public ApiResponse<List<RecycleBinItemVO>> list() {
         return ApiResponse.success(recycleBinService.list(UserContext.getUserId()));
     }
 
-    /**
-     * 恢复回收站中的资源。
-     */
-    @Operation(summary = "恢复资源")
+    @Operation(summary = "Restore recycle bin item")
     @PostMapping("/restore/{recycleId}")
     public ApiResponse<Void> restore(@PathVariable Long recycleId, @RequestParam Long resourceId) {
-        diaryService.restore(UserContext.getUserId(), resourceId);
-        recycleBinService.restore(UserContext.getUserId(), recycleId);
+        RecycleBinRecord record = recycleBinService.getOwnedRecord(UserContext.getUserId(), recycleId);
+        if (record == null || !record.getResourceId().equals(resourceId)) {
+            return ApiResponse.failure(-1, "Recycle record not found");
+        }
+
+        if (record.getResourceType() == ResourceType.DIARY) {
+            diaryService.restore(UserContext.getUserId(), resourceId);
+        } else if (record.getResourceType() == ResourceType.LEDGER_ENTRY) {
+            ledgerService.restoreEntry(UserContext.getUserId(), resourceId);
+        } else {
+            return ApiResponse.failure(-1, "Restore is not supported for this resource");
+        }
+
         return ApiResponse.success();
     }
 
-    /**
-     * 彻底删除回收站中的资源。
-     */
-    @Operation(summary = "彻底删除资源")
+    @Operation(summary = "Permanently delete recycle bin item")
     @DeleteMapping("/force-delete/{recycleId}")
     public ApiResponse<Void> forceDelete(@PathVariable Long recycleId, @RequestParam Long resourceId) {
-        diaryService.forceDelete(UserContext.getUserId(), resourceId);
-        recycleBinService.forceDelete(UserContext.getUserId(), recycleId);
+        RecycleBinRecord record = recycleBinService.getOwnedRecord(UserContext.getUserId(), recycleId);
+        if (record == null || !record.getResourceId().equals(resourceId)) {
+            return ApiResponse.failure(-1, "Recycle record not found");
+        }
+
+        if (record.getResourceType() == ResourceType.DIARY) {
+            diaryService.forceDelete(UserContext.getUserId(), resourceId);
+        } else if (record.getResourceType() == ResourceType.LEDGER_ENTRY) {
+            ledgerService.forceDeleteEntry(UserContext.getUserId(), resourceId);
+        } else {
+            return ApiResponse.failure(-1, "Permanent delete is not supported for this resource");
+        }
+
         return ApiResponse.success();
     }
 }

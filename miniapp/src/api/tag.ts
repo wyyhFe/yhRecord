@@ -1,4 +1,5 @@
 import { request } from '@/utils/request'
+import type { Id } from '@/types/domain'
 
 export type TagModuleType = 'DIARY' | 'LEDGER'
 export type LedgerTagType = 'EXPENSE' | 'INCOME'
@@ -7,8 +8,8 @@ export type LedgerTagType = 'EXPENSE' | 'INCOME'
  * 用户标签结构。
  */
 export interface TagItem {
-  id: number
-  templateId?: number
+  id: Id
+  templateId?: Id
   name: string
   color?: string
   icon?: string
@@ -41,7 +42,7 @@ export function fetchTagTemplates(moduleType: TagModuleType = 'DIARY', ledgerTyp
 /**
  * 基于模板创建用户标签。
  */
-export function createTagFromTemplate(templateId: number, moduleType: TagModuleType = 'DIARY') {
+export function createTagFromTemplate(templateId: Id, moduleType: TagModuleType = 'DIARY') {
   return request<TagItem>({
     url: '/tags/create-from-template',
     method: 'POST',
@@ -72,7 +73,7 @@ export function createTag(data: {
 /**
  * 删除标签。
  */
-export function deleteTag(id: number) {
+export function deleteTag(id: Id) {
   return request<void>({
     url: `/tags/delete/${id}`,
     method: 'DELETE'

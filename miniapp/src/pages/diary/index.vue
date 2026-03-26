@@ -70,7 +70,7 @@ import { onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import FilterTabs from '@/components/business/filter-tabs'
 import { fetchDiaryList } from '@/api/diary'
-import type { DiaryItem } from '@/types/domain'
+import type { DiaryItem, Id } from '@/types/domain'
 
 const tabItems = [
   { label: '全部', value: 'ALL' },
@@ -83,7 +83,7 @@ const activeTab = ref<string>('ALL')
 const keyword = ref('')
 const list = ref<DiaryItem[]>([])
 
-function goDetail(id: number) {
+function goDetail(id: Id) {
   uni.navigateTo({ url: `/pages/diary/detail?id=${id}` })
 }
 

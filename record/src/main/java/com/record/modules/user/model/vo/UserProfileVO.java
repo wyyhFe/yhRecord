@@ -1,5 +1,7 @@
 package com.record.modules.user.model.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.record.common.enums.GenderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -16,6 +18,7 @@ import java.time.LocalDate;
 public class UserProfileVO {
 
     @Schema(description = "用户 ID", example = "10001")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     @Schema(description = "小程序 openid")

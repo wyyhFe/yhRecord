@@ -91,6 +91,12 @@
       }
     },
     {
+      "path": "pages/memorial-manage/index",
+      "style": {
+        "navigationBarTitleText": "纪念日"
+      }
+    },
+    {
       "path": "pages/profile/index",
       "style": {
         "navigationBarTitleText": "个人中心"

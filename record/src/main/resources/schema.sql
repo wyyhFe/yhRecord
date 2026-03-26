@@ -178,6 +178,7 @@ CREATE TABLE IF NOT EXISTS `ledger_entry` (
   `entry_date` DATE NOT NULL COMMENT '记账日期',
   `remark` VARCHAR(255) DEFAULT NULL COMMENT '备注',
   `image_path` VARCHAR(255) DEFAULT NULL COMMENT '图片路径',
+  `deleted_at` DATETIME DEFAULT NULL COMMENT '软删除时间',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
@@ -185,6 +186,7 @@ CREATE TABLE IF NOT EXISTS `ledger_entry` (
   PRIMARY KEY (`id`),
   KEY `idx_ledger_entry_user_date` (`user_id`, `entry_date`),
   KEY `idx_ledger_entry_book_date` (`book_id`, `entry_date`),
+  KEY `idx_ledger_entry_user_deleted_at` (`user_id`, `deleted_at`),
   CONSTRAINT `chk_ledger_entry_type` CHECK (`type` IN ('INCOME', 'EXPENSE')),
   CONSTRAINT `chk_ledger_entry_amount` CHECK (`amount` > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='记账流水表';
@@ -327,3 +329,11 @@ SET FOREIGN_KEY_CHECKS = 1;
 --
 -- DROP INDEX uk_user_tag_user_module_name ON user_tag;
 -- CREATE UNIQUE INDEX uk_user_tag_user_module_ledger_name ON user_tag (user_id, module_type, ledger_type, name);
+
+-- 记账流水回收站升级 SQL
+-- 如果你的库里 ledger_entry 还没有 deleted_at 字段，请执行：
+--
+-- ALTER TABLE ledger_entry
+--   ADD COLUMN deleted_at DATETIME NULL COMMENT '软删除时间' AFTER image_path;
+--
+-- CREATE INDEX idx_ledger_entry_user_deleted_at ON ledger_entry (user_id, deleted_at);

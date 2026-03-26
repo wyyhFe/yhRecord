@@ -330,8 +330,18 @@
             </view>
           </view>
 
-          <view class="action-grid-2 entry-popup__actions">
+          <view class="entry-popup__actions" :class="editingEntryId ? 'entry-popup__actions--editing' : ''">
             <u-button plain shape="circle" :hair-line="false" @click="closeEntryPopup">取消</u-button>
+            <u-button
+              v-if="editingEntryId"
+              type="error"
+              shape="circle"
+              plain
+              :loading="submitting"
+              @click="removeEntry"
+            >
+              删除
+            </u-button>
             <u-button
               type="primary"
               shape="circle"
@@ -356,9 +366,9 @@ import EmptyStateCard from '@/components/business/empty-state-card'
 import { API_BASE_URL, OSS_BASE_URL } from '@/config/app'
 import { fetchBooks, type LedgerBook } from '@/api/books'
 import { fetchMonthLedger } from '@/api/ledger'
-import { createLedgerEntry, updateLedgerEntry, type LedgerEntryFormPayload } from '@/api/ledger-form'
+import { createLedgerEntry, deleteLedgerEntry, updateLedgerEntry, type LedgerEntryFormPayload } from '@/api/ledger-form'
 import { fetchUserTags, type TagItem } from '@/api/tag'
-import type { LedgerEntry } from '@/types/domain'
+import type { Id, LedgerEntry } from '@/types/domain'
 import { getLastLedgerBook, setLastLedgerBook } from '@/utils/ledger-book'
 import { uploadImageToOss } from '@/utils/upload'
 
@@ -412,18 +422,18 @@ const currentYear = ref(now.getFullYear())
 const currentMonth = ref(now.getMonth() + 1)
 const viewMode = ref<ViewMode>('month')
 const typeFilter = ref<TypeFilter>('ALL')
-const selectedFilterTagId = ref<number>()
+const selectedFilterTagId = ref<Id>()
 const pendingTypeFilter = ref<TypeFilter>('ALL')
-const pendingFilterTagId = ref<number>()
-const selectedBookId = ref<number>()
+const pendingFilterTagId = ref<Id>()
+const selectedBookId = ref<Id>()
 const selectedBookName = ref('')
-const selectedTagIds = ref<number[]>([])
+const selectedTagIds = ref<Id[]>([])
 const amountText = ref('')
 const entryImagePath = ref('')
 const showFilterPopup = ref(false)
 const showEntryPopup = ref(false)
 const submitting = ref(false)
-const editingEntryId = ref<number>()
+const editingEntryId = ref<Id>()
 const pendingOpenEntry = ref(false)
 
 const entryForm = ref({
@@ -823,6 +833,28 @@ async function submitEntry() {
   }
 }
 
+async function removeEntry() {
+  if (!editingEntryId.value) return
+
+  const result = await uni.showModal({
+    title: '确认删除账单',
+    content: '删除后会进入回收站，可在 15 天内恢复。'
+  })
+  if (!result.confirm) return
+
+  submitting.value = true
+  try {
+    await deleteLedgerEntry(editingEntryId.value)
+    uni.$feedback.success('账单已移入回收站')
+    closeEntryPopup()
+    await Promise.all([loadMonthEntries(), viewMode.value === 'year' ? loadYearStats() : Promise.resolve()])
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '删除失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
 async function loadBooks() {
   books.value = await fetchBooks()
   if (selectedBookId.value) {
@@ -861,7 +893,7 @@ async function reloadByView() {
 }
 
 onLoad((query) => {
-  if (query?.bookId) selectedBookId.value = Number(query.bookId)
+  if (query?.bookId) selectedBookId.value = String(query.bookId)
   if (query?.bookName) selectedBookName.value = decodeURIComponent(String(query.bookName))
 
   if (!selectedBookId.value) {
@@ -1361,8 +1393,15 @@ onShow(() => {
 }
 
 .entry-popup__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
   margin-top: 20rpx;
   padding-top: 12rpx;
+}
+
+.entry-popup__actions--editing {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .filter-popup__empty {

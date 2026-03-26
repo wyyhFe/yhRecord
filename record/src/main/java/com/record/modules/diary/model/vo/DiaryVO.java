@@ -1,5 +1,7 @@
 package com.record.modules.diary.model.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.record.common.enums.LocationSourceType;
 import com.record.common.enums.VisibilityType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,6 +20,7 @@ import java.util.List;
 public class DiaryVO {
 
     @Schema(description = "日记 ID", example = "1")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     @Schema(description = "标题", example = "今天去了海边")
@@ -75,5 +78,6 @@ public class DiaryVO {
     private List<String> mediaPaths;
 
     @Schema(description = "标签 ID 列表")
+    @JsonSerialize(contentUsing = ToStringSerializer.class)
     private List<Long> tagIds;
 }

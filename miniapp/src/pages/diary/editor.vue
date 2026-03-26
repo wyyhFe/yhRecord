@@ -142,6 +142,7 @@ import { fetchUserTags } from '@/api/tag'
 import { VISIBILITY_OPTIONS } from '@/config/app'
 import { DIARY_MOOD_OPTIONS, DIARY_WEATHER_OPTIONS } from '@/config/diary'
 import type { CreateDiaryPayload } from '@/types/diary'
+import type { Id } from '@/types/domain'
 import { uploadImageToOss } from '@/utils/upload'
 
 type PhotoPickerExpose = {
@@ -175,8 +176,8 @@ const photoPickerRef = ref<PhotoPickerExpose | null>(null)
 const locationPickerRef = ref<LocationPickerExpose | null>(null)
 const photos = ref<SelectedPhoto[]>([])
 const submitting = ref(false)
-const selectedTagIds = ref<number[]>([])
-const tagOptions = ref<Array<{ label: string; value: number }>>([])
+const selectedTagIds = ref<Id[]>([])
+const tagOptions = ref<Array<{ label: string; value: Id }>>([])
 const showWeatherDialog = ref(false)
 const showMoodDialog = ref(false)
 const showTagDialog = ref(false)
@@ -242,7 +243,7 @@ function selectMood(value: string | number) {
 }
 
 function toggleTag(value: string | number) {
-  const tagId = Number(value)
+  const tagId = String(value)
   console.log('[diary-editor] toggle tag', tagId)
   const index = selectedTagIds.value.indexOf(tagId)
   if (index >= 0) {
@@ -352,7 +353,7 @@ async function submitDiary() {
     }
 
     if (isEdit.value && diaryId.value) {
-      await updateDiary(Number(diaryId.value), payload)
+      await updateDiary(diaryId.value, payload)
     } else {
       await createDiary(payload)
     }
@@ -387,7 +388,7 @@ async function initDiary() {
   if (!options?.id) return
 
   diaryId.value = options.id
-  const detail = await fetchDiaryDetail(Number(options.id))
+  const detail = await fetchDiaryDetail(options.id)
   form.value = {
     title: detail.title,
     content: detail.content,

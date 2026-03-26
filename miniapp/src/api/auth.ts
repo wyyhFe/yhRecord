@@ -1,11 +1,12 @@
 import { request } from '@/utils/request'
+import type { Id } from '@/types/domain'
 
 /**
  * 登录接口返回的会话信息。
  * 前端拿到后会把 accessToken、refreshToken、sessionId 存入本地。
  */
 export interface LoginResult {
-  userId: number
+  userId: Id
   openid: string
   accessToken: string
   refreshToken: string

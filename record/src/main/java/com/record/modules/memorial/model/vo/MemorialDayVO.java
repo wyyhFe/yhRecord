@@ -1,5 +1,7 @@
 package com.record.modules.memorial.model.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 public class MemorialDayVO {
 
     @Schema(description = "纪念日 ID", example = "1")
+    @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
     @Schema(description = "标题", example = "第一次旅行")

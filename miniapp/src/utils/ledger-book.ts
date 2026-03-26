@@ -1,7 +1,9 @@
+import type { Id } from '@/types/domain'
+
 const LAST_LEDGER_BOOK_KEY = 'life-record:last-ledger-book'
 
 export interface LastLedgerBook {
-  id: number
+  id: Id
   name: string
 }
 
@@ -9,7 +11,7 @@ export function getLastLedgerBook(): LastLedgerBook | null {
   const value = uni.getStorageSync(LAST_LEDGER_BOOK_KEY)
   if (!value || typeof value !== 'object') return null
 
-  const id = Number((value as Record<string, unknown>).id)
+  const id = String((value as Record<string, unknown>).id || '')
   const name = String((value as Record<string, unknown>).name || '')
   if (!id || !name) return null
 

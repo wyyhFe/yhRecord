@@ -1,6 +1,6 @@
 import { request } from '@/utils/request'
 import type { Pagination } from '@/types/api'
-import type { DiaryItem } from '@/types/domain'
+import type { DiaryItem, Id } from '@/types/domain'
 import type { CreateDiaryPayload } from '@/types/diary'
 
 /**
@@ -40,7 +40,7 @@ export function createDiary(data: CreateDiaryPayload) {
 /**
  * 更新日记。
  */
-export function updateDiary(id: number, data: CreateDiaryPayload) {
+export function updateDiary(id: Id, data: CreateDiaryPayload) {
   return request<DiaryItem>({
     url: `/diaries/update/${id}`,
     method: 'PUT',
@@ -51,7 +51,7 @@ export function updateDiary(id: number, data: CreateDiaryPayload) {
 /**
  * 查询日记详情。
  */
-export function fetchDiaryDetail(id: number) {
+export function fetchDiaryDetail(id: Id) {
   return request<DiaryItem>({
     url: `/diaries/detail/${id}`,
     method: 'GET'
@@ -61,7 +61,7 @@ export function fetchDiaryDetail(id: number) {
 /**
  * 软删除日记，删除后进入回收站。
  */
-export function deleteDiary(id: number) {
+export function deleteDiary(id: Id) {
   return request<void>({
     url: `/diaries/delete/${id}`,
     method: 'DELETE'

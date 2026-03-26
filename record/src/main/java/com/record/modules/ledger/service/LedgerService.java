@@ -20,6 +20,10 @@ public interface LedgerService {
 
     void deleteEntry(Long userId, Long entryId);
 
+    void restoreEntry(Long userId, Long entryId);
+
+    void forceDeleteEntry(Long userId, Long entryId);
+
     List<LedgerEntryVO> monthEntries(Long userId, Integer year, Integer month, Long bookId);
 
     YearStatisticsVO yearStatistics(Long userId, Integer year, Long bookId);

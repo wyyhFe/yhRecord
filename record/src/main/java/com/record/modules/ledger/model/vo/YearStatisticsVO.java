@@ -1,5 +1,7 @@
 package com.record.modules.ledger.model.vo;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -26,6 +28,7 @@ public class YearStatisticsVO {
     @Schema(description = "单个标签的统计结果")
     public static class TagAmountVO {
         @Schema(description = "标签 ID", example = "1")
+        @JsonSerialize(using = ToStringSerializer.class)
         private Long tagId;
 
         @Schema(description = "标签名称", example = "饮食")

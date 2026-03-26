@@ -1,3 +1,5 @@
+import type { Id } from './domain'
+
 /**
  * 日记附件提交结构。
  */
@@ -33,5 +35,5 @@ export interface CreateDiaryPayload {
   visibility: 'PRIVATE' | 'SHARED' | 'PUBLIC'
   location?: DiaryLocationInput
   mediaList: DiaryMediaInput[]
-  tagIds?: number[]
+  tagIds?: Id[]
 }

@@ -97,7 +97,7 @@ async function removeDiary() {
   })
   if (!result.confirm) return
 
-  await deleteDiary(Number(diaryId.value))
+  await deleteDiary(diaryId.value)
   uni.$feedback.success('已移入回收站')
   setTimeout(() => {
     uni.navigateBack()
@@ -110,7 +110,7 @@ async function init() {
   const options = current?.options
   diaryId.value = options?.id || ''
   if (!diaryId.value) return
-  detail.value = await fetchDiaryDetail(Number(diaryId.value))
+  detail.value = await fetchDiaryDetail(diaryId.value)
 }
 
 init().catch(() => undefined)

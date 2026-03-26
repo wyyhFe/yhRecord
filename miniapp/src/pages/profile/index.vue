@@ -41,7 +41,7 @@
     <view class="page-section section-shell">
       <view class="section-copy">
         <view class="section-copy__title">我的记录</view>
-        <view class="section-copy__desc">把当前账号最常用的数据和状态集中放在一个页面里。</view>
+        <view class="section-copy__desc">把当前账号最常用的数据和状态集中放在同一个页面里。</view>
       </view>
 
       <view class="metric-grid">
@@ -56,7 +56,7 @@
     <view class="page-section section-shell overflow-hidden">
       <view class="section-copy">
         <view class="section-copy__title">常用入口</view>
-        <view class="section-copy__desc">提醒、标签和回收站都集中放在这里，后面继续扩展也统一放这一组。</view>
+        <view class="section-copy__desc">提醒、纪念日、标签和回收站都集中放在这里。</view>
       </view>
 
       <u-cell-group :border="false">
@@ -125,6 +125,12 @@ const settings = [
     value: '配置'
   },
   {
+    key: 'memorial',
+    title: '纪念日管理',
+    description: '维护重要日期，提醒、首页和去年今日都会复用这里的数据。',
+    value: '进入'
+  },
+  {
     key: 'tag',
     title: '标签管理',
     description: '基于系统模板扩展自己的日记和记账标签。',
@@ -133,7 +139,7 @@ const settings = [
   {
     key: 'recycle',
     title: '回收站',
-    description: '删除后的日记会暂存在这里，可恢复或彻底删除。',
+    description: '删除后的内容会暂存到这里，可恢复或彻底删除。',
     value: '进入'
   }
 ]
@@ -159,6 +165,11 @@ function handleSelect(key: string) {
 
   if (key === 'reminder') {
     uni.navigateTo({ url: '/pages/profile/reminder' })
+    return
+  }
+
+  if (key === 'memorial') {
+    uni.navigateTo({ url: '/pages/memorial-manage/index' })
     return
   }
 
