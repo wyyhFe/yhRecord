@@ -261,18 +261,22 @@ public class DiaryServiceImpl implements DiaryService {
                             || (location.getDistrict() == null || location.getDistrict().isBlank());
 
             if (needGeoFill && location.getLatitude() != null && location.getLongitude() != null) {
-                var geo = locationService.reverseGeocode(location.getLatitude(), location.getLongitude());
-                if (diary.getAddress() == null || diary.getAddress().isBlank()) {
-                    diary.setAddress(geo.getAddress());
-                }
-                if (diary.getProvince() == null || diary.getProvince().isBlank()) {
-                    diary.setProvince(geo.getProvince());
-                }
-                if (diary.getCity() == null || diary.getCity().isBlank()) {
-                    diary.setCity(geo.getCity());
-                }
-                if (diary.getDistrict() == null || diary.getDistrict().isBlank()) {
-                    diary.setDistrict(geo.getDistrict());
+                try {
+                    var geo = locationService.reverseGeocode(location.getLatitude(), location.getLongitude());
+                    if (diary.getAddress() == null || diary.getAddress().isBlank()) {
+                        diary.setAddress(geo.getAddress());
+                    }
+                    if (diary.getProvince() == null || diary.getProvince().isBlank()) {
+                        diary.setProvince(geo.getProvince());
+                    }
+                    if (diary.getCity() == null || diary.getCity().isBlank()) {
+                        diary.setCity(geo.getCity());
+                    }
+                    if (diary.getDistrict() == null || diary.getDistrict().isBlank()) {
+                        diary.setDistrict(geo.getDistrict());
+                    }
+                } catch (RuntimeException ignored) {
+                    // 地图服务只用于补全地址信息，不应阻断日记保存主流程。
                 }
             }
         }

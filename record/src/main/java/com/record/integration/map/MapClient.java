@@ -25,9 +25,12 @@ public class MapClient {
                 .queryParam("key", appProperties.getMap().getApiKey())
                 .queryParam("location", latitude + "," + longitude)
                 .toUriString();
+
         ReverseGeocodeResponse response = restTemplate.getForObject(url, ReverseGeocodeResponse.class);
         if (response == null || response.getStatus() == null || response.getStatus() != 0) {
-            throw new LocationException("逆地理编码失败");
+            Integer status = response == null ? null : response.getStatus();
+            String message = response == null ? null : response.getMessage();
+            throw new LocationException("逆地理编码失败: status=" + status + ", message=" + message);
         }
         return response;
     }

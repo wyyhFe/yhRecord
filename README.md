@@ -12,7 +12,7 @@
 - 记账管理
 - 打卡任务
 - 纪念日管理
-- 去年今日回忆
+- 那年今日回忆
 - 标签体系
 - 回收站
 - 微信提醒消息
@@ -29,7 +29,7 @@
 
 ### 1. 日记模块
 
-- 创建、编辑、删除、恢复、强制删除
+- 创建、编辑、删除、恢复、彻底删除
 - 标题、正文、天气、心情、日期
 - 图片上传、位置记录
 - 标签关联
@@ -43,13 +43,13 @@
 - 收入 / 支出流水
 - 月度查询
 - 标签统计
-- 年度汇总
+- 年度统计
 
 ### 3. 打卡模块
 
 - 创建任务
 - 每日打卡
-- 日历状态聚合
+- 按日期查看历史
 
 ### 4. 纪念日模块
 
@@ -60,12 +60,21 @@
 ### 5. 提醒模块
 
 - 主通道：小程序订阅消息
-- 扩展通道：公众号模板消息
+- 日记提醒
+- 每日记账提醒
+- 每月记账提醒
+- 纪念日提醒
 
-### 6. 定位与媒体模块
+### 6. 回收站模块
 
-- 当前位置
-- 手动选点
+- 日记进入回收站
+- 记账流水进入回收站
+- 支持恢复与彻底删除
+
+### 7. 定位与媒体模块
+
+- 当前定位
+- 微信地图选点
 - 腾讯地图逆地理编码
 - OSS 路径存储
 
@@ -92,7 +101,7 @@
 
 ---
 
-## 系统架构图
+## 系统架构
 
 ```mermaid
 flowchart LR
@@ -118,81 +127,9 @@ flowchart LR
 
 ---
 
-## 模块关系图
-
-```mermaid
-flowchart TB
-    AUTH[认证与会话]
-    USER[用户中心]
-    DIARY[日记模块]
-    TAG[标签模块]
-    LEDGER[记账模块]
-    CHECKIN[打卡模块]
-    MEMORIAL[纪念日模块]
-    REMINDER[提醒模块]
-    RECYCLE[回收站]
-    LOCATION[定位模块]
-    FILE[文件上传]
-    CALENDAR[日历与回忆]
-
-    AUTH --> USER
-    USER --> DIARY
-    USER --> LEDGER
-    USER --> CHECKIN
-    USER --> MEMORIAL
-    USER --> REMINDER
-    USER --> RECYCLE
-
-    TAG --> DIARY
-    TAG --> LEDGER
-
-    LOCATION --> DIARY
-    FILE --> DIARY
-    FILE --> LEDGER
-
-    DIARY --> CALENDAR
-    CHECKIN --> CALENDAR
-    MEMORIAL --> CALENDAR
-
-    DIARY --> RECYCLE
-    LEDGER --> RECYCLE
-    MEMORIAL --> REMINDER
-    DIARY --> REMINDER
-```
-
----
-
-## 登录与认证
-
-当前项目使用微信小程序 `openid` 作为用户唯一标识。
-
-登录流程：
-
-1. 小程序前端调用 `wx.login`
-2. 前端把 `code` 传给后端
-3. 后端调用微信 `code2Session`
-4. 后端获取 `openid`
-5. 后端签发 `accessToken + refreshToken`
-6. Redis 保存当前有效会话
-
-会话策略：
-
-- 单设备在线
-- 新登录顶掉旧登录
-- 旧 token 立即失效
-
----
-
 ## Quick Start
 
-### 1. 克隆项目
-
-```bash
-git clone <your-repository-url>
-cd lifeRecord
-```
-
-### 2. 启动后端
+### 1. 启动后端
 
 ```bash
 cd record
@@ -207,7 +144,7 @@ cd record
 ./mvnw.cmd -q clean package
 ```
 
-### 3. 启动前端
+### 2. 启动前端
 
 ```bash
 cd miniapp
@@ -223,7 +160,7 @@ npm run type-check
 npm run build:mp-weixin
 ```
 
-### 4. 环境配置
+### 3. 环境配置
 
 后端配置文件：
 
@@ -249,11 +186,10 @@ lifeRecord/
   miniapp/                     # uni-app 微信小程序前端
   record/                      # Spring Boot 后端
   docs/
-    architecture/             # 架构设计文档
-    guide/                    # 发布、接入、配置操作指南
-    standards/                # 开发规范、提交规范
-    assets/                   # 文档附件与资源包
-  .editorconfig               # 编辑器与编码规范
+    architecture/              # 架构设计文档
+    guide/                     # 发布、接入、配置指南
+    standards/                 # 开发与提交规范
+    assets/                    # 附件与补充文档
   README.md
 ```
 
@@ -283,26 +219,40 @@ modules/<module-name>/
 4. [发布配置清单](./docs/guide/发布配置清单.md)
 5. [新手发布步骤](./docs/guide/新手发布步骤.md)
 6. [小程序订阅消息和地图配置步骤](./docs/guide/小程序订阅消息和地图配置步骤.md)
+7. [待办清单](./docs/assets/todo.md)
 
 ---
 
-## Screenshots
+## 当前状态
 
-当前仓库暂未整理正式截图，后续建议补充：
+### V1
 
-- 首页
-- 日记列表页
-- 写日记页
-- 日记详情页
-- 记账页
-- 打卡页
-- 个人中心页
+- 已完成基础前后端骨架搭建
+- 已打通登录、日记、记账、打卡、纪念日主链路
+- 已完成小程序构建与后端打包
 
-如需统一存放，建议放到：
+### V1.1
 
-```text
-docs/assets/screenshots/
-```
+- 已完成提醒链路联调
+- 已完成回收站与标签管理主流程
+- 已完成真实环境验证：OSS 上传、地图选点、微信订阅提醒
+- 已完成回收站策略收口：`Diary`、`LedgerEntry` 进入回收站；`CheckinTask`、`MemorialDay`、`LedgerBook` 不进入回收站
+- 已完成 `ledger_entry.deleted_at` 真实数据库迁移
+- 腾讯地图逆地理编码已接入服务端 `WebService API`
+
+### V1.2
+
+- 计划增加更多统计分析页面
+- 计划完善分享与公开展示能力
+- 计划继续提升整体使用体验与页面完成度
+
+---
+
+## 配置注意事项
+
+- 腾讯地图服务端调试需要给对应环境的公网出口 IP 配置白名单
+- `192.168.x.x` 这类内网地址不能作为腾讯地图服务端白名单
+- 地图逆地理编码失败时不会再阻断日记主流程保存，但建议保持腾讯地图配置可用，方便补全 `province / city / district`
 
 ---
 
@@ -316,50 +266,11 @@ docs/assets/screenshots/
 
 ---
 
-## Roadmap
-
-### V1
-
-- 完成基础前后端骨架
-- 打通登录、日记、记账、打卡、纪念日主链路
-- 完成小程序构建与后端打包
-
-### V1.1
-
-- 完善提醒链路
-- 完善回收站与标签管理
-- 优化接口文档与模型说明
-
-### V1.2
-
-- 增加更多统计分析页面
-- 完善分享与公开展示能力
-- 提升整体使用体验与页面完成度
-
----
-
 ## 开发约定
 
 - 全仓文本文件统一使用 `UTF-8`
 - Java 源码使用 `UTF-8 without BOM`
 - 换行统一使用 `LF`
-- DTO / VO / Entity 必须补 `@Schema`
-- `schema.sql` 必须补字段 `COMMENT`
+- DTO / VO / Entity 需要补齐 `@Schema`
+- `schema.sql` 需要补齐字段 `COMMENT`
 - 提交前至少完成编译或构建检查
-
----
-
-## 当前状态
-
-当前仓库已经具备：
-
-- 后端可编译、可打包
-- 小程序可构建
-- 核心业务主链路已打通
-
-后续仍可继续增强：
-
-- 更完整的评论互动
-- 更完整的标签管理体验
-- 更完善的提醒模板配置
-- 更丰富的数据统计能力

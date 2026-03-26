@@ -13,6 +13,15 @@
       "postcss": true,
       "minified": true
     },
+    "requiredPrivateInfos": [
+      "getLocation",
+      "chooseLocation"
+    ],
+    "permission": {
+      "scope.userLocation": {
+        "desc": "用于获取当前位置和在地图中选择地点，给日记记录补充位置信息"
+      }
+    },
     "usingComponents": true
   }
 }
