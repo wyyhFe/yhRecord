@@ -142,7 +142,7 @@
         <view class="section-head">
           <view class="section-copy">
             <view class="section-copy__title">{{ currentYear }} 年统计</view>
-            <view class="section-copy__desc">按月份查看收支情况，并在每个月下面展示支出标签占比。</view>
+            <view class="section-copy__desc">按月份查看收支情况，并用图表展示全年走势和分类分布。</view>
           </view>
         </view>
 
@@ -165,51 +165,12 @@
         </view>
       </view>
 
-      <view v-if="yearOverview.length" class="ledger-group-stack">
-        <u-card
-          v-for="item in yearOverview"
-          :key="item.month"
-          :show-head="false"
-          :show-foot="false"
-          :border="false"
-          margin="0 0 24rpx 0"
-          padding="0"
-          :body-style="cardBodyStyle"
-        >
-          <view class="year-month-card">
-            <view class="year-month-card__head">
-              <view class="year-month-card__title">{{ currentYear }}年{{ item.month }}月</view>
-              <view class="year-month-card__summary">
-                <text class="year-month-card__summary-item year-month-card__summary-item--expense">
-                  出 {{ item.expense.toFixed(2) }}
-                </text>
-                <text class="year-month-card__summary-item year-month-card__summary-item--income">
-                  入 {{ item.income.toFixed(2) }}
-                </text>
-              </view>
-            </view>
-
-            <view class="year-month-card__body">
-              <view class="year-month-card__section-title">支出分布</view>
-              <view v-if="item.distributions.length" class="year-distribution-list">
-                <view v-for="distribution in item.distributions" :key="distribution.label" class="year-distribution-row">
-                  <view class="year-distribution-row__label">{{ distribution.label }}</view>
-                  <view class="year-distribution-row__amount">{{ distribution.amount.toFixed(2) }}</view>
-                  <view class="year-distribution-row__bar">
-                    <view
-                      class="year-distribution-row__bar-fill"
-                      :style="{ width: `${Math.max(distribution.ratio * 100, 3)}%` }"
-                    />
-                  </view>
-                  <view class="year-distribution-row__ratio">{{ formatRatio(distribution.ratio) }}</view>
-                </view>
-              </view>
-              <view v-else class="note-card">这个月没有支出分布数据。</view>
-            </view>
-          </view>
-        </u-card>
-      </view>
-
+      <LedgerYearCharts
+        v-if="yearOverview.length"
+        :key="`${currentYear}-${selectedBookId || 'no-book'}-${yearOverview.length}`"
+        :year="currentYear"
+        :items="yearOverview"
+      />
       <EmptyStateCard
         v-else
         title="这一年还没有统计数据"
@@ -362,10 +323,11 @@
 import { computed, ref, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import ChoiceChips from '@/components/business/choice-chips'
+import LedgerYearCharts from '@/components/business/ledger-year-charts/index.vue'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import { API_BASE_URL, OSS_BASE_URL } from '@/config/app'
 import { fetchBooks, type LedgerBook } from '@/api/books'
-import { fetchMonthLedger } from '@/api/ledger'
+import { fetchMonthLedger, fetchYearLedger } from '@/api/ledger'
 import { createLedgerEntry, deleteLedgerEntry, updateLedgerEntry, type LedgerEntryFormPayload } from '@/api/ledger-form'
 import { fetchUserTags, type TagItem } from '@/api/tag'
 import type { Id, LedgerEntry } from '@/types/domain'
@@ -598,10 +560,6 @@ function formatDateHint(dateText: string) {
   if (diffDays === 0) return '今天'
   if (diffDays === 1) return '昨天'
   return ''
-}
-
-function formatRatio(ratio: number) {
-  return `${(Number(ratio) * 100).toFixed(1)}%`
 }
 
 function buildYearMonthCard(month: number, monthEntries: LedgerEntry[]): YearMonthCard {
@@ -875,12 +833,22 @@ async function loadMonthEntries() {
 }
 
 async function loadYearStats() {
-  const monthList = await Promise.all(
-    Array.from({ length: 12 }, (_, index) => fetchMonthLedger(currentYear.value, index + 1, selectedBookId.value))
-  )
+  // 年视图改成一次性拉全年明细，避免前端按 1~12 月连续触发 12 次接口请求。
+  const yearEntries = await fetchYearLedger(currentYear.value, selectedBookId.value)
+  const monthMap = new Map<number, LedgerEntry[]>()
+  for (const entry of yearEntries) {
+    // 把全年明细按月份分桶，后面图表会直接消费这个月度聚合结果。
+    const month = new Date(`${entry.entryDate}T00:00:00`).getMonth() + 1
+    const bucket = monthMap.get(month) || []
+    bucket.push(entry)
+    monthMap.set(month, bucket)
+  }
 
-  yearOverview.value = monthList
-    .map((monthEntries, index) => buildYearMonthCard(index + 1, monthEntries))
+  // 固定生成 1~12 月的数据结构，保证图表顺序稳定；没有数据的月份最后统一过滤掉。
+  yearOverview.value = Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1
+    return buildYearMonthCard(month, monthMap.get(month) || [])
+  })
     .filter((item) => item.expense > 0 || item.income > 0)
 }
 
@@ -889,6 +857,7 @@ async function reloadByView() {
     await loadMonthEntries()
     return
   }
+  // 切到年视图时，走“全年一次请求 + 前端聚合”的分支。
   await loadYearStats()
 }
 
@@ -1096,93 +1065,6 @@ onShow(() => {
 
 .ledger-entry-row__amount--income {
   color: #2c9b67;
-}
-
-.year-month-card__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16rpx;
-  padding: 24rpx 28rpx;
-  border-bottom: 1rpx solid #f0e6da;
-}
-
-.year-month-card__title {
-  color: #2b2118;
-  font-size: 32rpx;
-  font-weight: 700;
-}
-
-.year-month-card__summary {
-  display: flex;
-  gap: 18rpx;
-}
-
-.year-month-card__summary-item {
-  font-size: 28rpx;
-  font-weight: 600;
-}
-
-.year-month-card__summary-item--expense {
-  color: #d35d56;
-}
-
-.year-month-card__summary-item--income {
-  color: #2c9b67;
-}
-
-.year-month-card__body {
-  padding: 24rpx 28rpx 28rpx;
-}
-
-.year-month-card__section-title {
-  margin-bottom: 18rpx;
-  color: #5e4b3a;
-  font-size: 26rpx;
-  font-weight: 700;
-}
-
-.year-distribution-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.year-distribution-row {
-  display: grid;
-  grid-template-columns: 120rpx 110rpx 1fr 70rpx;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.year-distribution-row__label {
-  color: #2b2118;
-  font-size: 28rpx;
-}
-
-.year-distribution-row__amount {
-  color: #d35d56;
-  font-size: 28rpx;
-  font-weight: 600;
-}
-
-.year-distribution-row__bar {
-  height: 14rpx;
-  overflow: hidden;
-  border-radius: 999rpx;
-  background: #f6ede4;
-}
-
-.year-distribution-row__bar-fill {
-  height: 100%;
-  border-radius: 999rpx;
-  background: linear-gradient(90deg, #f39b94 0%, #ef6b6b 100%);
-}
-
-.year-distribution-row__ratio {
-  color: #8a735f;
-  font-size: 24rpx;
-  text-align: right;
 }
 
 .ledger-page-tabbar {
@@ -1408,4 +1290,5 @@ onShow(() => {
   font-size: 24rpx;
   line-height: 1.7;
 }
+
 </style>

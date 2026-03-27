@@ -4,7 +4,7 @@
       <view class="section-head">
         <view class="section-copy">
           <view class="section-copy__title">纪念日管理</view>
-          <view class="section-copy__desc">把重要日期留下来，后续首页、提醒和去年今日都会复用这里的数据。</view>
+          <view class="section-copy__desc">把重要日期留下来，提醒、首页和去年今日都会复用这里的数据。</view>
         </view>
         <u-tag text="纪念日" type="warning" plain shape="circle" />
       </view>
@@ -28,7 +28,7 @@
           <view class="list-card__head">
             <view>
               <view class="list-card__title">{{ item.title }}</view>
-              <view class="list-card__meta">{{ item.type || '纪念日' }} · {{ item.memorialDate }}</view>
+              <view class="list-card__meta">{{ item.type || '纪念日' }} | {{ item.memorialDate }}</view>
             </view>
             <view class="memorial-repeat-tag">{{ item.annualRepeat ? '每年重复' : '单次' }}</view>
           </view>
@@ -56,7 +56,7 @@
         <scroll-view scroll-y class="memorial-popup__body">
           <view class="memorial-popup__head">
             <view class="memorial-popup__title">{{ editingId ? '编辑纪念日' : '新建纪念日' }}</view>
-            <view class="memorial-popup__subtitle">先把最必要的信息填完整，提醒能力会直接复用这些字段。</view>
+            <view class="memorial-popup__subtitle">先把必要信息填完整，提醒能力会直接复用这些字段。</view>
           </view>
 
           <view class="block-stack">
@@ -82,17 +82,26 @@
           </view>
 
           <view class="block-stack">
-            <u-cell-group :border="false">
+            <view class="picker-card-list">
               <picker mode="date" :value="form.memorialDate" @change="onMemorialDateChange">
-                <u-cell-item title="纪念日期" :value="form.memorialDate" :border-bottom="true" />
+                <view class="picker-card-row">
+                  <view class="picker-card-row__label">纪念日期</view>
+                  <view class="picker-card-row__value">{{ form.memorialDate }}</view>
+                </view>
               </picker>
               <picker mode="date" :value="remindDateText" @change="onRemindDateChange">
-                <u-cell-item title="提醒日期" :value="remindDateText" :border-bottom="true" />
+                <view class="picker-card-row">
+                  <view class="picker-card-row__label">提醒日期</view>
+                  <view class="picker-card-row__value">{{ remindDateText }}</view>
+                </view>
               </picker>
               <picker mode="time" :value="remindTimeText" @change="onRemindTimeChange">
-                <u-cell-item title="提醒时间" :value="remindTimeText" :border-bottom="false" />
+                <view class="picker-card-row">
+                  <view class="picker-card-row__label">提醒时间</view>
+                  <view class="picker-card-row__value">{{ remindTimeText }}</view>
+                </view>
               </picker>
-            </u-cell-group>
+            </view>
           </view>
 
           <view class="memorial-switch-row">
@@ -144,12 +153,12 @@ import {
   updateMemorialDay,
   type MemorialDayPayload
 } from '@/api/memorial'
-import type { MemorialDay } from '@/types/domain'
+import type { Id, MemorialDay } from '@/types/domain'
 
 const items = ref<MemorialDay[]>([])
 const showPopup = ref(false)
 const submitting = ref(false)
-const editingId = ref<number>()
+const editingId = ref<Id>()
 const today = new Date().toISOString().slice(0, 10)
 
 const form = reactive({
@@ -265,7 +274,7 @@ async function loadMemorialDays() {
   }
 }
 
-async function removeItem(id: number) {
+async function removeItem(id: Id) {
   const result = await uni.showModal({
     title: '确认删除',
     content: '删除后这条纪念日将不再参与提醒和回顾展示。'
@@ -369,5 +378,33 @@ onShow(() => {
 
 .memorial-popup__actions {
   margin-top: 24rpx;
+}
+
+.picker-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.picker-card-row {
+  min-height: 84rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 0 22rpx;
+  border-radius: 20rpx;
+  background: #fcf5ec;
+}
+
+.picker-card-row__label {
+  color: #7f6b58;
+  font-size: 24rpx;
+}
+
+.picker-card-row__value {
+  color: #2b2118;
+  font-size: 28rpx;
+  font-weight: 600;
 }
 </style>

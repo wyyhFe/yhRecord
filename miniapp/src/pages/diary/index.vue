@@ -1,9 +1,9 @@
-<template>
+﻿<template>
   <view class="page-shell-safe">
     <view class="section-shell">
       <view class="section-copy">
         <view class="section-copy__title">筛选</view>
-        <view class="section-copy__desc">按可见范围和关键词做真实过滤。</view>
+        <view class="section-copy__desc">按可见范围和关键词筛选你的日记内容。</view>
       </view>
 
       <view class="block-stack">
@@ -44,12 +44,12 @@
         >
           <view class="diary-entry__head">
             <view class="diary-entry__title">{{ item.title }}</view>
-            <view class="diary-entry__mood">{{ item.mood || '平静' }}</view>
+            <view class="diary-entry__mood">{{ resolveDiaryMoodLabel(item.mood, '平静') }}</view>
           </view>
           <view class="diary-entry__content">{{ item.content }}</view>
           <view class="diary-entry__meta">
             <view>{{ item.recordDate }}</view>
-            <view>{{ item.likeCount }} 点赞 · {{ item.commentCount }} 评论</view>
+            <view>{{ item.likeCount }} 点赞 / {{ item.commentCount }} 评论</view>
           </view>
         </view>
       </view>
@@ -71,6 +71,7 @@ import EmptyStateCard from '@/components/business/empty-state-card'
 import FilterTabs from '@/components/business/filter-tabs'
 import { fetchDiaryList } from '@/api/diary'
 import type { DiaryItem, Id } from '@/types/domain'
+import { resolveDiaryMoodLabel } from '@/utils/diary-display'
 
 const tabItems = [
   { label: '全部', value: 'ALL' },

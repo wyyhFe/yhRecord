@@ -3,10 +3,26 @@
 </template>
 
 <script setup lang="ts">
-import { onShow } from '@dcloudio/uni-app'
+import { onLaunch, onShow } from '@dcloudio/uni-app'
 import { ensureEntryAuth } from '@/utils/auth'
+import { useAppStore } from '@/stores/app'
+import { ensureSession } from '@/utils/session'
+
+const appStore = useAppStore()
+
+async function bootstrapSession() {
+  const loggedIn = await ensureSession()
+  if (loggedIn) {
+    await appStore.loadProfile().catch(() => undefined)
+  }
+}
+
+onLaunch(() => {
+  bootstrapSession().catch(() => undefined)
+})
 
 onShow(() => {
+  bootstrapSession().catch(() => undefined)
   ensureEntryAuth()
 })
 </script>

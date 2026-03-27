@@ -1,11 +1,11 @@
-<template>
+﻿<template>
   <view class="page-shell-safe">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
           <view class="section-copy__title">去年今日</view>
           <view class="section-copy__desc">
-            用真实接口回看去年的同一天，把日记、打卡和纪念日放到同一页。
+            用真实接口回看去年同一天，把日记、打卡和纪念日放到同一页展示。
           </view>
         </view>
         <view class="memory-date-chip">{{ targetDate }}</view>
@@ -24,7 +24,7 @@
       <view class="section-head">
         <view class="section-copy">
           <view class="section-copy__title">日记</view>
-          <view class="section-copy__desc">去年的今天写下过什么。</view>
+          <view class="section-copy__desc">去年这一天写下过什么。</view>
         </view>
       </view>
 
@@ -38,9 +38,9 @@
           <view class="list-card__head">
             <view>
               <view class="list-card__title">{{ item.title }}</view>
-              <view class="list-card__meta">{{ item.recordDate }} {{ item.mood || '平静' }}</view>
+              <view class="list-card__meta">{{ item.recordDate }} {{ resolveDiaryMoodLabel(item.mood, '平静') }}</view>
             </view>
-            <view class="list-card__aside">{{ item.weather || '未记录天气' }}</view>
+            <view class="list-card__aside">{{ resolveDiaryWeatherLabel(item.weather, '未记录天气') }}</view>
           </view>
           <view class="memory-diary-card__content">{{ item.content }}</view>
         </view>
@@ -48,7 +48,7 @@
       <EmptyStateCard
         v-else
         title="去年今天没有日记"
-        description="这一部分已经接通真实接口，等你之后留下更多内容就会自动显示。"
+        description="这一部分已经接通真实接口，等你后续留下更多内容后会自动展示。"
         mode="history"
       />
     </view>
@@ -95,7 +95,7 @@
           <view class="list-card__head">
             <view>
               <view class="list-card__title">{{ item.title }}</view>
-              <view class="list-card__meta">{{ item.type || '纪念日' }} · {{ item.memorialDate }}</view>
+              <view class="list-card__meta">{{ item.type || '纪念日' }} / {{ item.memorialDate }}</view>
             </view>
             <view class="memory-tag">{{ item.annualRepeat ? '每年重复' : '单次' }}</view>
           </view>
@@ -118,6 +118,7 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import { fetchOnThisDay } from '@/api/calendar'
 import type { CalendarDayDetail, Id } from '@/types/domain'
+import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
 
 const defaultDate = new Date()
 const queryDate = reactive({
@@ -160,7 +161,7 @@ function goDiaryDetail(id: Id) {
 }
 
 function goMemorialPage() {
-  uni.navigateTo({ url: '/pages/memorial-manage/index' })
+  uni.navigateTo({ url: '/pages/memorialPage/index' })
 }
 
 async function loadOnThisDay() {

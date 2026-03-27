@@ -3,57 +3,76 @@ import type { DiaryLocationInput } from '@/types/diary'
 import { createQqMapClient } from './client'
 import type { QqMapSearchResult } from './types'
 
-/**
- * 尝试把位置数据补齐成后端需要的结构。
- * 如果前端只有经纬度，这里会再调用后端逆地理编码接口补全地址信息。
- */
-export async function buildLocationPayload(payload: DiaryLocationInput): Promise<DiaryLocationInput> {
-  if (payload.address && payload.province && payload.city) return payload
-  if (!payload.latitude || !payload.longitude) return payload
+const CURRENT_LOCATION_CACHE_KEY = 'current-location-cache'
+const CURRENT_LOCATION_CACHE_TTL = 5 * 60 * 1000
 
-  try {
-    const resolved = await reverseGeocode(payload.latitude, payload.longitude)
-    return {
-      ...resolved,
-      locationName: payload.locationName || resolved.locationName || resolved.address || '已选位置',
-      sourceType: payload.sourceType
-    }
-  } catch {
-    return payload
-  }
+interface CurrentLocationCache {
+  latitude: number
+  longitude: number
+  expiresAt: number
+  location: DiaryLocationInput
 }
 
-/**
- * 获取当前位置，并组装成统一的位置结构。
- */
-export async function pickCurrentLocationPayload(): Promise<DiaryLocationInput> {
+export interface CurrentLocationResult {
+  payload: DiaryLocationInput
+  reverseGeocodeError?: unknown
+}
+
+export async function pickCurrentLocationPayload(): Promise<CurrentLocationResult> {
   const result = await uni.getLocation({ type: 'gcj02' })
-  return buildLocationPayload({
+  const payload: DiaryLocationInput = {
     latitude: result.latitude,
     longitude: result.longitude,
     sourceType: 'CURRENT',
     locationName: '当前位置'
-  })
+  }
+
+  const cachedLocation = getCachedCurrentLocation(result.latitude, result.longitude)
+  if (cachedLocation) {
+    return {
+      payload: {
+        ...payload,
+        ...cachedLocation,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        sourceType: 'CURRENT',
+        locationName: cachedLocation.locationName || cachedLocation.address || payload.locationName
+      }
+    }
+  }
+
+  try {
+    const location = await reverseGeocode(result.latitude, result.longitude)
+    setCachedCurrentLocation(result.latitude, result.longitude, location)
+    return {
+      payload: {
+        ...payload,
+        ...location,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        sourceType: 'CURRENT',
+        locationName: location.locationName || location.address || payload.locationName
+      }
+    }
+  } catch (error) {
+    return {
+      payload,
+      reverseGeocodeError: error
+    }
+  }
 }
 
-/**
- * 使用微信原生选点能力，返回统一的位置结构。
- */
 export async function pickManualLocationPayload(): Promise<DiaryLocationInput> {
   const result = await uni.chooseLocation({})
-  return buildLocationPayload({
+  return {
     latitude: result.latitude,
     longitude: result.longitude,
     sourceType: 'MANUAL',
     locationName: result.name || '手动选择位置',
     address: result.address
-  })
+  }
 }
 
-/**
- * 使用腾讯地图 SDK 搜索地点。
- * 返回值已经做过裁剪，页面不需要直接处理原始 SDK 数据结构。
- */
 export function searchLocations(keyword: string): Promise<QqMapSearchResult[]> {
   const client = createQqMapClient()
 
@@ -82,4 +101,39 @@ export function searchLocations(keyword: string): Promise<QqMapSearchResult[]> {
       }
     })
   })
+}
+
+function getCachedCurrentLocation(latitude: number, longitude: number): DiaryLocationInput | null {
+  const cache = uni.getStorageSync(CURRENT_LOCATION_CACHE_KEY) as CurrentLocationCache | null
+  if (!cache || cache.expiresAt <= Date.now()) {
+    uni.removeStorageSync(CURRENT_LOCATION_CACHE_KEY)
+    return null
+  }
+
+  if (!isSameCoordinate(cache.latitude, latitude) || !isSameCoordinate(cache.longitude, longitude)) {
+    return null
+  }
+
+  return cache.location
+}
+
+function setCachedCurrentLocation(latitude: number, longitude: number, location: DiaryLocationInput) {
+  const cache: CurrentLocationCache = {
+    latitude,
+    longitude,
+    expiresAt: Date.now() + CURRENT_LOCATION_CACHE_TTL,
+    location: {
+      locationName: location.locationName,
+      address: location.address,
+      province: location.province,
+      city: location.city,
+      district: location.district
+    }
+  }
+
+  uni.setStorageSync(CURRENT_LOCATION_CACHE_KEY, cache)
+}
+
+function isSameCoordinate(left: number, right: number) {
+  return Math.abs(left - right) < 0.0001
 }

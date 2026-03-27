@@ -59,18 +59,20 @@
         <view class="section-copy__desc">提醒、纪念日、标签和回收站都集中放在这里。</view>
       </view>
 
-      <u-cell-group :border="false">
-        <u-cell-item
+      <view class="profile-entry-list">
+        <view
           v-for="item in settings"
           :key="item.key"
-          :title="item.title"
-          :label="item.description"
-          :value="item.value"
-          arrow
-          :border-bottom="item.key !== settings[settings.length - 1].key"
-          @click="handleSelect(item.key)"
-        />
-      </u-cell-group>
+          class="profile-entry-card"
+          @tap="handleSelect(item.key)"
+        >
+          <view class="profile-entry-card__main">
+            <view class="profile-entry-card__title">{{ item.title }}</view>
+            <view class="profile-entry-card__desc">{{ item.description }}</view>
+          </view>
+          <view class="profile-entry-card__value">{{ item.value }}</view>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -169,7 +171,7 @@ function handleSelect(key: string) {
   }
 
   if (key === 'memorial') {
-    uni.navigateTo({ url: '/pages/memorial-manage/index' })
+    uni.navigateTo({ url: '/pages/memorialPage/index' })
     return
   }
 
@@ -258,5 +260,47 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18rpx;
+}
+
+.profile-entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.profile-entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  padding: 22rpx 20rpx;
+  border-radius: 24rpx;
+  background: #fffaf4;
+  border: 1rpx solid rgba(196, 124, 82, 0.1);
+}
+
+.profile-entry-card__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-entry-card__title {
+  color: #2b2118;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.profile-entry-card__desc {
+  margin-top: 10rpx;
+  color: #7a6a5c;
+  font-size: 23rpx;
+  line-height: 1.6;
+}
+
+.profile-entry-card__value {
+  flex-shrink: 0;
+  color: #a56d4b;
+  font-size: 24rpx;
+  font-weight: 600;
 }
 </style>

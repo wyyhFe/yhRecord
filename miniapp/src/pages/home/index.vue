@@ -63,50 +63,25 @@
         </view>
       </view>
 
-      <u-cell-group :border="false">
-        <u-cell-item
+      <view class="quick-action-grid">
+        <view
           v-for="item in quickActions"
           :key="item.key"
-          :title="item.title"
-          :label="item.description"
-          :border-bottom="true"
-          arrow
-          @click="handleQuickAction(item.key, item.path)"
-        />
-      </u-cell-group>
-    </view>
-
-    <view v-if="!hasToken" class="page-section section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">登录调试</view>
-          <view class="section-copy__desc">先用固定按钮验证微信登录链路，不依赖弹层是否正常显示。</view>
+          class="quick-action-card"
+          @tap="handleQuickAction(item.key, item.path)"
+        >
+          <view class="quick-action-card__title">{{ item.title }}</view>
+          <view class="quick-action-card__desc">{{ item.description }}</view>
         </view>
       </view>
-
-      <view class="action-stack">
-        <u-button
-          type="primary"
-          shape="circle"
-          color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
-          @click="showLoginSheet = true"
-        >
-          打开登录弹层
-        </u-button>
-        <u-button shape="circle" plain @click="debugWechatLogin">直接测试微信登录</u-button>
-      </view>
     </view>
-
-    <LoginSheet v-model="showLoginSheet" @success="handleLoginSuccess" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import LoginSheet from '@/components/business/login-sheet/index.vue'
 import { useGreeting } from '@/composables/useGreeting'
-import { wxLogin } from '@/api/auth'
 import { fetchCalendarSummary } from '@/api/calendar'
 import type { DaySummary } from '@/types/domain'
 import { tokenStorage } from '@/utils/storage'
@@ -114,8 +89,6 @@ import { getLastLedgerBook } from '@/utils/ledger-book'
 
 const greeting = useGreeting()
 const calendarItems = ref<DaySummary[]>([])
-const showLoginSheet = ref(false)
-const hasToken = computed(() => Boolean(tokenStorage.getAccessToken()))
 
 const quickActions = [
   {
@@ -165,15 +138,6 @@ const metrics = computed(() => {
   ]
 })
 
-function syncLoginSheet() {
-  const hasAccessToken = Boolean(tokenStorage.getAccessToken())
-  showLoginSheet.value = !hasAccessToken
-  console.log('[home] sync login sheet', {
-    hasToken: hasAccessToken,
-    showLoginSheet: showLoginSheet.value
-  })
-}
-
 function buildFallbackSummary() {
   calendarItems.value = Array.from({ length: 7 }).map((_, index) => ({
     date: `2026-03-${String(index + 14).padStart(2, '0')}`,
@@ -200,26 +164,6 @@ async function loadSummary() {
   }
 }
 
-function handleLoginSuccess() {
-  syncLoginSheet()
-  loadSummary()
-}
-
-async function debugWechatLogin() {
-  try {
-    const loginRes = await uni.login({ provider: 'weixin' })
-    console.log('[home] debug wechat login code', loginRes.code)
-    const result = await wxLogin(loginRes.code || '')
-    tokenStorage.setAccessToken(result.accessToken)
-    tokenStorage.setRefreshToken(result.refreshToken)
-    uni.$feedback.success('微信登录成功')
-    handleLoginSuccess()
-  } catch (error) {
-    console.error('[home] debug wechat login failed', error)
-    uni.$feedback.error(error)
-  }
-}
-
 function handleQuickAction(key: string, path: string) {
   if (key === 'ledger') {
     const lastBook = getLastLedgerBook()
@@ -237,12 +181,10 @@ function handleQuickAction(key: string, path: string) {
 }
 
 onShow(() => {
-  syncLoginSheet()
   loadSummary()
 })
 
 onLoad(() => {
-  syncLoginSheet()
   loadSummary()
 })
 </script>
@@ -293,5 +235,35 @@ onLoad(() => {
   margin-top: 12rpx;
   color: #8a735f;
   font-size: 22rpx;
+}
+
+.quick-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18rpx;
+}
+
+.quick-action-card {
+  min-height: 180rpx;
+  padding: 24rpx 22rpx;
+  border-radius: 28rpx;
+  background:
+    radial-gradient(circle at top right, rgba(215, 166, 72, 0.12), transparent 40%),
+    linear-gradient(180deg, #fffdf8 0%, #fcf4ea 100%);
+  border: 1rpx solid rgba(196, 124, 82, 0.1);
+  box-shadow: 0 14rpx 26rpx rgba(67, 41, 26, 0.06);
+}
+
+.quick-action-card__title {
+  color: #2b2118;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.quick-action-card__desc {
+  margin-top: 14rpx;
+  color: #7f6a58;
+  font-size: 22rpx;
+  line-height: 1.7;
 }
 </style>

@@ -11,6 +11,13 @@ export function fetchCheckinTasks() {
   })
 }
 
+export function deleteCheckinTask(taskId: Id) {
+  return request<void>({
+    url: `/checkin/tasks/delete/${taskId}`,
+    method: 'DELETE'
+  })
+}
+
 /**
  * 完成某个任务的打卡。
  */

@@ -26,35 +26,44 @@
       </view>
 
       <view v-if="tasks.length" class="list-stack">
-        <view v-for="task in tasks" :key="task.id" class="list-card">
-          <view class="list-card__head">
-            <view>
-              <view class="list-card__title">{{ task.name }}</view>
-              <view class="list-card__meta">{{ task.description || '未填写任务描述' }}</view>
+        <u-swipe-action
+          v-for="task in tasks"
+          :key="task.id"
+          :index="task.id"
+          :options="swipeOptions"
+          btn-width="140"
+          @click="handleSwipeAction"
+        >
+          <view class="list-card checkin-task-card">
+            <view class="list-card__head">
+              <view>
+                <view class="list-card__title">{{ task.name }}</view>
+                <view class="list-card__meta">{{ task.description || '未填写任务描述' }}</view>
+              </view>
+              <view class="checkin-count">{{ task.totalCount }} 次</view>
             </view>
-            <view class="checkin-count">{{ task.totalCount }} 次</view>
-          </view>
 
-          <view class="list-card__meta">
-            开始日期：{{ task.startDate || '--' }} · 最近完成：{{ task.latestCheckedAt || '还没有打卡记录' }}
-          </view>
+            <view class="list-card__meta">
+              开始日期：{{ task.startDate || '--' }} | 最近完成：{{ task.latestCheckedAt || '还没有打卡记录' }}
+            </view>
 
-          <view class="action-grid-2 checkin-actions">
-            <u-button
-              shape="circle"
-              :plain="todayDoneIds.has(task.id)"
-              :hair-line="false"
-              :type="todayDoneIds.has(task.id) ? 'default' : 'primary'"
-              :color="todayDoneIds.has(task.id) ? undefined : 'linear-gradient(135deg, #c47c52 0%, #d7a648 100%)'"
-              @click="handleCheckin(task)"
-            >
-              {{ todayDoneIds.has(task.id) ? '今天已打卡' : '今日打卡' }}
-            </u-button>
-            <u-button shape="circle" plain :hair-line="false" @click="viewTaskHistory(task)">
-              查看历史
-            </u-button>
+            <view class="action-grid-2 checkin-actions">
+              <u-button
+                shape="circle"
+                :plain="todayDoneIds.has(task.id)"
+                :hair-line="false"
+                :type="todayDoneIds.has(task.id) ? 'default' : 'primary'"
+                :color="todayDoneIds.has(task.id) ? undefined : 'linear-gradient(135deg, #c47c52 0%, #d7a648 100%)'"
+                @click="handleCheckin(task)"
+              >
+                {{ todayDoneIds.has(task.id) ? '今天已打卡' : '今日打卡' }}
+              </u-button>
+              <u-button shape="circle" plain :hair-line="false" @click="viewTaskHistory(task)">
+                查看历史
+              </u-button>
+            </view>
           </view>
-        </view>
+        </u-swipe-action>
       </view>
       <EmptyStateCard
         v-else
@@ -131,7 +140,7 @@
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
-import { fetchCheckinDayDetail, fetchCheckinTasks, submitCheckin } from '@/api/checkin'
+import { deleteCheckinTask, fetchCheckinDayDetail, fetchCheckinTasks, submitCheckin } from '@/api/checkin'
 import type { CheckinTask, Id } from '@/types/domain'
 
 const tasks = ref<CheckinTask[]>([])
@@ -143,6 +152,16 @@ const showTaskHistoryPopup = ref(false)
 const today = new Date().toISOString().slice(0, 10)
 const historyDate = ref(today)
 const todayDoneIds = ref(new Set<Id>())
+
+const swipeOptions = [
+  {
+    text: '删除',
+    style: {
+      backgroundColor: '#d35d56',
+      color: '#fffaf4'
+    }
+  }
+]
 
 const filteredHistoryItems = computed(() => historyItems.value)
 
@@ -208,12 +227,36 @@ async function handleCheckin(task: CheckinTask) {
   }
 }
 
+async function removeTask(taskId: Id) {
+  const result = await uni.showModal({
+    title: '确认删除',
+    content: '删除任务后，相关历史打卡记录也会一起删除。'
+  })
+  if (!result.confirm) return
+
+  try {
+    await deleteCheckinTask(taskId)
+    uni.$feedback.success('任务已删除')
+    await reloadAll()
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '删除失败')
+  }
+}
+
+function handleSwipeAction(taskId: Id) {
+  removeTask(taskId)
+}
+
 onShow(() => {
   reloadAll()
 })
 </script>
 
 <style scoped lang="scss">
+.checkin-task-card {
+  margin-bottom: 0;
+}
+
 .checkin-count {
   border-radius: 999rpx;
   background: #edf4ef;

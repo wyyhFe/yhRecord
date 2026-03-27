@@ -25,3 +25,13 @@ declare module '*.vue' {
   const component: DefineComponent<{}, {}, any>
   export default component
 }
+
+declare module 'echarts' {
+  const echarts: any
+  export = echarts
+}
+
+declare module 'echarts/dist/echarts.esm.js' {
+  const echarts: any
+  export = echarts
+}

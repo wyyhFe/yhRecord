@@ -91,7 +91,7 @@
       }
     },
     {
-      "path": "pages/memorial-manage/index",
+      "path": "pages/memorialPage/index",
       "style": {
         "navigationBarTitleText": "纪念日"
       }

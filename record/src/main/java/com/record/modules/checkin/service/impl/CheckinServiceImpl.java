@@ -12,15 +12,13 @@ import com.record.modules.checkin.model.entity.CheckinTask;
 import com.record.modules.checkin.model.vo.CheckinTaskVO;
 import com.record.modules.checkin.service.CheckinService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * 打卡服务实现。
- */
 @Service
 public class CheckinServiceImpl implements CheckinService {
 
@@ -47,18 +45,26 @@ public class CheckinServiceImpl implements CheckinService {
     @Override
     public List<CheckinTaskVO> listTasks(Long userId) {
         return checkinTaskMapper.selectList(new LambdaQueryWrapper<CheckinTask>()
-                        .eq(CheckinTask::getUserId, userId))
+                        .eq(CheckinTask::getUserId, userId)
+                        .eq(CheckinTask::getStatus, CommonStatus.ENABLED))
                 .stream()
                 .map(this::toVO)
                 .toList();
     }
 
     @Override
+    @Transactional
+    public void deleteTask(Long userId, Long taskId) {
+        CheckinTask task = requireOwnedTask(userId, taskId);
+        checkinRecordMapper.delete(new LambdaQueryWrapper<CheckinRecord>()
+                .eq(CheckinRecord::getTaskId, taskId)
+                .eq(CheckinRecord::getUserId, userId));
+        checkinTaskMapper.deleteById(task.getId());
+    }
+
+    @Override
     public void checkin(Long userId, Long taskId, CheckinRequest request) {
-        CheckinTask task = checkinTaskMapper.selectById(taskId);
-        if (task == null || !task.getUserId().equals(userId)) {
-            throw new CheckinException("打卡任务不存在");
-        }
+        CheckinTask task = requireOwnedTask(userId, taskId);
 
         LocalDate checkinDate = request.getCheckinDate() == null ? LocalDate.now() : request.getCheckinDate();
         Long count = checkinRecordMapper.selectCount(new LambdaQueryWrapper<CheckinRecord>()
@@ -66,7 +72,7 @@ public class CheckinServiceImpl implements CheckinService {
                 .eq(CheckinRecord::getUserId, userId)
                 .eq(CheckinRecord::getCheckinDate, checkinDate));
         if (count > 0) {
-            throw new CheckinException("同一天不能重复打卡");
+            throw new CheckinException("同一个任务当天不能重复打卡");
         }
 
         CheckinRecord record = new CheckinRecord();
@@ -91,6 +97,14 @@ public class CheckinServiceImpl implements CheckinService {
             return List.of();
         }
         return checkinTaskMapper.selectBatchIds(taskIds).stream().map(this::toVO).toList();
+    }
+
+    private CheckinTask requireOwnedTask(Long userId, Long taskId) {
+        CheckinTask task = checkinTaskMapper.selectById(taskId);
+        if (task == null || !task.getUserId().equals(userId)) {
+            throw new CheckinException("打卡任务不存在");
+        }
+        return task;
     }
 
     private CheckinTaskVO toVO(CheckinTask task) {

@@ -10,6 +10,7 @@ import java.util.List;
 public interface CheckinService {
     CheckinTaskVO createTask(Long userId, CreateCheckinTaskRequest request);
     List<CheckinTaskVO> listTasks(Long userId);
+    void deleteTask(Long userId, Long taskId);
     void checkin(Long userId, Long taskId, CheckinRequest request);
     List<CheckinTaskVO> listByDate(Long userId, LocalDate date);
 }

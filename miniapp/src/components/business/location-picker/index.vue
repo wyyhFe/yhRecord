@@ -3,16 +3,16 @@
     <view class="section-head">
       <view class="section-copy">
         <view class="section-copy__title">位置</view>
-        <view class="section-copy__desc">
-          手动选点走微信地图选点服务，当前位置走微信定位能力。
-        </view>
+        <view class="section-copy__desc">可以直接获取当前位置，也可以调用微信地图选点。</view>
       </view>
       <u-tag v-if="modelValue?.locationName" text="已选择" plain shape="circle" type="warning" />
     </view>
 
     <view v-if="modelValue?.locationName" class="location-picker__result">
       <view class="location-picker__name">{{ modelValue.locationName }}</view>
-      <view class="location-picker__address">{{ modelValue.address || '已获取经纬度' }}</view>
+      <view class="location-picker__address">
+        {{ modelValue.address || '已获取坐标，保存时会继续补全地址信息' }}
+      </view>
     </view>
 
     <view class="action-grid-2">
@@ -31,6 +31,7 @@
 
 <script setup lang="ts">
 import type { DiaryLocationInput } from '@/types/diary'
+import { pickCurrentLocationPayload, pickManualLocationPayload } from '@/utils/qqmap/location'
 
 defineProps<{
   modelValue?: DiaryLocationInput
@@ -42,34 +43,25 @@ const emit = defineEmits<{
 
 async function pickCurrentLocation() {
   try {
-    const result = await uni.getLocation({
-      type: 'gcj02'
-    })
+    const result = await pickCurrentLocationPayload()
+    emit('update:modelValue', result.payload)
 
-    emit('update:modelValue', {
-      locationName: '当前位置',
-      address: '',
-      latitude: result.latitude,
-      longitude: result.longitude,
-      sourceType: 'CURRENT'
-    })
-    uni.$feedback.success('已获取当前位置')
-  } catch {
-    uni.$feedback.error('定位失败，请检查定位权限')
+    if (result.reverseGeocodeError) {
+      uni.$feedback.error(result.reverseGeocodeError, undefined, '已获取坐标，但地址解析失败')
+      return
+    }
+
+    uni.$feedback.success(result.payload.address ? '已获取当前位置' : '已获取当前位置坐标')
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '定位失败，请检查定位权限')
   }
 }
 
 async function pickManualLocation() {
   // #ifdef MP-WEIXIN
   try {
-    const result = await uni.chooseLocation()
-    emit('update:modelValue', {
-      locationName: result.name,
-      address: result.address,
-      latitude: result.latitude,
-      longitude: result.longitude,
-      sourceType: 'MANUAL'
-    })
+    const payload = await pickManualLocationPayload()
+    emit('update:modelValue', payload)
   } catch {
     uni.$feedback.info('已取消选点')
   }

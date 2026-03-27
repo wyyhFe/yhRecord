@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "Recycle Bin")
+@Tag(name = "回收站")
 @RestController
 @RequestMapping("/recycle-bin")
 public class RecycleBinController {
@@ -37,18 +37,18 @@ public class RecycleBinController {
         this.ledgerService = ledgerService;
     }
 
-    @Operation(summary = "List recycle bin items")
+    @Operation(summary = "查询回收站列表")
     @GetMapping("/list")
     public ApiResponse<List<RecycleBinItemVO>> list() {
         return ApiResponse.success(recycleBinService.list(UserContext.getUserId()));
     }
 
-    @Operation(summary = "Restore recycle bin item")
+    @Operation(summary = "恢复回收站资源")
     @PostMapping("/restore/{recycleId}")
     public ApiResponse<Void> restore(@PathVariable Long recycleId, @RequestParam Long resourceId) {
         RecycleBinRecord record = recycleBinService.getOwnedRecord(UserContext.getUserId(), recycleId);
         if (record == null || !record.getResourceId().equals(resourceId)) {
-            return ApiResponse.failure(-1, "Recycle record not found");
+            return ApiResponse.failure(-1, "回收站记录不存在");
         }
 
         if (record.getResourceType() == ResourceType.DIARY) {
@@ -56,18 +56,18 @@ public class RecycleBinController {
         } else if (record.getResourceType() == ResourceType.LEDGER_ENTRY) {
             ledgerService.restoreEntry(UserContext.getUserId(), resourceId);
         } else {
-            return ApiResponse.failure(-1, "Restore is not supported for this resource");
+            return ApiResponse.failure(-1, "当前资源暂不支持恢复");
         }
 
         return ApiResponse.success();
     }
 
-    @Operation(summary = "Permanently delete recycle bin item")
+    @Operation(summary = "彻底删除回收站资源")
     @DeleteMapping("/force-delete/{recycleId}")
     public ApiResponse<Void> forceDelete(@PathVariable Long recycleId, @RequestParam Long resourceId) {
         RecycleBinRecord record = recycleBinService.getOwnedRecord(UserContext.getUserId(), recycleId);
         if (record == null || !record.getResourceId().equals(resourceId)) {
-            return ApiResponse.failure(-1, "Recycle record not found");
+            return ApiResponse.failure(-1, "回收站记录不存在");
         }
 
         if (record.getResourceType() == ResourceType.DIARY) {
@@ -75,7 +75,7 @@ public class RecycleBinController {
         } else if (record.getResourceType() == ResourceType.LEDGER_ENTRY) {
             ledgerService.forceDeleteEntry(UserContext.getUserId(), resourceId);
         } else {
-            return ApiResponse.failure(-1, "Permanent delete is not supported for this resource");
+            return ApiResponse.failure(-1, "当前资源暂不支持彻底删除");
         }
 
         return ApiResponse.success();

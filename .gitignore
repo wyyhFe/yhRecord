@@ -35,3 +35,4 @@ build/
 miniapp/.env.local
 miniapp/.env.*.local
 miniapp/dist/
+miniapp/vite.config.ts.timestamp-*.mjs

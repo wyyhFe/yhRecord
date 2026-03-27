@@ -58,7 +58,9 @@ public class LedgerEntryController {
     @Operation(summary = "查询月账单")
     @GetMapping("/entries/month")
     public ApiResponse<List<LedgerEntryVO>> month(@RequestParam Integer year,
-                                                  @RequestParam Integer month,
+                                                  // month 可以不传：
+                                                  // 传 month 时查某年某月；不传时查某年全年明细，给前端年视图一次性使用。
+                                                  @RequestParam(required = false) Integer month,
                                                   @RequestParam(required = false) Long bookId) {
         return ApiResponse.success(ledgerService.monthEntries(UserContext.getUserId(), year, month, bookId));
     }

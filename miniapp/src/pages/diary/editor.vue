@@ -90,14 +90,20 @@
       </view>
 
       <view class="block-stack">
-        <u-cell-group :border="false">
+        <view class="editor-setting-list">
           <picker mode="date" :value="form.recordDate" @change="onDateChange">
-            <u-cell-item title="记录日期" :value="form.recordDate" :border-bottom="true" />
+            <view class="editor-setting-row">
+              <view class="editor-setting-row__label">记录日期</view>
+              <view class="editor-setting-row__value">{{ form.recordDate }}</view>
+            </view>
           </picker>
           <picker :range="visibilityOptions" range-key="label" @change="onVisibilityChange">
-            <u-cell-item title="可见范围" :value="visibilityLabel" :border-bottom="false" />
+            <view class="editor-setting-row">
+              <view class="editor-setting-row__label">可见范围</view>
+              <view class="editor-setting-row__value">{{ visibilityLabel }}</view>
+            </view>
           </picker>
-        </u-cell-group>
+        </view>
       </view>
     </view>
 
@@ -134,6 +140,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import PhotoPicker, { type SelectedPhoto } from '@/components/business/photo-picker/index.vue'
 import LocationPicker from '@/components/business/location-picker/index.vue'
 import SelectorDialog from '@/components/business/selector-dialog/index.vue'
@@ -142,7 +149,7 @@ import { fetchUserTags } from '@/api/tag'
 import { VISIBILITY_OPTIONS } from '@/config/app'
 import { DIARY_MOOD_OPTIONS, DIARY_WEATHER_OPTIONS } from '@/config/diary'
 import type { CreateDiaryPayload } from '@/types/diary'
-import type { Id } from '@/types/domain'
+import type { DiaryItem, Id } from '@/types/domain'
 import { uploadImageToOss } from '@/utils/upload'
 
 type PhotoPickerExpose = {
@@ -158,20 +165,10 @@ const visibilityOptions = VISIBILITY_OPTIONS.filter((item) => item.value !== 'AL
 const weatherOptions = DIARY_WEATHER_OPTIONS
 const moodOptions = DIARY_MOOD_OPTIONS
 
-const diaryId = ref<string | undefined>()
+const diaryId = ref('')
 const isEdit = computed(() => Boolean(diaryId.value))
 
-const form = ref<CreateDiaryPayload>({
-  title: '',
-  content: '',
-  recordDate: new Date().toISOString().slice(0, 10),
-  weather: '',
-  mood: '',
-  visibility: 'PRIVATE',
-  mediaList: [],
-  location: undefined
-})
-
+const form = ref<CreateDiaryPayload>(createEmptyForm())
 const photoPickerRef = ref<PhotoPickerExpose | null>(null)
 const locationPickerRef = ref<LocationPickerExpose | null>(null)
 const photos = ref<SelectedPhoto[]>([])
@@ -215,36 +212,43 @@ const selectedTagSummary = computed(() => {
   return names.length > 2 ? `${names.slice(0, 2).join(' / ')} +${names.length - 2}` : names.join(' / ')
 })
 
+function createEmptyForm(): CreateDiaryPayload {
+  return {
+    title: '',
+    content: '',
+    recordDate: new Date().toISOString().slice(0, 10),
+    weather: '',
+    mood: '',
+    visibility: 'PRIVATE',
+    mediaList: [],
+    location: undefined
+  }
+}
+
 function openWeatherDialog() {
-  console.log('[diary-editor] open weather dialog')
   showWeatherDialog.value = true
 }
 
 function openMoodDialog() {
-  console.log('[diary-editor] open mood dialog')
   showMoodDialog.value = true
 }
 
 function openTagDialog() {
-  console.log('[diary-editor] open tag dialog', selectedTagIds.value)
   showTagDialog.value = true
 }
 
 function selectWeather(value: string | number) {
-  console.log('[diary-editor] select weather', value)
   form.value.weather = String(value)
   showWeatherDialog.value = false
 }
 
 function selectMood(value: string | number) {
-  console.log('[diary-editor] select mood', value)
   form.value.mood = String(value)
   showMoodDialog.value = false
 }
 
 function toggleTag(value: string | number) {
   const tagId = String(value)
-  console.log('[diary-editor] toggle tag', tagId)
   const index = selectedTagIds.value.indexOf(tagId)
   if (index >= 0) {
     selectedTagIds.value.splice(index, 1)
@@ -263,12 +267,10 @@ function openDatePicker() {
 }
 
 function openPhotoSection() {
-  console.log('[diary-editor] open photo action')
   photoPickerRef.value?.openActionSheet()
 }
 
 function openLocationSection() {
-  console.log('[diary-editor] open location action')
   locationPickerRef.value?.pickManualLocation?.()
 }
 
@@ -286,8 +288,9 @@ function fillMemoryTemplate() {
 }
 
 function clearForm() {
-  form.value.title = ''
-  form.value.content = ''
+  form.value = createEmptyForm()
+  photos.value = []
+  selectedTagIds.value = []
 }
 
 function onDateChange(event: { detail: { value: string } }) {
@@ -352,7 +355,7 @@ async function submitDiary() {
       tagIds: selectedTagIds.value
     }
 
-    if (isEdit.value && diaryId.value) {
+    if (isEdit.value) {
       await updateDiary(diaryId.value, payload)
     } else {
       await createDiary(payload)
@@ -382,23 +385,22 @@ async function initTags() {
 }
 
 async function initDiary() {
-  const pages = getCurrentPages()
-  const current = pages[pages.length - 1] as { options?: Record<string, string> } | undefined
-  const options = current?.options
-  if (!options?.id) return
+  if (!diaryId.value) return
+  const detail = await fetchDiaryDetail(diaryId.value)
+  applyDiaryDetail(detail)
+}
 
-  diaryId.value = options.id
-  const detail = await fetchDiaryDetail(options.id)
+function applyDiaryDetail(detail: DiaryItem & { tagIds?: Id[] }) {
   form.value = {
     title: detail.title,
     content: detail.content,
     recordDate: detail.recordDate,
-    weather: detail.weather,
-    mood: detail.mood,
+    weather: detail.weather || '',
+    mood: detail.mood || '',
     visibility: detail.visibility,
     mediaList: [],
     location:
-      detail.latitude || detail.longitude
+      detail.latitude != null || detail.longitude != null || detail.locationName || detail.address
         ? {
             locationName: detail.locationName,
             address: detail.address,
@@ -411,15 +413,19 @@ async function initDiary() {
           }
         : undefined
   }
-  selectedTagIds.value = detail.tags?.map((item) => item.id) || []
-  photos.value = detail.mediaPaths.map((path) => ({
+
+  selectedTagIds.value = detail.tags?.map((item) => item.id) || detail.tagIds || []
+  photos.value = (detail.mediaPaths || []).map((path) => ({
     localPath: path,
     ossPath: path,
     status: 'done'
   }))
 }
 
-Promise.allSettled([initTags(), initDiary()])
+onLoad((options) => {
+  diaryId.value = options?.id || ''
+  Promise.allSettled([initTags(), initDiary()]).catch(() => undefined)
+})
 </script>
 
 <style scoped lang="scss">
@@ -542,5 +548,33 @@ Promise.allSettled([initTags(), initDiary()])
   background: #fff8ef;
   color: #a56d4b;
   font-size: 24rpx;
+}
+
+.editor-setting-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.editor-setting-row {
+  min-height: 84rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 0 22rpx;
+  border-radius: 20rpx;
+  background: #fcf5ec;
+}
+
+.editor-setting-row__label {
+  color: #7f6b58;
+  font-size: 24rpx;
+}
+
+.editor-setting-row__value {
+  color: #2b2118;
+  font-size: 28rpx;
+  font-weight: 600;
 }
 </style>

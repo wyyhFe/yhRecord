@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -135,8 +136,11 @@ public class LedgerServiceImpl implements LedgerService {
                         .eq(LedgerEntry::getUserId, userId)
                         .eq(bookId != null, LedgerEntry::getBookId, bookId)
                         .isNull(LedgerEntry::getDeletedAt)
+                        // 年份始终必传，所以月视图和年视图都会先按“某一年”收敛查询范围。
                         .apply("YEAR(entry_date) = {0}", year)
-                        .apply("MONTH(entry_date) = {0}", month)
+                        // month 传了就按“某年某月”查询；month 不传就只按“某年”查询，给前端年视图一次性拉全年数据用。
+                        .apply(month != null, "MONTH(entry_date) = {0}", month)
+                        // 即使是全年查询，也保持按日期倒序，前端可以直接复用当前明细处理逻辑。
                         .orderByDesc(LedgerEntry::getEntryDate)
                         .orderByDesc(LedgerEntry::getId))
                 .stream()
@@ -187,13 +191,13 @@ public class LedgerServiceImpl implements LedgerService {
 
     private void validateAmount(BigDecimal amount) {
         if (amount == null) {
-            throw new LedgerException("Amount is required");
+            throw new LedgerException("金额不能为空");
         }
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new LedgerException("Amount must be greater than 0");
+            throw new LedgerException("金额必须大于 0");
         }
         if (amount.scale() > 2) {
-            throw new LedgerException("Amount must keep at most 2 decimal places");
+            throw new LedgerException("金额最多保留两位小数");
         }
     }
 
@@ -225,7 +229,7 @@ public class LedgerServiceImpl implements LedgerService {
     private LedgerEntry requireOwnedEntry(Long userId, Long entryId, boolean includeDeleted) {
         LedgerEntry entry = ledgerEntryMapper.selectById(entryId);
         if (entry == null || !entry.getUserId().equals(userId) || (!includeDeleted && entry.getDeletedAt() != null)) {
-            throw new LedgerException("Ledger entry not found");
+            throw new LedgerException("账单不存在或无权限访问");
         }
         return entry;
     }
@@ -240,7 +244,8 @@ public class LedgerServiceImpl implements LedgerService {
         Map<Long, UserTag> tagMap = loadTagMap(tagIds);
         List<LedgerEntryVO.TagItemVO> tags = tagIds.stream()
                 .map(tagMap::get)
-                .filter(tag -> tag != null)
+                .filter(Objects::nonNull)
+//            .filter(tag -> tag != null)
                 .map(tag -> LedgerEntryVO.TagItemVO.builder()
                         .id(tag.getId())
                         .name(tag.getName())

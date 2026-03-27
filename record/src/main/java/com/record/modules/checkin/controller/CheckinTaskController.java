@@ -9,6 +9,7 @@ import com.record.modules.checkin.service.CheckinService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,9 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * 打卡接口。
- */
 @Tag(name = "打卡")
 @RestController
 @RequestMapping("/checkin")
@@ -44,6 +42,13 @@ public class CheckinTaskController {
     @GetMapping("/tasks/list")
     public ApiResponse<List<CheckinTaskVO>> list() {
         return ApiResponse.success(checkinService.listTasks(UserContext.getUserId()));
+    }
+
+    @Operation(summary = "删除打卡任务")
+    @DeleteMapping("/tasks/delete/{taskId}")
+    public ApiResponse<Void> delete(@PathVariable Long taskId) {
+        checkinService.deleteTask(UserContext.getUserId(), taskId);
+        return ApiResponse.success();
     }
 
     @Operation(summary = "完成打卡")

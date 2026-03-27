@@ -28,11 +28,13 @@
         />
       </view>
       <view class="block-stack">
-        <u-cell-group :border="false">
-          <picker mode="date" :value="form.startDate" @change="onDateChange">
-            <u-cell-item title="开始日期" :value="form.startDate" :border-bottom="false" />
-          </picker>
-        </u-cell-group>
+        <view class="field-label">开始日期</view>
+        <picker mode="date" :value="form.startDate" @change="onDateChange">
+          <view class="picker-row">
+            <text class="picker-row__value">{{ form.startDate }}</text>
+            <text class="picker-row__arrow">></text>
+          </view>
+        </picker>
       </view>
     </view>
 
@@ -97,3 +99,26 @@ async function submit() {
   }
 }
 </script>
+
+<style scoped lang="scss">
+.picker-row {
+  min-height: 84rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  border-radius: 20rpx;
+  background: #fcf5ec;
+  padding: 0 22rpx;
+}
+
+.picker-row__value {
+  color: #2b2118;
+  font-size: 28rpx;
+}
+
+.picker-row__arrow {
+  color: #b08a6d;
+  font-size: 26rpx;
+}
+</style>
