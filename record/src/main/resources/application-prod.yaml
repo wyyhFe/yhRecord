@@ -1,22 +1,21 @@
 # 生产环境配置。
-# 这里不写死真实值，全部通过环境变量注入，避免敏感信息进入仓库。
+# 生产环境不要在仓库内保留真实密钥，统一通过环境变量注入。
 
 spring:
   datasource:
-    # 生产 MySQL 连接地址。
     url: ${DB_URL:jdbc:mysql://123.207.210.150:3306/life_record?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
-    # 生产数据库用户名。
     username: ${DB_USERNAME:root}
-    # 生产数据库密码。
     password: ${DB_PASSWORD:wyh20040118}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
-      # 生产 Redis 主机。
       host: ${REDIS_HOST}
-      # 生产 Redis 端口。
       port: ${REDIS_PORT:6379}
-      # 生产 Redis 库号。
       database: ${REDIS_DATABASE:0}
-      # Redis 连接超时。
       timeout: 3s
+  ai:
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: ${AI_CHAT_MEMORY_INIT_SCHEMA:never}

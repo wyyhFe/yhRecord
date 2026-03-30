@@ -10,6 +10,7 @@
           </view>
         </view>
         <view class="ledger-header-actions">
+          <u-button plain shape="circle" size="mini" :hair-line="false" @click="goAiAnalysis">AI 分析</u-button>
           <u-button plain shape="circle" size="mini" :hair-line="false" @click="goLedgerTags">管理标签</u-button>
           <u-button plain shape="circle" size="mini" :hair-line="false" @click="goBooks">管理账本</u-button>
         </view>
@@ -603,6 +604,13 @@ function syncPendingFilter() {
 
 function goBooks() {
   uni.navigateTo({ url: '/pages/ledger/books' })
+}
+
+function goAiAnalysis() {
+  const query = selectedBookId.value
+    ? `?bookId=${selectedBookId.value}&bookName=${encodeURIComponent(selectedBookName.value || '')}`
+    : ''
+  uni.navigateTo({ url: `/pages/ai/bill-analysis${query}` })
 }
 
 function goLedgerTags() {

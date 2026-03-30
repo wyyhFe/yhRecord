@@ -302,6 +302,45 @@ CREATE TABLE IF NOT EXISTS `reminder_log` (
   CONSTRAINT `chk_reminder_log_channel` CHECK (`channel` IN ('MINI_PROGRAM', 'OFFICIAL_ACCOUNT'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='提醒发送日志表';
 
+CREATE TABLE IF NOT EXISTS `ai_bill_analysis_record` (
+  `id` BIGINT NOT NULL COMMENT '分析记录 ID',
+  `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
+  `book_id` BIGINT DEFAULT NULL COMMENT '账本 ID',
+  `book_name` VARCHAR(64) DEFAULT NULL COMMENT '账本名称',
+  `start_date` DATE NOT NULL COMMENT '分析开始日期',
+  `end_date` DATE NOT NULL COMMENT '分析结束日期',
+  `entry_count` INT NOT NULL DEFAULT 0 COMMENT '分析账单条数',
+  `question` VARCHAR(255) DEFAULT NULL COMMENT '补充分析问题',
+  `summary` VARCHAR(1000) DEFAULT NULL COMMENT '分析摘要',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+  `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
+  PRIMARY KEY (`id`),
+  KEY `idx_ai_bill_analysis_user_created` (`user_id`, `created_at`),
+  KEY `idx_ai_bill_analysis_user_range` (`user_id`, `start_date`, `end_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI 账单分析历史表';
+
+CREATE TABLE IF NOT EXISTS `ai_call_log` (
+  `id` BIGINT NOT NULL COMMENT '日志 ID',
+  `user_id` BIGINT DEFAULT NULL COMMENT '所属用户 ID',
+  `scene` VARCHAR(32) NOT NULL COMMENT '调用场景：CHAT / CHAT_STREAM / BILL_ANALYSIS',
+  `provider` VARCHAR(32) DEFAULT NULL COMMENT '模型提供方',
+  `model` VARCHAR(64) DEFAULT NULL COMMENT '模型名称',
+  `conversation_id` VARCHAR(64) DEFAULT NULL COMMENT '会话 ID',
+  `success_flag` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否成功',
+  `duration_ms` BIGINT DEFAULT NULL COMMENT '调用耗时，单位毫秒',
+  `error_message` VARCHAR(500) DEFAULT NULL COMMENT '失败原因',
+  `called_at` DATETIME DEFAULT NULL COMMENT '调用时间',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+  `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
+  PRIMARY KEY (`id`),
+  KEY `idx_ai_call_log_user_called` (`user_id`, `called_at`),
+  KEY `idx_ai_call_log_scene_called` (`scene`, `called_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI 调用日志表';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- 旧库升级参考 SQL

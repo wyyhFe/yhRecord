@@ -131,6 +131,18 @@
       "style": {
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/ai/chat",
+      "style": {
+        "navigationBarTitleText": "AI Chat"
+      }
+    },
+    {
+      "path": "pages/ai/bill-analysis",
+      "style": {
+        "navigationBarTitleText": "AI Bill Analysis"
+      }
     }
   ]
 }
