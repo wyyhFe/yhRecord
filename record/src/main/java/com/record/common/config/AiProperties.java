@@ -24,7 +24,7 @@ public class AiProperties {
     /**
      * 默认系统提示词。
      */
-    private String systemPrompt = "你是生活记录助手，负责聊天、账单总结和消费分析。回答需要准确、克制，不编造账单数据。";
+    private String systemPrompt;
 
     private Chat chat = new Chat();
     private BillAnalysis billAnalysis = new BillAnalysis();
@@ -57,6 +57,6 @@ public class AiProperties {
         /**
          * 账单分析系统提示词。
          */
-        private String systemPrompt = "你是专业账单分析助手。你只能基于用户提供的账单数据做总结、分类观察、风险提示和建议，不能捏造金额、趋势和交易记录。";
+        private String systemPrompt;
     }
 }

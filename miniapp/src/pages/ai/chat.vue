@@ -1,25 +1,23 @@
 <template>
   <view class="page-shell-safe ai-chat-page">
     <view class="page-head">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="page-head__eyebrow">AI Assistant</view>
-          <view class="page-head__title">AI Chat</view>
-          <view class="page-head__desc">
-            Streamed replies are enabled. Ask a question directly or request a recent spending summary.
+        <view class="section-head">
+          <view class="section-copy">
+          <view class="page-head__eyebrow">AI 助手</view>
+          <view class="page-head__title">智能对话</view>
+          <view class="page-head__desc">可以直接提问，也可以让它结合最近账单给你做分析。</view>
           </view>
+        <u-tag :text="streaming ? '回答中' : '就绪'" type="warning" plain shape="circle" />
         </view>
-        <u-tag :text="streaming ? 'Streaming' : 'Ready'" type="warning" plain shape="circle" />
       </view>
-    </view>
 
     <view class="page-section section-shell">
       <view class="section-head">
         <view class="section-copy">
-          <view class="section-copy__title">Conversation</view>
+          <view class="section-copy__title">当前会话</view>
           <view class="section-copy__desc">{{ conversationId }}</view>
         </view>
-        <u-button size="mini" type="primary" plain @tap="resetConversation">New Chat</u-button>
+        <u-button size="mini" type="primary" plain @tap="resetConversation">新对话</u-button>
       </view>
 
       <view v-if="messages.length" class="message-list">
@@ -30,22 +28,22 @@
           :class="item.role === 'user' ? 'message-card--user' : 'message-card--assistant'"
         >
           <view class="message-card__meta">
-            {{ item.role === 'user' ? 'You' : 'AI' }}
+            {{ item.role === 'user' ? '我' : 'AI 助手' }}
           </view>
           <view class="message-card__content">{{ item.content }}</view>
         </view>
       </view>
 
       <view v-else class="empty-state">
-        Start with something like: summarize my recent spending habits.
+        先发一句话试试，比如：帮我总结最近的消费习惯。
       </view>
     </view>
 
     <view class="page-section section-shell">
       <view class="section-head">
         <view class="section-copy">
-          <view class="section-copy__title">Message</view>
-          <view class="section-copy__desc">Short questions usually stream more smoothly.</view>
+          <view class="section-copy__title">输入问题</view>
+          <view class="section-copy__desc">问题尽量具体一点，回答通常会更稳定。</view>
         </view>
       </view>
 
@@ -53,12 +51,12 @@
         v-model="draft"
         class="composer"
         maxlength="500"
-        placeholder="Type your message"
+        placeholder="请输入你的问题"
       />
 
       <view class="composer-actions">
-        <u-button :disabled="streaming" type="info" plain @tap="fillLedgerPrompt">Ledger Prompt</u-button>
-        <u-button :disabled="streaming || !draft.trim()" type="warning" @tap="sendMessage">Send</u-button>
+        <u-button :disabled="streaming" type="info" plain @tap="fillLedgerPrompt">账单提问模板</u-button>
+        <u-button :disabled="streaming || !draft.trim()" type="warning" @tap="sendMessage">发送</u-button>
       </view>
     </view>
   </view>
@@ -67,7 +65,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
-import { streamAiChat } from '@/api/ai'
+import { createAiChat, streamAiChat } from '@/api/ai'
 
 type ChatRole = 'user' | 'assistant'
 
@@ -109,6 +107,28 @@ function closeStream() {
   streaming.value = false
 }
 
+async function sendByRequest(message: string) {
+  try {
+    const result = await createAiChat({
+      conversationId: conversationId.value,
+      message
+    })
+    conversationId.value = result.conversationId || conversationId.value
+    updateLastAssistantMessage(result.reply || '已收到，但后端没有返回内容。')
+  } catch (error) {
+    const text = error instanceof Error ? error.message : '发送失败，请稍后重试'
+    const lastMessage = messages.value.at(-1)
+    const content = `请求失败：${text}`
+    if (lastMessage?.role === 'assistant' && !lastMessage.content.trim()) {
+      lastMessage.content = content
+    } else {
+      appendMessage('assistant', content)
+    }
+  } finally {
+    closeStream()
+  }
+}
+
 function sendMessage() {
   const message = draft.value.trim()
   if (!message || streaming.value) {
@@ -130,14 +150,7 @@ function sendMessage() {
       closeStream()
     },
     onError(errorMessage) {
-      const lastMessage = messages.value.at(-1)
-      const text = `Request failed: ${errorMessage}`
-      if (lastMessage?.role === 'assistant' && !lastMessage.content.trim()) {
-        lastMessage.content = text
-      } else {
-        appendMessage('assistant', text)
-      }
-      closeStream()
+      sendByRequest(message).catch(() => undefined)
     }
   })
 }
@@ -155,10 +168,10 @@ function fillLedgerPrompt() {
 
 function buildInitialPrompt() {
   if (bookId.value) {
-    const name = bookName.value || 'this ledger'
-    return `Analyze recent records in ${name}, summarize spending habits, and point out the category that needs the most attention.`
+    const name = bookName.value || '这个账本'
+    return `请结合 ${name} 最近的记录，帮我总结消费习惯，并指出最需要关注的支出类别。`
   }
-  return 'Summarize my recent spending habits and point out the category that needs the most attention.'
+  return '请帮我总结最近的消费习惯，并指出最需要关注的支出类别。'
 }
 
 onLoad((query) => {

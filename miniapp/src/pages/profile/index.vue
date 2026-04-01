@@ -35,6 +35,15 @@
         >
           去写日记
         </u-button>
+        <u-button
+          class="profile-hero__ai-trigger"
+          plain
+          shape="circle"
+          :hair-line="false"
+          @click="openAiPopup"
+        >
+          AI 助手
+        </u-button>
       </view>
     </view>
 
@@ -74,15 +83,50 @@
         </view>
       </view>
     </view>
+
+    <u-popup
+      :model-value="showAiPopup"
+      mode="bottom"
+      border-radius="36"
+      @update:model-value="handleAiPopupChange"
+    >
+      <view class="ai-entry-popup">
+        <view class="ai-entry-popup__handle" />
+
+        <view class="ai-entry-popup__title">AI 模块</view>
+        <view class="ai-entry-popup__desc">
+          这里仅提供独立入口，具体能力仍在 AI 模块页内完成，不和“我的”页面业务耦合。
+        </view>
+
+        <view class="ai-entry-popup__list">
+          <view class="ai-entry-card" @tap="goAiChat">
+            <view class="ai-entry-card__main">
+              <view class="ai-entry-card__title">普通 AI 对话</view>
+              <view class="ai-entry-card__desc">适合开放式提问、追问和账单分析后的延伸交流。</view>
+            </view>
+            <view class="ai-entry-card__value">进入</view>
+          </view>
+
+          <view class="ai-entry-card" @tap="goKnowledgeChat">
+            <view class="ai-entry-card__main">
+              <view class="ai-entry-card__title">知识库聊天</view>
+              <view class="ai-entry-card__desc">适合基于指定知识库做问答，后续也方便单独接更多库。</view>
+            </view>
+            <view class="ai-entry-card__value">进入</view>
+          </view>
+        </view>
+      </view>
+    </u-popup>
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
 
 const appStore = useAppStore()
 const profile = computed(() => appStore.profile)
+const showAiPopup = ref(false)
 
 const avatarText = computed(() => {
   const name = profile.value?.nickname?.trim()
@@ -152,6 +196,24 @@ function goEditProfile() {
 
 function goDiaryEditor() {
   uni.navigateTo({ url: '/pages/diary/editor' })
+}
+
+function openAiPopup() {
+  showAiPopup.value = true
+}
+
+function handleAiPopupChange(value: boolean) {
+  showAiPopup.value = value
+}
+
+function goAiChat() {
+  showAiPopup.value = false
+  uni.navigateTo({ url: '/pages/ai/index' })
+}
+
+function goKnowledgeChat() {
+  showAiPopup.value = false
+  uni.navigateTo({ url: '/pages/ai/index?mode=knowledge' })
 }
 
 function handleSelect(key: string) {
@@ -262,6 +324,10 @@ onMounted(() => {
   gap: 18rpx;
 }
 
+.profile-hero__ai-trigger {
+  grid-column: 1 / -1;
+}
+
 .profile-entry-list {
   display: flex;
   flex-direction: column;
@@ -298,6 +364,77 @@ onMounted(() => {
 }
 
 .profile-entry-card__value {
+  flex-shrink: 0;
+  color: #a56d4b;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.ai-entry-popup {
+  padding: 30rpx 28rpx 48rpx;
+}
+
+.ai-entry-popup__handle {
+  width: 88rpx;
+  height: 8rpx;
+  margin: 0 auto;
+  border-radius: 999rpx;
+  background: #e7d7c7;
+}
+
+.ai-entry-popup__title {
+  margin-top: 24rpx;
+  color: #2b2118;
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.ai-entry-popup__desc {
+  margin-top: 14rpx;
+  color: #6b5b4e;
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
+.ai-entry-popup__list {
+  margin-top: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.ai-entry-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  padding: 24rpx 22rpx;
+  border-radius: 24rpx;
+  background:
+    radial-gradient(circle at top right, rgba(215, 166, 72, 0.12), transparent 40%),
+    linear-gradient(180deg, #fffdf8 0%, #fcf4ea 100%);
+  border: 1rpx solid rgba(196, 124, 82, 0.1);
+}
+
+.ai-entry-card__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.ai-entry-card__title {
+  color: #2b2118;
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.ai-entry-card__desc {
+  margin-top: 10rpx;
+  color: #7a6a5c;
+  font-size: 23rpx;
+  line-height: 1.6;
+}
+
+.ai-entry-card__value {
   flex-shrink: 0;
   color: #a56d4b;
   font-size: 24rpx;

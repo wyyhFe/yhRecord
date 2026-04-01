@@ -133,15 +133,27 @@
       }
     },
     {
+      "path": "pages/ai/index",
+      "style": {
+        "navigationBarTitleText": "AI 工作台"
+      }
+    },
+    {
       "path": "pages/ai/chat",
       "style": {
-        "navigationBarTitleText": "AI Chat"
+        "navigationBarTitleText": "智能对话"
       }
     },
     {
       "path": "pages/ai/bill-analysis",
       "style": {
-        "navigationBarTitleText": "AI Bill Analysis"
+        "navigationBarTitleText": "AI 账单分析"
+      }
+    },
+    {
+      "path": "pages/ai/knowledge-base",
+      "style": {
+        "navigationBarTitleText": "知识库聊天"
       }
     }
   ]

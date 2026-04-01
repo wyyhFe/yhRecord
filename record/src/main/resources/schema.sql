@@ -341,6 +341,70 @@ CREATE TABLE IF NOT EXISTS `ai_call_log` (
   KEY `idx_ai_call_log_scene_called` (`scene`, `called_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI 调用日志表';
 
+CREATE TABLE IF NOT EXISTS `knowledge_base` (
+  `id` BIGINT NOT NULL COMMENT '知识库 ID',
+  `user_id` BIGINT DEFAULT NULL COMMENT '所属用户 ID，公共知识库可为空',
+  `name` VARCHAR(128) NOT NULL COMMENT '知识库名称',
+  `code` VARCHAR(64) NOT NULL COMMENT '知识库唯一编码',
+  `description` VARCHAR(255) DEFAULT NULL COMMENT '知识库描述',
+  `status` VARCHAR(16) NOT NULL DEFAULT 'ENABLED' COMMENT '状态：ENABLED / DISABLED',
+  `visibility` VARCHAR(16) NOT NULL DEFAULT 'PRIVATE' COMMENT '可见范围：PRIVATE / PUBLIC',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+  `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_knowledge_base_code` (`code`),
+  KEY `idx_knowledge_base_user_status` (`user_id`, `status`),
+  CONSTRAINT `chk_knowledge_base_status` CHECK (`status` IN ('ENABLED', 'DISABLED')),
+  CONSTRAINT `chk_knowledge_base_visibility` CHECK (`visibility` IN ('PRIVATE', 'PUBLIC'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库表';
+
+CREATE TABLE IF NOT EXISTS `knowledge_document` (
+  `id` BIGINT NOT NULL COMMENT '文档 ID',
+  `knowledge_base_id` BIGINT NOT NULL COMMENT '所属知识库 ID',
+  `user_id` BIGINT DEFAULT NULL COMMENT '上传用户 ID',
+  `title` VARCHAR(255) NOT NULL COMMENT '文档标题',
+  `source_type` VARCHAR(32) NOT NULL COMMENT '来源类型：UPLOAD / URL / MANUAL',
+  `file_name` VARCHAR(255) DEFAULT NULL COMMENT '原始文件名',
+  `file_path` VARCHAR(512) DEFAULT NULL COMMENT '原始文件路径或对象存储地址',
+  `mime_type` VARCHAR(128) DEFAULT NULL COMMENT '文件类型',
+  `content_hash` VARCHAR(64) DEFAULT NULL COMMENT '文档内容哈希',
+  `status` VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态：PENDING / PARSING / VECTORIZED / FAILED',
+  `chunk_count` INT NOT NULL DEFAULT 0 COMMENT '切片数量',
+  `last_error` VARCHAR(500) DEFAULT NULL COMMENT '最后一次失败原因',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+  `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
+  PRIMARY KEY (`id`),
+  KEY `idx_knowledge_document_kb_status` (`knowledge_base_id`, `status`),
+  KEY `idx_knowledge_document_user_created` (`user_id`, `created_at`),
+  CONSTRAINT `chk_knowledge_document_source_type` CHECK (`source_type` IN ('UPLOAD', 'URL', 'MANUAL')),
+  CONSTRAINT `chk_knowledge_document_status` CHECK (`status` IN ('PENDING', 'PARSING', 'VECTORIZED', 'FAILED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库文档表';
+
+CREATE TABLE IF NOT EXISTS `knowledge_chunk_task` (
+  `id` BIGINT NOT NULL COMMENT '任务 ID',
+  `knowledge_base_id` BIGINT NOT NULL COMMENT '知识库 ID',
+  `document_id` BIGINT NOT NULL COMMENT '文档 ID',
+  `task_type` VARCHAR(32) NOT NULL COMMENT '任务类型：PARSE / EMBED / REINDEX / DELETE_VECTOR',
+  `status` VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态：PENDING / RUNNING / SUCCESS / FAILED',
+  `retry_count` INT NOT NULL DEFAULT 0 COMMENT '重试次数',
+  `last_error` VARCHAR(500) DEFAULT NULL COMMENT '最后一次失败原因',
+  `started_at` DATETIME DEFAULT NULL COMMENT '开始时间',
+  `finished_at` DATETIME DEFAULT NULL COMMENT '结束时间',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+  `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
+  PRIMARY KEY (`id`),
+  KEY `idx_knowledge_chunk_task_document_status` (`document_id`, `status`),
+  KEY `idx_knowledge_chunk_task_kb_type` (`knowledge_base_id`, `task_type`, `status`),
+  CONSTRAINT `chk_knowledge_chunk_task_type` CHECK (`task_type` IN ('PARSE', 'EMBED', 'REINDEX', 'DELETE_VECTOR')),
+  CONSTRAINT `chk_knowledge_chunk_task_status` CHECK (`status` IN ('PENDING', 'RUNNING', 'SUCCESS', 'FAILED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库切片与向量任务表';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- 旧库升级参考 SQL

@@ -15,13 +15,17 @@ spring:
     time-zone: Asia/Shanghai
   ai:
     openai:
+      api-key: ${AI_API_KEY}
       base-url: ${AI_BASE_URL:https://api.openai.com}
-      api-key: ${AI_API_KEY:}
       chat:
         options:
           model: ${AI_CHAT_MODEL:gpt-4o-mini}
           temperature: ${AI_CHAT_TEMPERATURE:0.2}
           max-tokens: ${AI_CHAT_MAX_TOKENS:1200}
+#          embedding:
+#            options:
+#              model: text-embedding-v3
+#              dimensions: 1024   #向量维度
     chat:
       memory:
         repository:
@@ -133,14 +137,14 @@ app:
   ai:
     enabled: ${APP_AI_ENABLED:false}
     provider: ${APP_AI_PROVIDER:openai-compatible}
-    system-prompt: ${APP_AI_SYSTEM_PROMPT:你是生活记录助手，负责聊天、账单总结和消费分析。回答需要准确、克制，不编造账单数据。}
+    system-prompt: ${APP_AI_SYSTEM_PROMPT:}
     chat:
       memory-enabled: ${APP_AI_CHAT_MEMORY_ENABLED:true}
       max-messages: ${APP_AI_CHAT_MAX_MESSAGES:20}
     bill-analysis:
       max-entries: ${APP_AI_BILL_ANALYSIS_MAX_ENTRIES:200}
       default-days: ${APP_AI_BILL_ANALYSIS_DEFAULT_DAYS:30}
-      system-prompt: ${APP_AI_BILL_ANALYSIS_SYSTEM_PROMPT:你是专业账单分析助手。你只能基于用户提供的账单数据做总结、分类观察、风险提示和建议，不能捏造金额、趋势和交易记录。}
+      system-prompt: ${APP_AI_BILL_ANALYSIS_SYSTEM_PROMPT:}
 
 #  你现在至少需要准备这些环境变量：
 #

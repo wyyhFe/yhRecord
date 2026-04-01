@@ -315,7 +315,7 @@ function goChat() {
     .join('&')
 
   uni.navigateTo({
-    url: `/pages/ai/chat${query ? `?${query}` : ''}`
+    url: `/pages/ai/index?scene=${encodeURIComponent(bookName.value || '账单分析追问')}${query ? `&${query}` : ''}`
   })
 }
 

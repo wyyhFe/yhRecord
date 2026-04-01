@@ -10,6 +10,74 @@ export interface AiChatRequest {
 export interface AiChatResponse {
   conversationId: string
   reply: string
+  sources?: AiCitation[]
+}
+
+export interface KnowledgeBaseChatRequest {
+  knowledgeBaseId?: string
+  conversationId?: string
+  message: string
+}
+
+export interface KnowledgeBaseChatResponse {
+  conversationId: string
+  reply: string
+  sources?: AiCitation[]
+}
+
+export interface AgentChatRequest {
+  conversationId?: string
+  message: string
+  knowledgeBaseId?: string
+}
+
+export interface AgentChatResponse {
+  conversationId: string
+  reply: string
+  sources?: AiCitation[]
+}
+
+export interface AiCitation {
+  id?: string
+  title: string
+  snippet: string
+  sourceType?: string
+  sourcePath?: string
+  score?: number
+}
+
+export interface AiAgentSummary {
+  id: string
+  name: string
+  description: string
+  capabilities?: string[]
+}
+
+export interface KnowledgeBaseSummary {
+  id: string
+  name: string
+  description: string
+  documentCount: number
+  updatedAt?: string
+}
+
+export interface AiConversationSummary {
+  id: string
+  title: string
+  agentId?: string | null
+  knowledgeBaseId?: string | null
+  lastMessagePreview?: string | null
+  updatedAt: string
+  messageCount: number
+}
+
+export interface AiConversationMessage {
+  id: string
+  conversationId: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  createdAt: string
+  sources?: AiCitation[]
 }
 
 export interface BillAnalysisHistory {
@@ -58,6 +126,12 @@ export interface BillAnalysisResponse {
 }
 
 interface StreamAiChatOptions extends AiChatRequest {
+  onMessage: (chunk: string) => void
+  onDone?: () => void
+  onError?: (message: string) => void
+}
+
+interface StreamKnowledgeBaseChatOptions extends KnowledgeBaseChatRequest {
   onMessage: (chunk: string) => void
   onDone?: () => void
   onError?: (message: string) => void
@@ -116,18 +190,23 @@ function parseSseBuffer(buffer: string, onEvent: (event: string, data: string) =
   return remain
 }
 
-export function streamAiChat(options: StreamAiChatOptions): StreamController {
+function createStreamRequest(
+  url: string,
+  payload: Record<string, unknown>,
+  options: {
+    onMessage: (chunk: string) => void
+    onDone?: () => void
+    onError?: (message: string) => void
+  }
+): StreamController {
   const token = tokenStorage.getAccessToken()
   let closed = false
   let sseBuffer = ''
 
   const requestTask = uni.request({
-    url: `${API_BASE_URL}/ai/chat/stream`,
+    url,
     method: 'POST',
-    data: {
-      conversationId: options.conversationId,
-      message: options.message
-    },
+    data: payload,
     header: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -175,11 +254,97 @@ export function streamAiChat(options: StreamAiChatOptions): StreamController {
   }
 }
 
+export function streamAiChat(options: StreamAiChatOptions): StreamController {
+  return createStreamRequest(
+    `${API_BASE_URL}/ai/chat/stream`,
+    {
+      conversationId: options.conversationId,
+      message: options.message
+    },
+    options
+  )
+}
+
 export function createAiChat(payload: AiChatRequest) {
   return request<AiChatResponse>({
     url: '/ai/chat',
     method: 'POST',
     data: payload
+  })
+}
+
+export function streamKnowledgeBaseChat(options: StreamKnowledgeBaseChatOptions): StreamController {
+  return createStreamRequest(
+    `${API_BASE_URL}/ai/knowledge-base/chat/stream`,
+    {
+      knowledgeBaseId: options.knowledgeBaseId,
+      conversationId: options.conversationId,
+      message: options.message
+    },
+    options
+  )
+}
+
+export function createKnowledgeBaseChat(payload: KnowledgeBaseChatRequest) {
+  return request<KnowledgeBaseChatResponse>({
+    url: '/ai/knowledge-base/chat',
+    method: 'POST',
+    data: payload
+  })
+}
+
+export function createAgentChat(agentId: string, payload: AgentChatRequest) {
+  return request<AgentChatResponse>({
+    url: `/ai/agents/${agentId}/chat`,
+    method: 'POST',
+    data: payload
+  })
+}
+
+export function fetchAiAgents() {
+  return request<AiAgentSummary[]>({
+    url: '/ai/agents',
+    method: 'GET'
+  })
+}
+
+export function fetchKnowledgeBases() {
+  return request<KnowledgeBaseSummary[]>({
+    url: '/ai/knowledge-bases',
+    method: 'GET'
+  })
+}
+
+export function fetchAiConversations() {
+  return request<AiConversationSummary[]>({
+    url: '/ai/conversations',
+    method: 'GET'
+  })
+}
+
+export function createAiConversation(data?: {
+  title?: string
+  agentId?: string
+  knowledgeBaseId?: string
+}) {
+  return request<AiConversationSummary>({
+    url: '/ai/conversations',
+    method: 'POST',
+    data
+  })
+}
+
+export function fetchAiConversationMessages(conversationId: string) {
+  return request<AiConversationMessage[]>({
+    url: `/ai/conversations/${conversationId}/messages`,
+    method: 'GET'
+  })
+}
+
+export function deleteAiConversation(conversationId: string) {
+  return request<boolean>({
+    url: `/ai/conversations/${conversationId}`,
+    method: 'DELETE'
   })
 }
 
