@@ -607,10 +607,8 @@ function goBooks() {
 }
 
 function goAiAnalysis() {
-  const query = selectedBookId.value
-    ? `?bookId=${selectedBookId.value}&bookName=${encodeURIComponent(selectedBookName.value || '')}`
-    : ''
-  uni.navigateTo({ url: `/pages/ai/bill-analysis${query}` })
+  const bookName = selectedBookName.value || '当前账本'
+  uni.navigateTo({ url: `/pages/ai/index?scene=${encodeURIComponent(`请结合 ${bookName} 帮我整理一下账单分析思路。`)}` })
 }
 
 function goLedgerTags() {

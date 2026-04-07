@@ -93,24 +93,14 @@
       <view class="ai-entry-popup">
         <view class="ai-entry-popup__handle" />
 
-        <view class="ai-entry-popup__title">AI 模块</view>
-        <view class="ai-entry-popup__desc">
-          这里仅提供独立入口，具体能力仍在 AI 模块页内完成，不和“我的”页面业务耦合。
-        </view>
+        <view class="ai-entry-popup__title">AI 聊天</view>
+        <view class="ai-entry-popup__desc">当前只保留基础聊天入口，方便单独学习和调试流式会话能力。</view>
 
         <view class="ai-entry-popup__list">
           <view class="ai-entry-card" @tap="goAiChat">
             <view class="ai-entry-card__main">
-              <view class="ai-entry-card__title">普通 AI 对话</view>
-              <view class="ai-entry-card__desc">适合开放式提问、追问和账单分析后的延伸交流。</view>
-            </view>
-            <view class="ai-entry-card__value">进入</view>
-          </view>
-
-          <view class="ai-entry-card" @tap="goKnowledgeChat">
-            <view class="ai-entry-card__main">
-              <view class="ai-entry-card__title">知识库聊天</view>
-              <view class="ai-entry-card__desc">适合基于指定知识库做问答，后续也方便单独接更多库。</view>
+              <view class="ai-entry-card__title">基础聊天</view>
+              <view class="ai-entry-card__desc">只保留会话列表、消息窗口和流式发送，其他能力暂时移除。</view>
             </view>
             <view class="ai-entry-card__value">进入</view>
           </view>
@@ -209,11 +199,6 @@ function handleAiPopupChange(value: boolean) {
 function goAiChat() {
   showAiPopup.value = false
   uni.navigateTo({ url: '/pages/ai/index' })
-}
-
-function goKnowledgeChat() {
-  showAiPopup.value = false
-  uni.navigateTo({ url: '/pages/ai/index?mode=knowledge' })
 }
 
 function handleSelect(key: string) {

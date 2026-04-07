@@ -3,6 +3,11 @@
 # 这里存放所有环境共用的默认值，生产环境优先通过环境变量覆盖。
 server:
   port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 spring:
   application:
@@ -36,7 +41,7 @@ mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
   global-config:
     db-config:
       id-type: assign_id
@@ -135,7 +140,7 @@ app:
         remark-field: ${OA_MEMORIAL_REMARK_FIELD:thing4}
         name-field: ${OA_MEMORIAL_NAME_FIELD:thing5}
   ai:
-    enabled: ${APP_AI_ENABLED:false}
+    enabled: ${APP_AI_ENABLED:true}
     provider: ${APP_AI_PROVIDER:openai-compatible}
     system-prompt: ${APP_AI_SYSTEM_PROMPT:}
     chat:
@@ -145,13 +150,6 @@ app:
       max-entries: ${APP_AI_BILL_ANALYSIS_MAX_ENTRIES:200}
       default-days: ${APP_AI_BILL_ANALYSIS_DEFAULT_DAYS:30}
       system-prompt: ${APP_AI_BILL_ANALYSIS_SYSTEM_PROMPT:}
-
-#  你现在至少需要准备这些环境变量：
-#
-#  APP_AI_ENABLED=true
-#  AI_API_KEY=你的key
-#  AI_BASE_URL=https://api.openai.com
-#  AI_CHAT_MODEL=gpt-4o-mini
 
 alioss:
   endpoint: ${ALIOSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}

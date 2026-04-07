@@ -1,13 +1,13 @@
-# Architecture Design
+# 架构设计
 
-## 1. System Overview
+## 1. 系统概览
 
-The project uses a frontend-backend separated architecture:
+本项目采用前后端分离架构：
 
-- frontend: WeChat mini program for user interaction and page rendering
-- backend: Spring Boot for business logic, authentication, persistence and external integrations
+- 前端：微信小程序，负责用户交互和页面渲染
+- 后端：Spring Boot，负责业务逻辑、认证鉴权、数据持久化和外部能力集成
 
-## 2. Architecture Diagram
+## 2. 架构图
 
 ```mermaid
 flowchart LR
@@ -29,100 +29,100 @@ flowchart LR
     API --> MAP
 ```
 
-## 3. Backend Layers
+## 3. 后端分层
 
-### Controller Layer
+### Controller 层
 
-Responsible for:
+职责：
 
-- receiving requests
-- validating request parameters
-- returning unified response objects
+- 接收请求
+- 校验请求参数
+- 返回统一响应对象
 
-### Service Layer
+### Service 层
 
-Responsible for:
+职责：
 
-- business logic
-- permission checks
-- cross-module orchestration
+- 承担业务逻辑
+- 执行权限校验
+- 协调跨模块流程
 
-### Mapper Layer
+### Mapper 层
 
-Responsible for:
+职责：
 
-- database read and write operations
-- persistence mapping
+- 负责数据库读写
+- 负责持久层映射
 
-### Model Layer
+### Model 层
 
-Responsible for:
+职责：
 
-- `dto`: request payloads
-- `vo`: response payloads
-- `entity`: persistence entities
+- `dto`：请求参数对象
+- `vo`：响应结果对象
+- `entity`：持久化实体
 
-### Integration Layer
+### 集成层
 
-Responsible for:
+职责：
 
-- WeChat login
-- mini program subscribe messages
-- official account template messages
-- map reverse geocoding
-- OSS related support
+- 微信登录
+- 小程序订阅消息
+- 公众号模板消息
+- 地图逆地理编码
+- OSS 相关能力支持
 
-## 4. Core Data Flow
+## 4. 核心数据流
 
-### Login
+### 登录
 
-The frontend calls `wx.login`, the backend exchanges the code for `openid`, then creates JWT tokens for its own business session.
+前端调用 `wx.login`，后端使用 `code` 换取 `openid`，再生成 JWT 令牌，建立自身业务会话。
 
-### Diary
+### 日记
 
-The frontend submits diary data, the backend writes the diary table, media table and tag relation table, and resolves structured address data when needed.
+前端提交日记数据后，后端会写入日记主表、媒体表和标签关联表，并在需要时补充结构化地址信息。
 
-### Reminder
+### 提醒
 
-A scheduled task scans reminder settings. The main delivery path uses mini program subscribe messages, while official account template messages remain an optional extension path.
+定时任务会扫描提醒设置。当前主发送链路是小程序订阅消息，公众号模板消息保留为可选扩展通道。
 
-## 5. Storage
+## 5. 存储设计
 
 ### MySQL
 
-Used for:
+用于存储：
 
-- users
-- sessions
-- diaries
-- tags
-- ledger entries
-- check-in tasks and records
-- memorial days
-- recycle bin records
-- reminder settings and logs
+- 用户
+- 会话
+- 日记
+- 标签
+- 记账流水
+- 打卡任务与记录
+- 纪念日
+- 回收站记录
+- 提醒设置与日志
 
 ### Redis
 
-Used for:
+用于存储：
 
-- active login sessions
-- token/session coordination
+- 活跃登录会话
+- token / session 协调状态
 
 ### OSS
 
-Used for:
+用于存储：
 
-- image files
-- video files
+- 图片文件
+- 视频文件
 
-The database stores relative file paths or object keys only.
+数据库中只保存相对文件路径或对象 Key。
 
-## 6. Design Principles
+## 6. 设计原则
 
-- keep user identity and business session separated
-- separate file storage from business data
-- keep module boundaries clear
-- favor extensible data models
-- keep API response format unified
-- keep OpenAPI model annotations complete
+- 用户身份与业务会话分离
+- 文件存储与业务数据分离
+- 保持模块边界清晰
+- 优先采用可扩展的数据模型
+- 保持 API 响应格式统一
+- 保持 OpenAPI 模型注解完整

@@ -179,11 +179,6 @@ function handleQuickAction(key: string, path: string) {
 
   uni.navigateTo({ url: path })
 }
-
-onShow(() => {
-  loadSummary()
-})
-
 onLoad(() => {
   loadSummary()
 })

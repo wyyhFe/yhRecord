@@ -1,15 +1,15 @@
 <template>
   <view class="page-shell-safe ai-chat-page">
     <view class="page-head">
-        <view class="section-head">
-          <view class="section-copy">
+      <view class="section-head">
+        <view class="section-copy">
           <view class="page-head__eyebrow">AI 助手</view>
           <view class="page-head__title">智能对话</view>
-          <view class="page-head__desc">可以直接提问，也可以让它结合最近账单给你做分析。</view>
-          </view>
-        <u-tag :text="streaming ? '回答中' : '就绪'" type="warning" plain shape="circle" />
+          <view class="page-head__desc">当前页面仅保留流式聊天接口。</view>
         </view>
+        <u-tag :text="streaming ? '回答中' : '就绪'" type="warning" plain shape="circle" />
       </view>
+    </view>
 
     <view class="page-section section-shell">
       <view class="section-head">
@@ -27,16 +27,12 @@
           class="message-card"
           :class="item.role === 'user' ? 'message-card--user' : 'message-card--assistant'"
         >
-          <view class="message-card__meta">
-            {{ item.role === 'user' ? '我' : 'AI 助手' }}
-          </view>
+          <view class="message-card__meta">{{ item.role === 'user' ? '我' : 'AI 助手' }}</view>
           <view class="message-card__content">{{ item.content }}</view>
         </view>
       </view>
 
-      <view v-else class="empty-state">
-        先发一句话试试，比如：帮我总结最近的消费习惯。
-      </view>
+      <view v-else class="empty-state">先发一句话试试，比如：帮我总结最近的消费习惯。</view>
     </view>
 
     <view class="page-section section-shell">
@@ -51,7 +47,9 @@
         v-model="draft"
         class="composer"
         maxlength="500"
+        confirm-type="send"
         placeholder="请输入你的问题"
+        @confirm="sendMessage"
       />
 
       <view class="composer-actions">
@@ -65,7 +63,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
-import { createAiChat, streamAiChat } from '@/api/ai'
+import { streamAiChat } from '@/api/ai'
 
 type ChatRole = 'user' | 'assistant'
 
@@ -107,26 +105,16 @@ function closeStream() {
   streaming.value = false
 }
 
-async function sendByRequest(message: string) {
-  try {
-    const result = await createAiChat({
-      conversationId: conversationId.value,
-      message
-    })
-    conversationId.value = result.conversationId || conversationId.value
-    updateLastAssistantMessage(result.reply || '已收到，但后端没有返回内容。')
-  } catch (error) {
-    const text = error instanceof Error ? error.message : '发送失败，请稍后重试'
-    const lastMessage = messages.value.at(-1)
-    const content = `请求失败：${text}`
-    if (lastMessage?.role === 'assistant' && !lastMessage.content.trim()) {
-      lastMessage.content = content
-    } else {
-      appendMessage('assistant', content)
-    }
-  } finally {
-    closeStream()
+function fillLedgerPrompt() {
+  draft.value = buildInitialPrompt()
+}
+
+function buildInitialPrompt() {
+  if (bookId.value) {
+    const name = bookName.value || '这个账本'
+    return `请结合 ${name} 最近的记录，帮我总结消费习惯，并指出最需要关注的支出类别。`
   }
+  return '请帮我总结最近的消费习惯，并指出最需要关注的支出类别。'
 }
 
 function sendMessage() {
@@ -150,7 +138,14 @@ function sendMessage() {
       closeStream()
     },
     onError(errorMessage) {
-      sendByRequest(message).catch(() => undefined)
+      const content = errorMessage || '流式请求失败，请检查后端流式接口。'
+      const lastMessage = messages.value.at(-1)
+      if (lastMessage?.role === 'assistant' && !lastMessage.content.trim()) {
+        lastMessage.content = content
+      } else {
+        appendMessage('assistant', content)
+      }
+      closeStream()
     }
   })
 }
@@ -160,18 +155,6 @@ function resetConversation() {
   conversationId.value = `chat-${Date.now()}`
   messages.value = []
   draft.value = buildInitialPrompt()
-}
-
-function fillLedgerPrompt() {
-  draft.value = buildInitialPrompt()
-}
-
-function buildInitialPrompt() {
-  if (bookId.value) {
-    const name = bookName.value || '这个账本'
-    return `请结合 ${name} 最近的记录，帮我总结消费习惯，并指出最需要关注的支出类别。`
-  }
-  return '请帮我总结最近的消费习惯，并指出最需要关注的支出类别。'
 }
 
 onLoad((query) => {

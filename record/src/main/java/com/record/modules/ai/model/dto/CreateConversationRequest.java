@@ -9,10 +9,4 @@ public class CreateConversationRequest {
 
     @Schema(description = "会话标题")
     private String title;
-
-    @Schema(description = "Agent ID")
-    private String agentId;
-
-    @Schema(description = "知识库 ID")
-    private Long knowledgeBaseId;
 }

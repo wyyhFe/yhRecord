@@ -7,65 +7,9 @@ export interface AiChatRequest {
   message: string
 }
 
-export interface AiChatResponse {
-  conversationId: string
-  reply: string
-  sources?: AiCitation[]
-}
-
-export interface KnowledgeBaseChatRequest {
-  knowledgeBaseId?: string
-  conversationId?: string
-  message: string
-}
-
-export interface KnowledgeBaseChatResponse {
-  conversationId: string
-  reply: string
-  sources?: AiCitation[]
-}
-
-export interface AgentChatRequest {
-  conversationId?: string
-  message: string
-  knowledgeBaseId?: string
-}
-
-export interface AgentChatResponse {
-  conversationId: string
-  reply: string
-  sources?: AiCitation[]
-}
-
-export interface AiCitation {
-  id?: string
-  title: string
-  snippet: string
-  sourceType?: string
-  sourcePath?: string
-  score?: number
-}
-
-export interface AiAgentSummary {
-  id: string
-  name: string
-  description: string
-  capabilities?: string[]
-}
-
-export interface KnowledgeBaseSummary {
-  id: string
-  name: string
-  description: string
-  documentCount: number
-  updatedAt?: string
-}
-
 export interface AiConversationSummary {
   id: string
   title: string
-  agentId?: string | null
-  knowledgeBaseId?: string | null
   lastMessagePreview?: string | null
   updatedAt: string
   messageCount: number
@@ -77,61 +21,9 @@ export interface AiConversationMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
   createdAt: string
-  sources?: AiCitation[]
-}
-
-export interface BillAnalysisHistory {
-  id: string
-  createdAt: string
-  startDate: string
-  endDate: string
-  bookId?: string | number | null
-  bookName?: string | null
-  entryCount: number
-  summary?: string | null
-  question?: string | null
-}
-
-export interface BillAnalysisCategoryItem {
-  name: string
-  amount: number
-  ratio: number
-}
-
-export interface BillAnalysisSampleItem {
-  entryDate: string
-  type: 'INCOME' | 'EXPENSE'
-  amount: number
-  bookName?: string | null
-  category?: string | null
-  remark?: string | null
-}
-
-export interface BillAnalysisResponse {
-  startDate: string
-  endDate: string
-  bookId?: string | number | null
-  bookName?: string | null
-  entryCount: number
-  totalIncome: number
-  totalExpense: number
-  balance: number
-  expenseCategories: BillAnalysisCategoryItem[]
-  incomeCategories: BillAnalysisCategoryItem[]
-  samples: BillAnalysisSampleItem[]
-  summary: string
-  observations: string[]
-  risks: string[]
-  suggestions: string[]
 }
 
 interface StreamAiChatOptions extends AiChatRequest {
-  onMessage: (chunk: string) => void
-  onDone?: () => void
-  onError?: (message: string) => void
-}
-
-interface StreamKnowledgeBaseChatOptions extends KnowledgeBaseChatRequest {
   onMessage: (chunk: string) => void
   onDone?: () => void
   onError?: (message: string) => void
@@ -151,6 +43,7 @@ function decodeChunk(chunk: ArrayBuffer) {
   for (let index = 0; index < bytes.length; index += 1) {
     result += String.fromCharCode(bytes[index])
   }
+
   try {
     return decodeURIComponent(escape(result))
   } catch {
@@ -190,15 +83,7 @@ function parseSseBuffer(buffer: string, onEvent: (event: string, data: string) =
   return remain
 }
 
-function createStreamRequest(
-  url: string,
-  payload: Record<string, unknown>,
-  options: {
-    onMessage: (chunk: string) => void
-    onDone?: () => void
-    onError?: (message: string) => void
-  }
-): StreamController {
+function createStreamRequest(url: string, payload: Record<string, unknown>, options: StreamAiChatOptions): StreamController {
   const token = tokenStorage.getAccessToken()
   let closed = false
   let sseBuffer = ''
@@ -217,7 +102,7 @@ function createStreamRequest(
       if (closed) {
         return
       }
-      options.onError?.(error.errMsg || 'Stream request failed')
+      options.onError?.(error.errMsg || '流式请求失败')
     }
   })
 
@@ -236,6 +121,11 @@ function createStreamRequest(
       sseBuffer = parseSseBuffer(sseBuffer, (event, dataText) => {
         if (event === 'done') {
           options.onDone?.()
+          return
+        }
+
+        if (event === 'error') {
+          options.onError?.(dataText || '聊天请求失败')
           return
         }
 
@@ -265,56 +155,6 @@ export function streamAiChat(options: StreamAiChatOptions): StreamController {
   )
 }
 
-export function createAiChat(payload: AiChatRequest) {
-  return request<AiChatResponse>({
-    url: '/ai/chat',
-    method: 'POST',
-    data: payload
-  })
-}
-
-export function streamKnowledgeBaseChat(options: StreamKnowledgeBaseChatOptions): StreamController {
-  return createStreamRequest(
-    `${API_BASE_URL}/ai/knowledge-base/chat/stream`,
-    {
-      knowledgeBaseId: options.knowledgeBaseId,
-      conversationId: options.conversationId,
-      message: options.message
-    },
-    options
-  )
-}
-
-export function createKnowledgeBaseChat(payload: KnowledgeBaseChatRequest) {
-  return request<KnowledgeBaseChatResponse>({
-    url: '/ai/knowledge-base/chat',
-    method: 'POST',
-    data: payload
-  })
-}
-
-export function createAgentChat(agentId: string, payload: AgentChatRequest) {
-  return request<AgentChatResponse>({
-    url: `/ai/agents/${agentId}/chat`,
-    method: 'POST',
-    data: payload
-  })
-}
-
-export function fetchAiAgents() {
-  return request<AiAgentSummary[]>({
-    url: '/ai/agents',
-    method: 'GET'
-  })
-}
-
-export function fetchKnowledgeBases() {
-  return request<KnowledgeBaseSummary[]>({
-    url: '/ai/knowledge-bases',
-    method: 'GET'
-  })
-}
-
 export function fetchAiConversations() {
   return request<AiConversationSummary[]>({
     url: '/ai/conversations',
@@ -322,11 +162,7 @@ export function fetchAiConversations() {
   })
 }
 
-export function createAiConversation(data?: {
-  title?: string
-  agentId?: string
-  knowledgeBaseId?: string
-}) {
+export function createAiConversation(data?: { title?: string }) {
   return request<AiConversationSummary>({
     url: '/ai/conversations',
     method: 'POST',
@@ -345,25 +181,5 @@ export function deleteAiConversation(conversationId: string) {
   return request<boolean>({
     url: `/ai/conversations/${conversationId}`,
     method: 'DELETE'
-  })
-}
-
-export function fetchBillAnalysisHistory(limit = 10) {
-  return request<BillAnalysisHistory[]>({
-    url: `/ai/bill-analysis/history?limit=${limit}`,
-    method: 'GET'
-  })
-}
-
-export function analyzeBill(data: {
-  bookId?: string
-  startDate?: string
-  endDate?: string
-  question?: string
-}) {
-  return request<BillAnalysisResponse>({
-    url: '/ai/bill-analysis',
-    method: 'POST',
-    data
   })
 }
