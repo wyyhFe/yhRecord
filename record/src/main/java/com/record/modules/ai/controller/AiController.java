@@ -6,6 +6,7 @@ import com.record.modules.ai.model.dto.AiChatRequest;
 import com.record.modules.ai.model.dto.CreateConversationRequest;
 import com.record.modules.ai.model.vo.AiConversationMessageVO;
 import com.record.modules.ai.model.vo.AiConversationSummaryVO;
+import com.record.modules.ai.model.vo.AiFunctionCallResponse;
 import com.record.modules.ai.service.AiService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +39,12 @@ public class AiController {
     @PostMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> streamChat(@Valid @RequestBody AiChatRequest request) {
         return aiService.streamChat(UserContext.getUserId(), request);
+    }
+
+    @Operation(summary = "Function calling demo")
+    @PostMapping("/function-call/demo")
+    public ApiResponse<AiFunctionCallResponse> functionCallDemo(@Valid @RequestBody AiChatRequest request) {
+        return ApiResponse.success(aiService.functionCallDemo(UserContext.getUserId(), request));
     }
 
     @Operation(summary = "会话列表")

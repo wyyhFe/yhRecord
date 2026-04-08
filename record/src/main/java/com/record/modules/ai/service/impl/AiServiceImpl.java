@@ -3,6 +3,7 @@ package com.record.modules.ai.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.config.AiProperties;
 import com.record.common.exception.BusinessException;
 import com.record.common.exception.ErrorCode;
@@ -12,9 +13,14 @@ import com.record.modules.ai.model.dto.CreateConversationRequest;
 import com.record.modules.ai.model.entity.AiCallLog;
 import com.record.modules.ai.model.vo.AiConversationMessageVO;
 import com.record.modules.ai.model.vo.AiConversationSummaryVO;
+import com.record.modules.ai.model.vo.AiFunctionCallResponse;
 import com.record.modules.ai.prompt.PromptTemplateLoader;
 import com.record.modules.ai.service.AiService;
+import com.record.modules.diary.model.vo.DiaryVO;
+import com.record.modules.diary.service.DiaryService;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.codec.ServerSentEvent;
@@ -49,19 +55,22 @@ public class AiServiceImpl implements AiService {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
     private final PromptTemplateLoader promptTemplateLoader;
+    private final DiaryService diaryService;
 
     public AiServiceImpl(ObjectProvider<ChatClient> chatClientProvider,
                          AiProperties aiProperties,
                          AiCallLogMapper aiCallLogMapper,
                          StringRedisTemplate stringRedisTemplate,
                          ObjectMapper objectMapper,
-                         PromptTemplateLoader promptTemplateLoader) {
+                         PromptTemplateLoader promptTemplateLoader,
+                         DiaryService diaryService) {
         this.chatClientProvider = chatClientProvider;
         this.aiProperties = aiProperties;
         this.aiCallLogMapper = aiCallLogMapper;
         this.stringRedisTemplate = stringRedisTemplate;
         this.objectMapper = objectMapper;
         this.promptTemplateLoader = promptTemplateLoader;
+        this.diaryService = diaryService;
     }
 
     @Override
@@ -100,6 +109,29 @@ public class AiServiceImpl implements AiService {
                         startTime,
                         error != null ? error.getMessage() : "stream error"
                 ));
+    }
+
+    @Override
+    public AiFunctionCallResponse functionCallDemo(Long userId, AiChatRequest request) {
+        ensureAiEnabled();
+        DiaryListTool tool = new DiaryListTool(userId, diaryService);
+        String reply = requireChatClient().prompt()
+                .system("""
+                        You are a function calling demo for the life-record app.
+                        If the user wants to view, search, or list diary records, call the list_diaries tool.
+                        Extract a short keyword from the user message when possible. Use current=1 and size=5 by default.
+                        Keep the final answer concise and summarize the returned records in Chinese.
+                        """)
+                .user(request.getMessage().trim())
+                .tools(tool)
+                .call()
+                .content();
+
+        return AiFunctionCallResponse.builder()
+                .reply(reply)
+                .toolName(tool.called ? "list_diaries" : null)
+                .toolResult(tool.lastResult)
+                .build();
     }
 
     @Override
@@ -383,5 +415,34 @@ public class AiServiceImpl implements AiService {
         }
         String message = errorMessage.trim();
         return message.length() > 500 ? message.substring(0, 500) : message;
+    }
+
+    public static class DiaryListTool {
+
+        private final Long userId;
+        private final DiaryService diaryService;
+        private boolean called;
+        private Page<DiaryVO> lastResult;
+
+        private DiaryListTool(Long userId, DiaryService diaryService) {
+            this.userId = userId;
+            this.diaryService = diaryService;
+        }
+
+        @Tool(name = "list_diaries", description = "Search the current user's diary list by keyword and return a paged list.")
+        public Page<DiaryVO> listDiaries(
+                @ToolParam(required = false, description = "Keyword extracted from the user's prompt. Use null if the user asks for recent diaries without a keyword.")
+                String keyword,
+                @ToolParam(required = false, description = "Page number, starts from 1. Use 1 by default.")
+                Integer current,
+                @ToolParam(required = false, description = "Page size. Use 5 by default and never exceed 10.")
+                Integer size) {
+            called = true;
+            long safeCurrent = current == null || current < 1 ? 1 : current;
+            long safeSize = size == null || size < 1 ? 5 : Math.min(size, 10);
+            String safeKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+            lastResult = diaryService.list(userId, safeCurrent, safeSize, null, null, safeKeyword);
+            return lastResult;
+        }
     }
 }
