@@ -29,18 +29,14 @@ spring:
       base-url: ${AI_BASE_URL:https://api.openai.com}
       chat:
         options:
-          model: ${AI_CHAT_MODEL:gpt-4o-mini}
-          temperature: ${AI_CHAT_TEMPERATURE:0.2}
-          max-tokens: ${AI_CHAT_MAX_TOKENS:1200}
-#          embedding:
-#            options:
-#              model: text-embedding-v3
-#              dimensions: 1024   #向量维度
+          model: gpt-4o-mini
+          temperature: 0.2
+          max-tokens: 1200
     chat:
       memory:
         repository:
           jdbc:
-            initialize-schema: ${AI_CHAT_MEMORY_INIT_SCHEMA:never}
+            initialize-schema: never
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
@@ -85,76 +81,75 @@ app:
     mini-program:
       token-url: https://api.weixin.qq.com/cgi-bin/token
       send-url: https://api.weixin.qq.com/cgi-bin/message/subscribe/send
-      diary-template-id: ${MP_DIARY_TEMPLATE_ID:92IzmSxsaJOMB3wn3aBoq1iMd13BnnocRgviQDr9CB0}
-      ledger-template-id: ${MP_LEDGER_TEMPLATE_ID:yU7oLAS9IHfH6AAhBS3vQ2h3oAN1cg_sSyO3xIdi4zc}
-      ledger-monthly-template-id: ${MP_LEDGER_MONTHLY_TEMPLATE_ID:XrzRcRmTmZ8qV-QS8_MmJGfRjnmmI5fIBMDYE-Sp4tk}
-      memorial-template-id: ${MP_MEMORIAL_TEMPLATE_ID:fcH_35MlCXOIOVVX130DlfckwMLuwz74OnZxLwV4Z7k}
-      diary-page: ${MP_DIARY_PAGE:pages/diary/index}
-      ledger-page: ${MP_LEDGER_PAGE:pages/ledger/index}
-      ledger-monthly-page: ${MP_LEDGER_MONTHLY_PAGE:pages/ledger/index}
-      memorial-page: ${MP_MEMORIAL_PAGE:pages/memory/index}
-      state: ${MP_MESSAGE_STATE:formal}
-      lang: ${MP_MESSAGE_LANG:zh_CN}
+      diary-template-id: 92IzmSxsaJOMB3wn3aBoq1iMd13BnnocRgviQDr9CB0
+      ledger-template-id: yU7oLAS9IHfH6AAhBS3vQ2h3oAN1cg_sSyO3xIdi4zc
+      ledger-monthly-template-id: XrzRcRmTmZ8qV-QS8_MmJGfRjnmmI5fIBMDYE-Sp4tk
+      memorial-template-id: fcH_35MlCXOIOVVX130DlfckwMLuwz74OnZxLwV4Z7k
+      diary-page: pages/diary/index
+      ledger-page: pages/ledger/index
+      ledger-monthly-page: pages/ledger/index
+      memorial-page: pages/memory/index
+      state: formal
+      lang: zh_CN
       diary-fields:
-        title-field: ${MP_DIARY_TITLE_FIELD:thing1}
-        content-field: ${MP_DIARY_CONTENT_FIELD:thing2}
-        date-field: ${MP_DIARY_DATE_FIELD:date3}
+        title-field: thing1
+        content-field: thing2
+        date-field: date3
       ledger-fields:
-        time-field: ${MP_LEDGER_TIME_FIELD:time1}
-        content-field: ${MP_LEDGER_CONTENT_FIELD:thing3}
-        today-expense-field: ${MP_LEDGER_TODAY_EXPENSE_FIELD:amount15}
-        today-income-field: ${MP_LEDGER_TODAY_INCOME_FIELD:amount17}
-        total-expense-field: ${MP_LEDGER_TOTAL_EXPENSE_FIELD:amount5}
+        time-field: time1
+        content-field: thing3
+        today-expense-field: amount15
+        today-income-field: amount17
+        total-expense-field: amount5
       ledger-monthly-fields:
-        book-name-field: ${MP_LEDGER_MONTHLY_BOOK_NAME_FIELD:thing5}
-        month-field: ${MP_LEDGER_MONTHLY_MONTH_FIELD:thing3}
-        last-month-expense-field: ${MP_LEDGER_MONTHLY_EXPENSE_FIELD:amount1}
-        last-month-income-field: ${MP_LEDGER_MONTHLY_INCOME_FIELD:amount2}
-        remark-field: ${MP_LEDGER_MONTHLY_REMARK_FIELD:thing4}
+        book-name-field: thing5
+        month-field: thing3
+        last-month-expense-field: amount1
+        last-month-income-field: amount2
+        remark-field: thing4
       memorial-fields:
-        time-field: ${MP_MEMORIAL_TIME_FIELD:time2}
-        remark-field: ${MP_MEMORIAL_REMARK_FIELD:thing4}
-        name-field: ${MP_MEMORIAL_NAME_FIELD:thing5}
+        time-field: time2
+        remark-field: thing4
+        name-field: thing5
     official-account:
       app-id: ${OA_APP_ID:wxe0b2c126bb08961c}
       app-secret: ${OA_APP_SECRET:7c7db12875ab6c4eafabf87d66bf6dd8}
       token-url: https://api.weixin.qq.com/cgi-bin/token
       send-url: https://api.weixin.qq.com/cgi-bin/message/template/send
-      diary-template-id: ${OA_DIARY_TEMPLATE_ID:}
-      ledger-template-id: ${OA_LEDGER_TEMPLATE_ID:}
-      ledger-monthly-template-id: ${OA_LEDGER_MONTHLY_TEMPLATE_ID:}
-      memorial-template-id: ${OA_MEMORIAL_TEMPLATE_ID:}
+      diary-template-id:
+      ledger-template-id:
+      ledger-monthly-template-id:
+      memorial-template-id:
       diary-fields:
-        title-field: ${OA_DIARY_TITLE_FIELD:thing1}
-        content-field: ${OA_DIARY_CONTENT_FIELD:thing2}
-        date-field: ${OA_DIARY_DATE_FIELD:date3}
+        title-field: thing1
+        content-field: thing2
+        date-field: date3
       ledger-fields:
-        time-field: ${OA_LEDGER_TIME_FIELD:time1}
-        content-field: ${OA_LEDGER_CONTENT_FIELD:thing3}
-        today-expense-field: ${OA_LEDGER_TODAY_EXPENSE_FIELD:amount15}
-        today-income-field: ${OA_LEDGER_TODAY_INCOME_FIELD:amount17}
-        total-expense-field: ${OA_LEDGER_TOTAL_EXPENSE_FIELD:amount5}
+        time-field: time1
+        content-field: thing3
+        today-expense-field: amount15
+        today-income-field: amount17
+        total-expense-field: amount5
       ledger-monthly-fields:
-        book-name-field: ${OA_LEDGER_MONTHLY_BOOK_NAME_FIELD:thing5}
-        month-field: ${OA_LEDGER_MONTHLY_MONTH_FIELD:thing3}
-        last-month-expense-field: ${OA_LEDGER_MONTHLY_EXPENSE_FIELD:amount1}
-        last-month-income-field: ${OA_LEDGER_MONTHLY_INCOME_FIELD:amount2}
-        remark-field: ${OA_LEDGER_MONTHLY_REMARK_FIELD:thing4}
+        book-name-field: thing5
+        month-field: thing3
+        last-month-expense-field: amount1
+        last-month-income-field: amount2
+        remark-field: thing4
       memorial-fields:
-        time-field: ${OA_MEMORIAL_TIME_FIELD:time2}
-        remark-field: ${OA_MEMORIAL_REMARK_FIELD:thing4}
-        name-field: ${OA_MEMORIAL_NAME_FIELD:thing5}
+        time-field: time2
+        remark-field: thing4
+        name-field: thing5
   ai:
-    enabled: ${APP_AI_ENABLED:true}
-    provider: ${APP_AI_PROVIDER:openai-compatible}
-    system-prompt: ${APP_AI_SYSTEM_PROMPT:}
+    provider: openai-compatible
+    system-prompt:
     chat:
-      memory-enabled: ${APP_AI_CHAT_MEMORY_ENABLED:true}
-      max-messages: ${APP_AI_CHAT_MAX_MESSAGES:20}
+      memory-enabled: true
+      max-messages: 20
     bill-analysis:
-      max-entries: ${APP_AI_BILL_ANALYSIS_MAX_ENTRIES:200}
-      default-days: ${APP_AI_BILL_ANALYSIS_DEFAULT_DAYS:30}
-      system-prompt: ${APP_AI_BILL_ANALYSIS_SYSTEM_PROMPT:}
+      max-entries: 200
+      default-days: 30
+      system-prompt:
 
 alioss:
   endpoint: ${ALIOSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}

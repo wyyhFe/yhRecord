@@ -14,7 +14,6 @@ public class AiProperties {
     /**
      * 总开关，便于分环境控制。
      */
-    private boolean enabled;
 
     /**
      * 当前使用的模型供应商标识，仅用于业务日志和路由判断。

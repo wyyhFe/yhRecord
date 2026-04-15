@@ -18,7 +18,7 @@ spring:
       memory:
         repository:
           jdbc:
-            initialize-schema: ${AI_CHAT_MEMORY_INIT_SCHEMA:always}
+            initialize-schema: always
 
 logging:
   level:
@@ -26,7 +26,3 @@ logging:
     org.mybatis: warn
     org.mybatis.spring: warn
     com.record.modules.tag.mapper: debug
-
-app:
-  ai:
-    enabled: ${APP_AI_ENABLED:true}

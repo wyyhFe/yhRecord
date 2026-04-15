@@ -75,7 +75,6 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public Flux<ServerSentEvent<String>> streamChat(Long userId, AiChatRequest request) {
-        ensureAiEnabled();
         long startTime = System.currentTimeMillis();
         String conversationId = normalizeConversationId(request.getConversationId());
         String message = request.getMessage().trim();
@@ -113,7 +112,6 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public AiFunctionCallResponse functionCallDemo(Long userId, AiChatRequest request) {
-        ensureAiEnabled();
         DiaryListTool tool = new DiaryListTool(userId, diaryService);
         String reply = requireChatClient().prompt()
                 .system("""
@@ -197,15 +195,9 @@ public class AiServiceImpl implements AiService {
     private ChatClient requireChatClient() {
         ChatClient chatClient = chatClientProvider.getIfAvailable();
         if (chatClient == null) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI 客户端未初始化，请检查 app.ai.enabled 和模型配置");
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "AI 客户端未初始化，请检查 AI 模型配置");
         }
         return chatClient;
-    }
-
-    private void ensureAiEnabled() {
-        if (!aiProperties.isEnabled()) {
-            throw new BusinessException(ErrorCode.BAD_REQUEST, "AI 功能未开启");
-        }
     }
 
     private String resolveSystemPrompt() {

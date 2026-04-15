@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 public class AiClientConfig {
 
     @Bean
-    @ConditionalOnProperty(prefix = "app.ai", name = "enabled", havingValue = "true")
+    // @ConditionalOnProperty(prefix = "app.ai", name = "enabled", havingValue = "true")
     public ChatClient chatClient(ChatClient.Builder builder) {
         return builder.build();
     }

@@ -18,4 +18,4 @@ spring:
       memory:
         repository:
           jdbc:
-            initialize-schema: ${AI_CHAT_MEMORY_INIT_SCHEMA:never}
+            initialize-schema: never
