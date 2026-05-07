@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -37,7 +37,7 @@
             <u-button
               type="primary"
               shape="circle"
-              color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+              color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
               @click="restore(item)"
             >
               恢复
@@ -57,6 +57,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { onMounted, ref } from 'vue'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import {
@@ -123,7 +126,7 @@ onMounted(() => {
 }
 
 .list-card__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 30rpx;
   font-weight: 700;
 }
@@ -135,7 +138,7 @@ onMounted(() => {
 }
 
 .list-card__meta {
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 </style>

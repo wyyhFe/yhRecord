@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -42,7 +42,7 @@
       class="primary-action"
       type="primary"
       shape="circle"
-      color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+      color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
       :loading="submitting"
       @click="submit"
     >
@@ -52,19 +52,22 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { ref } from 'vue'
 import { createCheckinTask } from '@/api/checkin-form'
 
 const submitting = ref(false)
 const fieldStyle = {
-  background: '#fcf5ec',
+  background: 'var(--color-surface-soft)',
   borderRadius: '20rpx',
   padding: '0 22rpx',
   fontSize: '28rpx',
   minHeight: '84rpx'
 }
 const textareaStyle = {
-  background: '#fcf5ec',
+  background: 'var(--color-surface-soft)',
   borderRadius: '20rpx',
   padding: '18rpx 22rpx',
   fontSize: '26rpx',
@@ -108,12 +111,12 @@ async function submit() {
   justify-content: space-between;
   gap: 16rpx;
   border-radius: 20rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
   padding: 0 22rpx;
 }
 
 .picker-row__value {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
 }
 

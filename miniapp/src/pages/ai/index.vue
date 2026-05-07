@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe ai-chat-page">
+  <view :class="['page-shell-safe ai-chat-page', themeClass]">
     <view class="page-head ai-chat-head">
       <view class="page-head__eyebrow">AI 聊天</view>
       <view class="page-head__title">基础会话</view>
@@ -92,6 +92,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import {
@@ -388,7 +391,7 @@ onUnload(() => {
 .ai-chat-head {
   background:
     radial-gradient(circle at top right, rgba(215, 166, 72, 0.16), transparent 34%),
-    linear-gradient(135deg, rgba(255, 250, 244, 0.96) 0%, rgba(252, 244, 234, 0.98) 100%);
+    linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface) 100%);
 }
 
 .page-head__eyebrow {
@@ -399,14 +402,14 @@ onUnload(() => {
 
 .page-head__title {
   margin-top: 12rpx;
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 44rpx;
   font-weight: 700;
 }
 
 .page-head__desc {
   margin-top: 14rpx;
-  color: #6b5b4e;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
   line-height: 1.7;
 }
@@ -433,7 +436,7 @@ onUnload(() => {
   padding: 22rpx;
   border-radius: 24rpx;
   background: #fffdf8;
-  border: 1rpx solid rgba(196, 124, 82, 0.1);
+  border: 1rpx solid var(--color-border);
   box-sizing: border-box;
 }
 
@@ -443,7 +446,7 @@ onUnload(() => {
 }
 
 .session-card__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 700;
   white-space: normal;
@@ -451,7 +454,7 @@ onUnload(() => {
 
 .session-card__desc {
   margin-top: 12rpx;
-  color: #7a6a5c;
+  color: var(--color-text-secondary);
   font-size: 22rpx;
   line-height: 1.6;
   white-space: normal;
@@ -459,7 +462,7 @@ onUnload(() => {
 
 .session-card__meta {
   margin-top: 14rpx;
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-size: 20rpx;
 }
 
@@ -487,7 +490,7 @@ onUnload(() => {
   max-width: 72%;
   padding: 22rpx 24rpx;
   border-radius: 24rpx;
-  border: 1rpx solid rgba(196, 124, 82, 0.12);
+  border: 1rpx solid var(--color-border-strong);
   box-sizing: border-box;
 }
 
@@ -507,7 +510,7 @@ onUnload(() => {
 
 .message-card__content {
   margin-top: 12rpx;
-  color: #2d241c;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   line-height: 1.8;
   white-space: pre-wrap;
@@ -516,7 +519,7 @@ onUnload(() => {
 
 .message-card__time {
   margin-top: 12rpx;
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 20rpx;
 }
 
@@ -527,9 +530,9 @@ onUnload(() => {
   padding: 24rpx;
   border-radius: 24rpx;
   background: #fffdf9;
-  border: 1rpx solid rgba(196, 124, 82, 0.12);
+  border: 1rpx solid var(--color-border-strong);
   box-sizing: border-box;
-  color: #2d241c;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   line-height: 1.7;
 }

@@ -1,6 +1,6 @@
 ﻿
 <template>
-  <view class="page-shell-safe ledger-page">
+  <view :class="['page-shell-safe ledger-page', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -44,7 +44,7 @@
           :list="viewModeList"
           :current="viewModeIndex"
           mode="subsection"
-          active-color="#c47c52"
+          active-color="var(--color-primary)"
           @change="onViewModeChange"
         />
       </view>
@@ -181,7 +181,7 @@
 
     <view class="ledger-page-tabbar">
       <view class="ledger-page-tabbar__item" @tap="goBooks">
-        <u-icon name="list" size="38" color="#7b6c5a" />
+        <u-icon name="list" size="38" color="var(--color-text-secondary)" />
         <view class="ledger-page-tabbar__text">管理账本</view>
       </view>
 
@@ -191,7 +191,7 @@
       </view>
 
       <view class="ledger-page-tabbar__item" @tap="shareBook">
-        <u-icon name="share" size="38" color="#7b6c5a" />
+        <u-icon name="share" size="38" color="var(--color-text-secondary)" />
         <view class="ledger-page-tabbar__text">邀请</view>
       </view>
     </view>
@@ -220,7 +220,7 @@
           <u-button
             type="primary"
             shape="circle"
-            color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+            color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
             @click="applyFilter"
           >
             应用
@@ -307,7 +307,7 @@
             <u-button
               type="primary"
               shape="circle"
-              color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+              color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
               :loading="submitting"
               @click="submitEntry"
             >
@@ -321,6 +321,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, ref, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import ChoiceChips from '@/components/business/choice-chips'
@@ -365,11 +368,11 @@ const viewModeList = ['月', '年']
 const keyboardKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '删除']
 const cardBodyStyle = {
   padding: '0',
-  background: '#fffaf4',
+  background: 'var(--color-bg)',
   borderRadius: '28rpx'
 }
 const remarkStyle = {
-  background: '#fcf5ec',
+  background: 'var(--color-surface-soft)',
   borderRadius: '20rpx',
   padding: '0 22rpx',
   fontSize: '28rpx',
@@ -933,7 +936,7 @@ onShow(() => {
   min-height: 68rpx;
   padding: 0 24rpx;
   border-radius: 999rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
   color: #5e4b3a;
   font-size: 24rpx;
   font-weight: 600;
@@ -973,13 +976,13 @@ onShow(() => {
 }
 
 .ledger-day-card__date-main {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 36rpx;
   font-weight: 700;
 }
 
 .ledger-day-card__date-sub {
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
@@ -1030,7 +1033,7 @@ onShow(() => {
 }
 
 .ledger-entry-row__type {
-  color: #c47c52;
+  color: var(--color-primary);
   font-size: 24rpx;
   font-weight: 600;
 }
@@ -1087,7 +1090,7 @@ onShow(() => {
   justify-content: space-between;
   padding: 16rpx 28rpx 10rpx;
   border-radius: 40rpx;
-  background: rgba(255, 250, 244, 0.96);
+  background: var(--color-surface);
   box-shadow: 0 18rpx 42rpx rgba(67, 41, 26, 0.12);
 }
 
@@ -1110,26 +1113,26 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #c47c52 0%, #d7a648 100%);
-  color: #fffaf4;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  color: var(--color-bg);
   font-size: 52rpx;
   line-height: 1;
   box-shadow: 0 16rpx 30rpx rgba(144, 88, 49, 0.2);
 }
 
 .ledger-page-tabbar__text {
-  color: #7b6c5a;
+  color: var(--color-text-secondary);
   font-size: 22rpx;
 }
 
 .ledger-page-tabbar__text--active {
-  color: #c47c52;
+  color: var(--color-primary);
   font-weight: 700;
 }
 
 .filter-popup,
 .entry-popup {
-  background: #fffaf4;
+  background: var(--color-bg);
 }
 
 .filter-popup {
@@ -1143,7 +1146,7 @@ onShow(() => {
 
 .filter-popup__title,
 .entry-popup__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 34rpx;
   font-weight: 700;
 }
@@ -1155,7 +1158,7 @@ onShow(() => {
 
 .entry-popup__subtitle {
   margin-top: 8rpx;
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
@@ -1196,7 +1199,7 @@ onShow(() => {
 .entry-popup__book {
   min-height: 76rpx;
   border-radius: 20rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
 }
 
 .entry-popup__date {
@@ -1205,7 +1208,7 @@ onShow(() => {
   justify-content: center;
   min-width: 220rpx;
   padding: 0 20rpx;
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 600;
 }
@@ -1219,12 +1222,12 @@ onShow(() => {
 }
 
 .entry-popup__book-label {
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
 .entry-popup__book-value {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 600;
 }
@@ -1249,7 +1252,7 @@ onShow(() => {
 }
 
 .entry-popup__link {
-  color: #c47c52;
+  color: var(--color-primary);
   font-size: 26rpx;
   font-weight: 600;
 }

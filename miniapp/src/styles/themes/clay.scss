@@ -1,0 +1,56 @@
+/**
+ * 暖陶主题 · 默认主题（保留当前项目视觉调性）
+ * 关键词：温暖、纸感、复古、笔记本氛围。
+ *
+ * 设计目标：让"打开 lifeRecord = 翻开自己的本子"这个体感成立。
+ * 颜色基底是陶土橙 + 米白 + 木质褐色，整体偏暖。
+ *
+ * 主题样式被定义在两个选择器上：
+ *   1. page —— 默认主题，无需任何 class 即生效
+ *   2. .theme-clay —— 显式主题，便于在切换时强制覆盖
+ */
+
+@mixin theme-clay {
+  /* ============== 主色 / 强调色 ============== */
+  --color-primary: #c47c52;
+  --color-primary-soft: rgba(196, 124, 82, 0.12);
+  --color-primary-strong: #a56d4b;
+  --color-accent: #d7a648;
+
+  /* ============== 背景与表面 ============== */
+  --color-bg: #fffaf4;
+  --color-bg-gradient: radial-gradient(circle at top left, rgba(216, 124, 134, 0.16), transparent 34%),
+    radial-gradient(circle at top right, rgba(215, 166, 72, 0.14), transparent 28%),
+    linear-gradient(180deg, #fffaf4 0%, #f6efe5 100%);
+  --color-surface: rgba(255, 250, 244, 0.94);
+  --color-surface-soft: #fcf5ec;
+  --color-surface-strong: #ffffff;
+
+  /* ============== 边框 / 分隔 ============== */
+  --color-border: rgba(196, 124, 82, 0.08);
+  --color-border-strong: rgba(196, 124, 82, 0.24);
+  --color-divider: rgba(196, 124, 82, 0.12);
+
+  /* ============== 文字 ============== */
+  --color-text-primary: #2b2118;
+  --color-text-secondary: #6b5b4e;
+  --color-text-muted: #9b866d;
+  --color-text-inverse: #fffaf4;
+
+  /* ============== 状态色 ============== */
+  --color-success: #4f7a4a;
+  --color-warning: #d7a648;
+  --color-danger: #b94a3b;
+  --color-info: #6b8a9c;
+
+  /* ============== 阴影（与背景呼应的暖色调阴影） ============== */
+  --shadow-card: 0 18rpx 48rpx rgba(67, 41, 26, 0.08);
+  --shadow-modal: 0 24rpx 64rpx rgba(67, 41, 26, 0.16);
+  --shadow-press: 0 6rpx 16rpx rgba(67, 41, 26, 0.06);
+  --shadow-none: none;
+}
+
+page,
+.theme-clay {
+  @include theme-clay;
+}

@@ -1,0 +1,41 @@
+/**
+ * 薄荷主题
+ * 关键词：清爽、自然、平静、绿意。
+ *
+ * 适合：希望视觉减负、专注静心的用户；夏天默认主题。
+ * 与暖陶主题相对：从暖橙换成自然绿，背景从米白换成雾白带一点淡绿。
+ */
+
+.theme-mint {
+  --color-primary: #5cab86;
+  --color-primary-soft: rgba(92, 171, 134, 0.12);
+  --color-primary-strong: #4a8e6e;
+  --color-accent: #7bb89a;
+
+  --color-bg: #f5f9f5;
+  --color-bg-gradient: radial-gradient(circle at top left, rgba(92, 171, 134, 0.12), transparent 36%),
+    radial-gradient(circle at top right, rgba(155, 200, 170, 0.14), transparent 30%),
+    linear-gradient(180deg, #f5f9f5 0%, #ebf2eb 100%);
+  --color-surface: rgba(255, 255, 255, 0.94);
+  --color-surface-soft: #ecf3ec;
+  --color-surface-strong: #ffffff;
+
+  --color-border: rgba(92, 171, 134, 0.1);
+  --color-border-strong: rgba(92, 171, 134, 0.28);
+  --color-divider: rgba(92, 171, 134, 0.14);
+
+  --color-text-primary: #1f2a23;
+  --color-text-secondary: #4f5f54;
+  --color-text-muted: #7a8b80;
+  --color-text-inverse: #f5f9f5;
+
+  --color-success: #4f8a5c;
+  --color-warning: #c89a3a;
+  --color-danger: #c45a4d;
+  --color-info: #5e8a9c;
+
+  --shadow-card: 0 18rpx 48rpx rgba(35, 60, 45, 0.08);
+  --shadow-modal: 0 24rpx 64rpx rgba(35, 60, 45, 0.16);
+  --shadow-press: 0 6rpx 16rpx rgba(35, 60, 45, 0.06);
+  --shadow-none: none;
+}

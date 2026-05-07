@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe bill-analysis-page">
+  <view :class="['page-shell-safe bill-analysis-page', themeClass]">
     <!-- 页面头部，统一沿用项目里 page-head 风格 -->
     <view class="page-head bill-analysis-head">
       <view class="page-head__eyebrow">AI 账单分析</view>
@@ -205,6 +205,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import {
@@ -379,7 +382,7 @@ onLoad((query) => {
 .bill-analysis-head {
   background:
     radial-gradient(circle at top right, rgba(215, 166, 72, 0.16), transparent 34%),
-    linear-gradient(135deg, rgba(255, 250, 244, 0.96) 0%, rgba(252, 244, 234, 0.98) 100%);
+    linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface) 100%);
 }
 
 .filter-row {
@@ -387,22 +390,22 @@ onLoad((query) => {
   justify-content: space-between;
   align-items: center;
   padding: 18rpx 0;
-  border-bottom: 1rpx solid rgba(196, 124, 82, 0.08);
+  border-bottom: 1rpx solid var(--color-border);
 }
 
 .filter-row__label {
-  color: #6b5b4e;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
 }
 
 .filter-row__value {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 600;
 }
 
 .filter-row__value--muted {
-  color: #a39383;
+  color: var(--color-text-muted);
   font-weight: 400;
 }
 
@@ -417,9 +420,9 @@ onLoad((query) => {
   padding: 20rpx;
   border-radius: 18rpx;
   background: #fffdf9;
-  border: 1rpx solid rgba(196, 124, 82, 0.12);
+  border: 1rpx solid var(--color-border-strong);
   box-sizing: border-box;
-  color: #2d241c;
+  color: var(--color-text-primary);
   font-size: 26rpx;
   line-height: 1.6;
 }
@@ -431,7 +434,7 @@ onLoad((query) => {
 }
 
 .summary-text {
-  color: #2d241c;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   line-height: 1.8;
   white-space: pre-wrap;
@@ -446,18 +449,18 @@ onLoad((query) => {
 }
 
 .insight-block__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 700;
   margin-bottom: 10rpx;
 }
 
 .insight-block__title--warn {
-  color: #b94a3b;
+  color: var(--color-danger);
 }
 
 .insight-block__title--good {
-  color: #4f7a4a;
+  color: var(--color-success);
 }
 
 .insight-item {
@@ -470,7 +473,7 @@ onLoad((query) => {
   display: flex;
   align-items: center;
   padding: 14rpx 0;
-  border-bottom: 1rpx solid rgba(196, 124, 82, 0.08);
+  border-bottom: 1rpx solid var(--color-border);
 
   &:last-child {
     border-bottom: none;
@@ -479,7 +482,7 @@ onLoad((query) => {
 
 .category-row__name {
   flex: 1;
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 26rpx;
 }
 
@@ -504,14 +507,14 @@ onLoad((query) => {
 
 .history-card__question {
   margin-top: 12rpx;
-  color: #7a6a5c;
+  color: var(--color-text-secondary);
   font-size: 22rpx;
   line-height: 1.7;
 }
 
 .history-card__summary {
   margin-top: 12rpx;
-  color: #2d241c;
+  color: var(--color-text-primary);
   font-size: 26rpx;
   line-height: 1.7;
   // 历史里的 summary 可能很长，截两行；用户想看全的去重新分析
@@ -522,10 +525,10 @@ onLoad((query) => {
 }
 
 .metric-card__value--good {
-  color: #4f7a4a !important;
+  color: var(--color-success) !important;
 }
 
 .metric-card__value--warn {
-  color: #b94a3b !important;
+  color: var(--color-danger) !important;
 }
 </style>

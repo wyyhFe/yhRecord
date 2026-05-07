@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="page-head">
       <view class="section-head">
         <view class="section-copy">
@@ -19,7 +19,7 @@
           <view class="section-copy__title">今日概览</view>
           <view class="section-copy__desc">先看今天的记录状态，再决定从哪里开始。</view>
         </view>
-        <u-icon name="calendar" size="42" color="#c47c52" />
+        <u-icon name="calendar" size="42" color="var(--color-primary)" />
       </view>
 
       <view class="metric-grid">
@@ -79,6 +79,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGreeting } from '@/composables/useGreeting'
@@ -198,11 +201,11 @@ onLoad(() => {
   padding: 20rpx 18rpx;
   border-radius: 24rpx;
   background: rgba(255, 255, 255, 0.72);
-  border: 1rpx solid rgba(196, 124, 82, 0.08);
+  border: 1rpx solid var(--color-border);
 }
 
 .home-status-item__date {
-  color: #1e293b;
+  color: var(--color-text-primary);
   font-size: 24rpx;
   font-weight: 600;
 }
@@ -228,7 +231,7 @@ onLoad(() => {
 
 .home-status-item__hint {
   margin-top: 12rpx;
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 22rpx;
 }
 
@@ -245,12 +248,12 @@ onLoad(() => {
   background:
     radial-gradient(circle at top right, rgba(215, 166, 72, 0.12), transparent 40%),
     linear-gradient(180deg, #fffdf8 0%, #fcf4ea 100%);
-  border: 1rpx solid rgba(196, 124, 82, 0.1);
+  border: 1rpx solid var(--color-border);
   box-shadow: 0 14rpx 26rpx rgba(67, 41, 26, 0.06);
 }
 
 .quick-action-card__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 30rpx;
   font-weight: 700;
 }

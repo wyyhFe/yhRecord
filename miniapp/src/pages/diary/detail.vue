@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -64,7 +64,7 @@
     </view>
 
     <view class="action-grid-2">
-      <u-button type="primary" shape="circle" color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)" @click="goEdit">
+      <u-button type="primary" shape="circle" color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)" @click="goEdit">
         编辑这篇日记
       </u-button>
       <u-button type="error" shape="circle" plain @click="removeDiary">删除到回收站</u-button>
@@ -73,6 +73,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { deleteDiary, fetchDiaryDetail } from '@/api/diary'
@@ -168,8 +171,8 @@ onLoad((options) => {
   min-width: 0;
   padding: 12rpx 18rpx;
   border-radius: 999rpx;
-  background: #fcf5ec;
-  border: 1rpx solid rgba(196, 124, 82, 0.12);
+  background: var(--color-surface-soft);
+  border: 1rpx solid var(--color-border-strong);
 }
 
 .detail-meta__label {
@@ -179,7 +182,7 @@ onLoad((options) => {
 
 .detail-meta__value {
   max-width: 280rpx;
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 24rpx;
   font-weight: 600;
 }
@@ -206,18 +209,18 @@ onLoad((options) => {
 .detail-extra__card {
   padding: 20rpx 22rpx;
   border-radius: 22rpx;
-  background: #fffaf4;
-  border: 1rpx solid rgba(196, 124, 82, 0.1);
+  background: var(--color-bg);
+  border: 1rpx solid var(--color-border);
 }
 
 .detail-extra__label {
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 22rpx;
 }
 
 .detail-extra__value {
   margin-top: 10rpx;
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 26rpx;
   line-height: 1.6;
 }

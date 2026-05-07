@@ -110,7 +110,7 @@ defineExpose({
 
 <style scoped lang="scss">
 .photo-picker__count {
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-size: 22rpx;
 }
 
@@ -171,7 +171,7 @@ defineExpose({
   height: 180rpx;
   border: 1rpx dashed #d0b79f;
   border-radius: 24rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
 }
 
 .photo-picker__add-content {

@@ -1,0 +1,59 @@
+/**
+ * lifeRecord 设计系统 · 原子 Token
+ *
+ * 这里定义的所有 token 跨主题不变：圆角、间距、字号、字重、动画时长。
+ * 主题相关的颜色在 styles/themes/ 下分别定义，按 active 主题覆盖。
+ *
+ * ⚠️ 任何新加的视觉常量都先来这里加 token，禁止页面里写 magic number。
+ * 详见 docs/standards/UI 设计规范.md。
+ */
+
+page {
+  /* ============== 圆角阶梯 ============== */
+  --radius-tiny: 8rpx;
+  --radius-small: 16rpx;
+  --radius-medium: 24rpx;
+  --radius-large: 28rpx;
+  --radius-xlarge: 36rpx;
+  --radius-full: 999rpx;
+
+  /* ============== 间距阶梯（8rpx 基本单位） ============== */
+  --space-1: 8rpx;
+  --space-2: 12rpx;
+  --space-3: 16rpx;
+  --space-4: 20rpx;
+  --space-5: 24rpx;
+  --space-6: 32rpx;
+  --space-7: 40rpx;
+  --space-8: 56rpx;
+
+  /* ============== 字号阶梯（按用途命名，不按大小） ============== */
+  --font-display: 44rpx;
+  --font-title: 36rpx;
+  --font-section: 30rpx;
+  --font-body: 28rpx;
+  --font-caption: 24rpx;
+  --font-meta: 22rpx;
+  --font-tiny: 20rpx;
+
+  /* ============== line-height ============== */
+  --leading-tight: 1.15;
+  --leading-snug: 1.4;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.7;
+  --leading-loose: 1.8;
+
+  /* ============== 字重（只用 4 档） ============== */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ============== 动画 ============== */
+  --motion-fast: 160ms;
+  --motion-base: 240ms;
+  --motion-slow: 360ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+}

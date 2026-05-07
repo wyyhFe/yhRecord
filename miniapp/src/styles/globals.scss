@@ -1,0 +1,237 @@
+/**
+ * 全局组件级样式。
+ *
+ * 设计原则（详见 docs/standards/UI 设计规范.md）：
+ * - 所有颜色用 var(--color-*)，禁止硬编码 hex / rgba
+ * - 所有圆角、间距、字号、阴影都用 var(--radius-*) / var(--space-*) / var(--font-*) / var(--shadow-*)
+ * - 这里只放跨页面复用的"通用块"，单页面专用的样式留在各页面 <style scoped> 里
+ *
+ * 命名约定：BEM 简化版（block__element--modifier），可读性优先。
+ *
+ * ⚠️ 后续做 §11 第 2 步把这些通用块抽成 components/ui/* 组件后，
+ * 这个文件会进一步瘦身。现在过渡期 page 还在用这些 class，先全保留。
+ */
+
+/* ============================================================
+ * Page Head：页面顶部大标题卡片
+ * 首页、列表页、详情页统一复用。
+ * ========================================================= */
+.page-head {
+  background: var(--color-surface);
+  border: 1rpx solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-large);
+  overflow: hidden;
+  padding: var(--space-6) var(--space-5);
+}
+
+.page-head__eyebrow {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
+}
+
+.page-head__title {
+  margin-top: var(--space-1);
+  color: var(--color-text-primary);
+  font-size: var(--font-display);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.page-head__desc {
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-caption);
+  line-height: var(--leading-relaxed);
+}
+
+/* ============================================================
+ * Section Shell：通用内容卡片
+ * 设置区、详情区、编辑区等主体容器。
+ * ========================================================= */
+.section-shell {
+  background: var(--color-surface);
+  border: 1rpx solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-large);
+  padding: var(--space-5);
+}
+
+/* 页面内各模块之间的标准间距。 */
+.page-section {
+  margin-top: var(--space-5);
+}
+
+/* 卡片内部常见的纵向字段堆叠间距。 */
+.block-stack {
+  margin-top: var(--space-4);
+}
+
+/* 卡片头部：左边说明，右边操作或状态。 */
+.section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.section-copy {
+  flex: 1;
+}
+
+.section-copy__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-semibold);
+}
+
+.section-copy__desc {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
+  line-height: var(--leading-relaxed);
+}
+
+/* ============================================================
+ * 表单字段标签：天气 / 心情 / 标签等小标题
+ * ========================================================= */
+.field-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-caption);
+}
+
+/* ============================================================
+ * Content Block：长文本正文块
+ * 用于详情、说明、描述等大段文字。
+ * ========================================================= */
+.content-block {
+  margin-top: var(--space-4);
+}
+
+.content-block__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-semibold);
+}
+
+.content-block__body {
+  margin-top: var(--space-4);
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  line-height: var(--leading-loose);
+}
+
+/* ============================================================
+ * Note Card：空数据 / 补充说明小提示
+ * ========================================================= */
+.note-card {
+  margin-top: var(--space-4);
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+  font-size: var(--font-caption);
+  line-height: var(--leading-relaxed);
+}
+
+/* ============================================================
+ * 操作按钮区
+ * ========================================================= */
+/* 两列并排操作。 */
+.action-grid-2 {
+  margin-top: var(--space-6);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+/* 单个主操作按钮的标准间距。 */
+.primary-action {
+  margin-top: var(--space-6);
+}
+
+/* 表单或调试区内纵向按钮堆叠。 */
+.action-stack {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ============================================================
+ * Metric Grid：三列统计卡片
+ * 首页、个人中心等概览区统一复用。
+ * ========================================================= */
+.metric-grid {
+  margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.metric-card {
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-strong);
+  padding: var(--space-3) var(--space-4);
+}
+
+.metric-card__label {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
+}
+
+.metric-card__value {
+  margin-top: var(--space-1);
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-semibold);
+}
+
+.metric-card__hint {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+/* ============================================================
+ * List：列表项与堆叠
+ * ========================================================= */
+.list-stack {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.list-card {
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  border: 1rpx solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.list-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.list-card__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+}
+
+.list-card__meta {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  line-height: var(--leading-relaxed);
+}
+
+.list-card__aside {
+  color: var(--color-primary-strong);
+  font-size: var(--font-meta);
+}

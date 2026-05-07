@@ -30,7 +30,7 @@ withDefaults(defineProps<{
 
 .empty-state-card__desc {
   margin-top: 10rpx;
-  color: #7f7366;
+  color: var(--color-text-secondary);
   font-size: 22rpx;
   line-height: 1.7;
 }

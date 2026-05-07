@@ -1,0 +1,14 @@
+/**
+ * 主题入口：导入所有主题。
+ *
+ * 加载顺序：clay 在最前是因为它会同时挂在 `page` 选择器上作为默认主题，
+ * 后面其他主题用 .theme-{name} 覆盖；放后面的主题在样式优先级里更晚生效，
+ * 但因为它们用的是不同的 class，不会和 clay 冲突。
+ *
+ * 切换主题的实现见 composables/useTheme.ts，store 见 stores/theme.ts。
+ */
+
+@import './clay.scss';
+@import './mint.scss';
+@import './lilac.scss';
+@import './ink.scss';

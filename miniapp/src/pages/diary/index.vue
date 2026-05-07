@@ -1,5 +1,5 @@
 ﻿<template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-copy">
         <view class="section-copy__title">筛选</view>
@@ -16,11 +16,11 @@
           placeholder="搜索标题或正文"
           :show-action="false"
           shape="round"
-          bg-color="#fcf5ec"
+          bg-color="var(--color-surface-soft)"
           border-color="#eadfd0"
-          color="#1e293b"
-          placeholder-color="#8a735f"
-          search-icon-color="#a56d4b"
+          color="var(--color-text-primary)"
+          placeholder-color="var(--color-text-muted)"
+          search-icon-color="var(--color-primary-strong)"
           @search="loadDiaries"
           @custom="loadDiaries"
         />
@@ -65,6 +65,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
@@ -124,8 +127,8 @@ onShow(() => {
 .diary-entry {
   padding: 26rpx 28rpx;
   border-radius: 28rpx;
-  border: 1rpx solid rgba(196, 124, 82, 0.08);
-  background: rgba(255, 250, 244, 0.94);
+  border: 1rpx solid var(--color-border);
+  background: var(--color-surface);
   box-shadow: 0 18rpx 48rpx rgba(67, 41, 26, 0.08);
 }
 
@@ -138,7 +141,7 @@ onShow(() => {
 
 .diary-entry__title {
   max-width: 72%;
-  color: #1e293b;
+  color: var(--color-text-primary);
   font-size: 30rpx;
   font-weight: 600;
 }

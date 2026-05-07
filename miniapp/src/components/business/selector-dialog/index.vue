@@ -108,22 +108,22 @@ watch(
   align-items: center;
   justify-content: space-between;
   padding: 28rpx 32rpx;
-  border-bottom: 1rpx solid rgba(196, 124, 82, 0.12);
+  border-bottom: 1rpx solid var(--color-border-strong);
 }
 
 .selector-dialog__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 32rpx;
   font-weight: 700;
 }
 
 .selector-dialog__action {
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
 .selector-dialog__action--primary {
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-weight: 600;
 }
 
@@ -148,7 +148,7 @@ watch(
 }
 
 .selector-dialog__label {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 24rpx;
 }
 
@@ -169,8 +169,8 @@ watch(
 }
 
 .selector-dialog__chip--active {
-  border-color: #c47c52;
-  background: rgba(196, 124, 82, 0.12);
+  border-color: var(--color-primary);
+  background: var(--color-border-strong);
   color: #a15f3d;
 }
 

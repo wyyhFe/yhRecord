@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -19,7 +19,7 @@
             会一次性申请日记提醒、纪念日提醒、每日记账提醒和记账月报提醒四个模板。
           </view>
         </view>
-        <switch :checked="form.miniProgramReminderEnabled" color="#c47c52" @change="onMiniProgramSwitch" />
+        <switch :checked="form.miniProgramReminderEnabled" color="var(--color-primary)" @change="onMiniProgramSwitch" />
       </view>
     </view>
 
@@ -29,7 +29,7 @@
           <view class="section-copy__title">公众号模板消息</view>
           <view class="section-copy__desc">作为扩展提醒通道保留，依赖公众号 openid 绑定能力。</view>
         </view>
-        <switch :checked="form.officialAccountReminderEnabled" color="#c47c52" @change="onOfficialSwitch" />
+        <switch :checked="form.officialAccountReminderEnabled" color="var(--color-primary)" @change="onOfficialSwitch" />
       </view>
     </view>
 
@@ -37,7 +37,7 @@
       class="primary-action"
       type="primary"
       shape="circle"
-      color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+      color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
       :loading="submitting"
       @click="submit"
     >
@@ -47,6 +47,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { onMounted, reactive, ref } from 'vue'
 import {
   MP_DIARY_TEMPLATE_ID,

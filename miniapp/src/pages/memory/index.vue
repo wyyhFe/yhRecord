@@ -1,5 +1,5 @@
 ﻿<template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -113,6 +113,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, reactive } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
@@ -199,7 +202,7 @@ onShow(() => {
   min-height: 60rpx;
   padding: 0 20rpx;
   border-radius: 999rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
   color: #8a5f42;
   font-size: 24rpx;
   font-weight: 600;
@@ -207,7 +210,7 @@ onShow(() => {
 
 .memory-diary-card__content {
   margin-top: 12rpx;
-  color: #6b5b4e;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
   line-height: 1.8;
   display: -webkit-box;

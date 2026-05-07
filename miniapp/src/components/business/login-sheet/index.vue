@@ -9,15 +9,15 @@
     <view class="px-[32rpx] pb-[48rpx] pt-[36rpx]">
       <view class="mx-auto h-[8rpx] w-[88rpx] rounded-full bg-[#e7d7c7]" />
 
-      <view class="mt-[24rpx] text-[38rpx] font-semibold text-[#2b2118]">微信登录</view>
-      <view class="mt-[16rpx] text-[26rpx] leading-[1.7] text-[#6b5b4e]">
+      <view class="mt-[24rpx] text-[38rpx] font-semibold text-[var(--color-text-primary)]">微信登录</view>
+      <view class="mt-[16rpx] text-[26rpx] leading-[1.7] text-[var(--color-text-secondary)]">
         登录后即可同步你的日记、记账、打卡和提醒设置，后端会统一维护当前设备的会话状态。
       </view>
 
       <view class="mt-[24rpx] rounded-[28rpx] bg-[#f7efe4] px-[24rpx] py-[24rpx]">
         <view class="flex items-start gap-[12rpx]">
           <u-icon name="weixin-fill" size="36" color="#4b6b57" />
-          <view class="flex-1 text-[24rpx] leading-[1.8] text-[#8a735f]">
+          <view class="flex-1 text-[24rpx] leading-[1.8] text-[var(--color-text-muted)]">
             当前通过微信身份完成登录，前端只负责获取临时 code，真正的 accessToken、refreshToken
             和单设备会话都由后端统一签发。
           </view>
@@ -28,7 +28,7 @@
         class="mt-[36rpx]"
         type="primary"
         shape="circle"
-        color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+        color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
         :loading="loading"
         @click="handleLogin"
       >

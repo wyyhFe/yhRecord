@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -9,7 +9,7 @@
       </view>
 
       <view class="action-grid-2">
-        <u-button type="primary" shape="circle" color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)" @click="goCreate">
+        <u-button type="primary" shape="circle" color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)" @click="goCreate">
           创建打卡任务
         </u-button>
         <u-button shape="circle" plain @click="reloadAll">刷新</u-button>
@@ -53,7 +53,7 @@
                 :plain="todayDoneIds.has(task.id)"
                 :hair-line="false"
                 :type="todayDoneIds.has(task.id) ? 'default' : 'primary'"
-                :color="todayDoneIds.has(task.id) ? undefined : 'linear-gradient(135deg, #c47c52 0%, #d7a648 100%)'"
+                :color="todayDoneIds.has(task.id) ? undefined : 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)'"
                 @click="handleCheckin(task)"
               >
                 {{ todayDoneIds.has(task.id) ? '今天已打卡' : '今日打卡' }}
@@ -137,6 +137,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
@@ -158,7 +161,7 @@ const swipeOptions = [
     text: '删除',
     style: {
       backgroundColor: '#d35d56',
-      color: '#fffaf4'
+      color: 'var(--color-bg)'
     }
   }
 ]
@@ -294,7 +297,7 @@ onShow(() => {
   min-height: 68rpx;
   padding: 0 24rpx;
   border-radius: 999rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
   color: #5e4b3a;
   font-size: 24rpx;
   font-weight: 600;
@@ -302,7 +305,7 @@ onShow(() => {
 
 .task-history-popup {
   padding: 28rpx 24rpx calc(28rpx + env(safe-area-inset-bottom));
-  background: #fffaf4;
+  background: var(--color-bg);
 }
 
 .task-history-popup__head {
@@ -310,14 +313,14 @@ onShow(() => {
 }
 
 .task-history-popup__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 34rpx;
   font-weight: 700;
 }
 
 .task-history-popup__subtitle {
   margin-top: 8rpx;
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 

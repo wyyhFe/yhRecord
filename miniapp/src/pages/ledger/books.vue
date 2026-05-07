@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -10,7 +10,7 @@
           size="mini"
           type="primary"
           shape="circle"
-          color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+          color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
           @click="showCreate = true"
         >
           + 新建账本
@@ -45,7 +45,7 @@
           type="primary"
           shape="circle"
           size="mini"
-          color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+          color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
           @click="showCreate = true"
         >
           新建账本
@@ -87,7 +87,7 @@
           <u-button
             type="primary"
             shape="circle"
-            color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+            color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
             :loading="submitting"
             @click="submit"
           >
@@ -100,6 +100,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
@@ -115,7 +118,7 @@ const form = ref({
 })
 
 const fieldStyle = {
-  background: '#fcf5ec',
+  background: 'var(--color-surface-soft)',
   borderRadius: '20rpx',
   padding: '0 22rpx',
   fontSize: '28rpx',
@@ -123,7 +126,7 @@ const fieldStyle = {
 }
 
 const textareaStyle = {
-  background: '#fcf5ec',
+  background: 'var(--color-surface-soft)',
   borderRadius: '20rpx',
   padding: '18rpx 22rpx',
   fontSize: '26rpx',
@@ -176,7 +179,7 @@ onShow(() => {
 
 <style scoped lang="scss">
 .book-card__id {
-  color: #9b866d;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
@@ -188,7 +191,7 @@ onShow(() => {
 
 .book-popup {
   padding: 28rpx;
-  background: #fffaf4;
+  background: var(--color-bg);
 }
 
 .book-popup__head {
@@ -197,7 +200,7 @@ onShow(() => {
 }
 
 .book-popup__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 34rpx;
   font-weight: 700;
 }

@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe memorial-page">
+  <view :class="['page-shell-safe memorial-page', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -13,7 +13,7 @@
         <u-button
           type="primary"
           shape="circle"
-          color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+          color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
           @click="openCreatePopup"
         >
           新建纪念日
@@ -109,7 +109,7 @@
               <view class="field-label">每年重复</view>
               <view class="list-card__meta">生日、纪念日这类固定日期建议打开。</view>
             </view>
-            <switch :checked="form.annualRepeat" color="#c47c52" @change="onRepeatChange" />
+            <switch :checked="form.annualRepeat" color="var(--color-primary)" @change="onRepeatChange" />
           </view>
 
           <view class="block-stack">
@@ -129,7 +129,7 @@
             <u-button
               type="primary"
               shape="circle"
-              color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+              color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
               :loading="submitting"
               @click="submit"
             >
@@ -143,6 +143,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
@@ -172,7 +175,7 @@ const form = reactive({
 })
 
 const fieldStyle = {
-  background: '#fcf5ec',
+  background: 'var(--color-surface-soft)',
   borderRadius: '20rpx',
   padding: '0 22rpx',
   fontSize: '28rpx',
@@ -180,7 +183,7 @@ const fieldStyle = {
 }
 
 const textareaStyle = {
-  background: '#fcf5ec',
+  background: 'var(--color-surface-soft)',
   borderRadius: '20rpx',
   padding: '18rpx 22rpx',
   fontSize: '26rpx',
@@ -345,7 +348,7 @@ onShow(() => {
 .memorial-popup {
   max-height: 74vh;
   padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
-  background: #fffaf4;
+  background: var(--color-bg);
 }
 
 .memorial-popup__body {
@@ -357,14 +360,14 @@ onShow(() => {
 }
 
 .memorial-popup__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 34rpx;
   font-weight: 700;
 }
 
 .memorial-popup__subtitle {
   margin-top: 8rpx;
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
@@ -394,7 +397,7 @@ onShow(() => {
   gap: 16rpx;
   padding: 0 22rpx;
   border-radius: 20rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
 }
 
 .picker-card-row__label {
@@ -403,7 +406,7 @@ onShow(() => {
 }
 
 .picker-card-row__value {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 600;
 }

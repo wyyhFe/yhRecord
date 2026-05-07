@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe login-page">
+  <view :class="['page-shell-safe login-page', themeClass]">
     <view class="login-page__hero">
       <view class="login-page__brand">Life Record</view>
       <view class="login-page__title">让记录变成一种长期关系</view>
@@ -12,7 +12,7 @@
       <u-button
         type="primary"
         shape="circle"
-        color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+        color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
         :loading="loading"
         @click="handleLogin"
       >
@@ -23,6 +23,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { ref } from 'vue'
 import { wxLogin } from '@/api/auth'
 import { tokenStorage } from '@/utils/storage'
@@ -61,7 +64,7 @@ async function handleLogin() {
 }
 
 .login-page__brand {
-  color: #9b866d;
+  color: var(--color-text-muted);
   font-size: 24rpx;
   letter-spacing: 6rpx;
   text-transform: uppercase;
@@ -69,7 +72,7 @@ async function handleLogin() {
 
 .login-page__title {
   margin-top: 16rpx;
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 56rpx;
   font-weight: 700;
   line-height: 1.15;

@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe diary-editor-page">
+  <view :class="['page-shell-safe diary-editor-page', themeClass]">
     <view class="section-shell diary-editor-topbar">
       <view class="diary-editor-topbar__date" @tap="openDatePicker">{{ displayDate }}</view>
 
@@ -13,7 +13,7 @@
         type="primary"
         shape="circle"
         :hair-line="false"
-        color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+        color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
         :loading="submitting"
         @click="submitDiary"
       >
@@ -139,6 +139,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import PhotoPicker, { type SelectedPhoto } from '@/components/business/photo-picker/index.vue'
@@ -186,7 +189,7 @@ const titleStyle = {
   fontSize: '40rpx',
   fontWeight: '600',
   minHeight: '72rpx',
-  color: '#2b2118'
+  color: 'var(--color-text-primary)'
 }
 
 const contentStyle = {
@@ -197,7 +200,7 @@ const contentStyle = {
   width: '100%',
   boxSizing: 'border-box' as const,
   lineHeight: '1.8',
-  color: '#2b2118'
+  color: 'var(--color-text-primary)'
 }
 
 const displayDate = computed(() => form.value.recordDate.slice(5))
@@ -442,7 +445,7 @@ onLoad((options) => {
 
 .diary-editor-topbar__date {
   min-width: 136rpx;
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 32rpx;
   font-weight: 700;
 }
@@ -460,7 +463,7 @@ onLoad((options) => {
   border-radius: 999rpx;
   border: 1rpx solid #ead9c7;
   background: #fff8ef;
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-size: 22rpx;
 }
 
@@ -469,16 +472,16 @@ onLoad((options) => {
   align-items: center;
   gap: 28rpx;
   padding-bottom: 20rpx;
-  border-bottom: 1rpx solid rgba(196, 124, 82, 0.12);
+  border-bottom: 1rpx solid var(--color-border-strong);
 }
 
 .diary-editor-tabs__item {
-  color: #9b866d;
+  color: var(--color-text-muted);
   font-size: 26rpx;
 }
 
 .diary-editor-tabs__item--active {
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-weight: 600;
 }
 
@@ -497,7 +500,7 @@ onLoad((options) => {
 }
 
 .diary-editor-filter__text {
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-size: 24rpx;
 }
 
@@ -520,14 +523,14 @@ onLoad((options) => {
   padding: 10rpx 20rpx;
   border-radius: 999rpx;
   border: 1rpx solid #ead9c7;
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-size: 22rpx;
   background: #fffdf8;
 }
 
 .diary-editor-footer__count {
   flex-shrink: 0;
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 22rpx;
 }
 
@@ -546,7 +549,7 @@ onLoad((options) => {
   border-radius: 999rpx;
   border: 1rpx solid #ead9c7;
   background: #fff8ef;
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-size: 24rpx;
 }
 
@@ -564,7 +567,7 @@ onLoad((options) => {
   gap: 16rpx;
   padding: 0 22rpx;
   border-radius: 20rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
 }
 
 .editor-setting-row__label {
@@ -573,7 +576,7 @@ onLoad((options) => {
 }
 
 .editor-setting-row__value {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 600;
 }

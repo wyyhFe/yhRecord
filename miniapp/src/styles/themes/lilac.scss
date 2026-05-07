@@ -1,0 +1,41 @@
+/**
+ * 紫雾主题
+ * 关键词：柔软、梦幻、女性向、情感记录。
+ *
+ * 适合：写日记记录心情、情感向应用调性。
+ * 偏粉紫，背景近乎雪白带一点紫，情感色彩比暖陶更轻盈。
+ */
+
+.theme-lilac {
+  --color-primary: #9b7cb6;
+  --color-primary-soft: rgba(155, 124, 182, 0.12);
+  --color-primary-strong: #7e63a0;
+  --color-accent: #c89cc8;
+
+  --color-bg: #faf6fb;
+  --color-bg-gradient: radial-gradient(circle at top left, rgba(155, 124, 182, 0.14), transparent 36%),
+    radial-gradient(circle at top right, rgba(220, 180, 220, 0.16), transparent 30%),
+    linear-gradient(180deg, #faf6fb 0%, #f1eaf3 100%);
+  --color-surface: rgba(255, 255, 255, 0.94);
+  --color-surface-soft: #f3edf5;
+  --color-surface-strong: #ffffff;
+
+  --color-border: rgba(155, 124, 182, 0.1);
+  --color-border-strong: rgba(155, 124, 182, 0.28);
+  --color-divider: rgba(155, 124, 182, 0.14);
+
+  --color-text-primary: #2a1f33;
+  --color-text-secondary: #5a4d65;
+  --color-text-muted: #8b7d99;
+  --color-text-inverse: #faf6fb;
+
+  --color-success: #6f9c66;
+  --color-warning: #d09848;
+  --color-danger: #b85a78;
+  --color-info: #6b7d9c;
+
+  --shadow-card: 0 18rpx 48rpx rgba(50, 35, 70, 0.08);
+  --shadow-modal: 0 24rpx 64rpx rgba(50, 35, 70, 0.16);
+  --shadow-press: 0 6rpx 16rpx rgba(50, 35, 70, 0.06);
+  --shadow-none: none;
+}

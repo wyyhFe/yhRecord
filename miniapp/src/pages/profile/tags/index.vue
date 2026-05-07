@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -23,7 +23,7 @@
         <view class="section-copy__desc">如果模板里没有合适的，可以直接新增自己的标签。</view>
       </view>
       <view class="action-grid-2">
-        <u-button type="primary" shape="circle" color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)" @click="createCustomTag">
+        <u-button type="primary" shape="circle" color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)" @click="createCustomTag">
           新增标签
         </u-button>
         <u-button shape="circle" plain @click="loadData">刷新列表</u-button>
@@ -92,6 +92,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, ref, watch } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import ChoiceChips from '@/components/business/choice-chips'

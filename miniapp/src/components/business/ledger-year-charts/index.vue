@@ -94,7 +94,7 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
     itemWidth: 18,
     itemHeight: 10,
     textStyle: {
-      color: '#6b5b4e',
+      color: 'var(--color-text-secondary)',
       fontSize: 11
     }
   },
@@ -107,7 +107,7 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
       }
     },
     axisLabel: {
-      color: '#8a735f',
+      color: 'var(--color-text-muted)',
       fontSize: 11
     },
     axisTick: {
@@ -128,7 +128,7 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
       }
     },
     axisLabel: {
-      color: '#8a735f',
+      color: 'var(--color-text-muted)',
       fontSize: 11
     }
   },
@@ -161,7 +161,7 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
 }))
 
 const distributionOption = computed<ChartOption>(() => ({
-  color: ['#c47c52'],
+  color: ['var(--color-primary)'],
   animation: false,
   grid: {
     left: 24,
@@ -196,7 +196,7 @@ const distributionOption = computed<ChartOption>(() => ({
       }
     },
     axisLabel: {
-      color: '#8a735f',
+      color: 'var(--color-text-muted)',
       fontSize: 11
     }
   },
@@ -222,7 +222,7 @@ const distributionOption = computed<ChartOption>(() => ({
       label: {
         show: true,
         position: 'right',
-        color: '#8a735f',
+        color: 'var(--color-text-muted)',
         formatter(params: { dataIndex: number }) {
           const ratio = activeDistributions.value[params.dataIndex]?.ratio || 0
           return `${(ratio * 100).toFixed(1)}%`
@@ -237,7 +237,7 @@ const distributionOption = computed<ChartOption>(() => ({
           y2: 0,
           colorStops: [
             { offset: 0, color: '#e3ae6c' },
-            { offset: 1, color: '#c47c52' }
+            { offset: 1, color: 'var(--color-primary)' }
           ]
         },
         borderRadius: [0, 10, 10, 0]
@@ -257,18 +257,18 @@ const distributionOption = computed<ChartOption>(() => ({
 .year-charts__card {
   padding: 24rpx 28rpx 28rpx;
   border-radius: 28rpx;
-  background: #fffaf4;
+  background: var(--color-bg);
 }
 
 .year-charts__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 30rpx;
   font-weight: 700;
 }
 
 .year-charts__desc {
   margin-top: 8rpx;
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
@@ -287,14 +287,14 @@ const distributionOption = computed<ChartOption>(() => ({
   padding: 14rpx 20rpx;
   border-radius: 999rpx;
   background: #f5ecdf;
-  color: #7b6c5a;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
   text-align: center;
 }
 
 .year-charts__tab--active {
-  background: linear-gradient(135deg, #c47c52 0%, #d7a648 100%);
-  color: #fffaf4;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
+  color: var(--color-bg);
   font-weight: 600;
 }
 </style>

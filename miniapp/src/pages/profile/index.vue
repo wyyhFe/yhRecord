@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell profile-hero">
       <view class="profile-hero__main">
         <view class="profile-hero__avatar">
@@ -30,7 +30,7 @@
           type="primary"
           shape="circle"
           :hair-line="false"
-          color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+          color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
           @click="goDiaryEditor"
         >
           去写日记
@@ -58,6 +58,32 @@
           <view class="metric-card__label">{{ item.label }}</view>
           <view class="metric-card__value">{{ item.value }}</view>
           <view class="metric-card__hint">{{ item.hint }}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="page-section section-shell">
+      <view class="section-copy">
+        <view class="section-copy__title">外观主题</view>
+        <view class="section-copy__desc">选择喜欢的视觉风格，整页颜色立即生效。</view>
+      </view>
+
+      <view class="theme-picker-grid">
+        <view
+          v-for="item in themeOptions"
+          :key="item.id"
+          :class="['theme-picker-card', `theme-${item.id}`, { 'theme-picker-card--active': item.id === active }]"
+          @tap="handleThemeChange(item.id)"
+        >
+          <!-- 用 var(--color-primary) 等变量取该卡片自己的主题色，预览即所见 -->
+          <view class="theme-picker-card__swatches">
+            <view class="theme-picker-card__swatch theme-picker-card__swatch--primary" />
+            <view class="theme-picker-card__swatch theme-picker-card__swatch--accent" />
+            <view class="theme-picker-card__swatch theme-picker-card__swatch--surface" />
+          </view>
+          <view class="theme-picker-card__label">{{ item.label }}</view>
+          <view class="theme-picker-card__desc">{{ item.description }}</view>
+          <view v-if="item.id === active" class="theme-picker-card__badge">已启用</view>
         </view>
       </view>
     </view>
@@ -113,10 +139,25 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
+import { ALL_THEMES, THEME_META, useTheme, type ThemeId } from '@/composables/useTheme'
 
 const appStore = useAppStore()
 const profile = computed(() => appStore.profile)
 const showAiPopup = ref(false)
+
+// 主题切换：themeClass 绑到根 view 上保证整页随激活主题变色。
+const { themeClass, active, setTheme } = useTheme()
+
+// 给 UI 用的主题选项列表，顺序与 ALL_THEMES 保持一致便于以后增减。
+const themeOptions = ALL_THEMES.map((id) => ({
+  id,
+  label: THEME_META[id].label,
+  description: THEME_META[id].description
+}))
+
+function handleThemeChange(theme: ThemeId) {
+  setTheme(theme)
+}
 
 const avatarText = computed(() => {
   const name = profile.value?.nickname?.trim()
@@ -236,7 +277,7 @@ onMounted(() => {
 .profile-hero {
   background:
     radial-gradient(circle at top right, rgba(234, 201, 160, 0.24), transparent 34%),
-    linear-gradient(135deg, rgba(255, 250, 244, 0.96) 0%, rgba(252, 244, 234, 0.96) 100%);
+    linear-gradient(135deg, var(--color-surface) 0%, rgba(252, 244, 234, 0.96) 100%);
 }
 
 .profile-hero__main {
@@ -251,7 +292,7 @@ onMounted(() => {
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background: linear-gradient(135deg, #c47c52 0%, #d7a648 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -264,7 +305,7 @@ onMounted(() => {
 }
 
 .profile-hero__avatar-text {
-  color: #fffaf4;
+  color: var(--color-bg);
   font-size: 42rpx;
   font-weight: 700;
 }
@@ -275,7 +316,7 @@ onMounted(() => {
 }
 
 .profile-hero__name {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 38rpx;
   font-weight: 700;
 }
@@ -298,7 +339,7 @@ onMounted(() => {
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
   background: rgba(255, 255, 255, 0.78);
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 22rpx;
 }
 
@@ -326,8 +367,8 @@ onMounted(() => {
   gap: 18rpx;
   padding: 22rpx 20rpx;
   border-radius: 24rpx;
-  background: #fffaf4;
-  border: 1rpx solid rgba(196, 124, 82, 0.1);
+  background: var(--color-bg);
+  border: 1rpx solid var(--color-border);
 }
 
 .profile-entry-card__main {
@@ -336,21 +377,21 @@ onMounted(() => {
 }
 
 .profile-entry-card__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 700;
 }
 
 .profile-entry-card__desc {
   margin-top: 10rpx;
-  color: #7a6a5c;
+  color: var(--color-text-secondary);
   font-size: 23rpx;
   line-height: 1.6;
 }
 
 .profile-entry-card__value {
   flex-shrink: 0;
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-size: 24rpx;
   font-weight: 600;
 }
@@ -369,14 +410,14 @@ onMounted(() => {
 
 .ai-entry-popup__title {
   margin-top: 24rpx;
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 36rpx;
   font-weight: 700;
 }
 
 .ai-entry-popup__desc {
   margin-top: 14rpx;
-  color: #6b5b4e;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
   line-height: 1.7;
 }
@@ -398,7 +439,7 @@ onMounted(() => {
   background:
     radial-gradient(circle at top right, rgba(215, 166, 72, 0.12), transparent 40%),
     linear-gradient(180deg, #fffdf8 0%, #fcf4ea 100%);
-  border: 1rpx solid rgba(196, 124, 82, 0.1);
+  border: 1rpx solid var(--color-border);
 }
 
 .ai-entry-card__main {
@@ -407,22 +448,102 @@ onMounted(() => {
 }
 
 .ai-entry-card__title {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 700;
 }
 
 .ai-entry-card__desc {
   margin-top: 10rpx;
-  color: #7a6a5c;
+  color: var(--color-text-secondary);
   font-size: 23rpx;
   line-height: 1.6;
 }
 
 .ai-entry-card__value {
   flex-shrink: 0;
-  color: #a56d4b;
+  color: var(--color-primary-strong);
   font-size: 24rpx;
   font-weight: 600;
+}
+
+/* ============== 外观主题切换器 ============== */
+/* 网格在主题切换时不需要动，所以放外层（不在 .theme-{id} 卡片内）。 */
+.theme-picker-grid {
+  margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+/*
+ * 每张卡片自己带 .theme-{id} class，让 CSS 变量在卡内被该主题覆盖。
+ * 这样卡片的 swatches 直接 var(--color-primary) 就能预览真实色，
+ * 用户当前用什么主题不影响这些预览。
+ */
+.theme-picker-card {
+  position: relative;
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius-large);
+  background: var(--color-surface);
+  border: 2rpx solid var(--color-border);
+  transition: border-color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
+}
+
+.theme-picker-card--active {
+  /* 激活态用稍强的边框色 + 阴影，向用户明示当前选中 */
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-card);
+}
+
+.theme-picker-card__swatches {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.theme-picker-card__swatch {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: var(--radius-full);
+  border: 1rpx solid var(--color-border);
+}
+
+.theme-picker-card__swatch--primary {
+  background: var(--color-primary);
+}
+
+.theme-picker-card__swatch--accent {
+  background: var(--color-accent);
+}
+
+.theme-picker-card__swatch--surface {
+  background: var(--color-surface-soft);
+}
+
+.theme-picker-card__label {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-semibold);
+}
+
+.theme-picker-card__desc {
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  line-height: var(--leading-snug);
+}
+
+.theme-picker-card__badge {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  padding: 4rpx var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-medium);
 }
 </style>

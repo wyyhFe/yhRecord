@@ -19,7 +19,7 @@
       <u-button
         type="primary"
         shape="circle"
-        color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+        color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
         @click="pickCurrentLocation"
       >
         当前位置
@@ -82,19 +82,19 @@ defineExpose({
 .location-picker__result {
   margin-top: 18rpx;
   border-radius: 20rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
   padding: 18rpx 22rpx;
 }
 
 .location-picker__name {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   font-weight: 600;
 }
 
 .location-picker__address {
   margin-top: 10rpx;
-  color: #7f7366;
+  color: var(--color-text-secondary);
   font-size: 22rpx;
 }
 </style>

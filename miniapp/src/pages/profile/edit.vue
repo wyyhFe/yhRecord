@@ -1,5 +1,5 @@
 <template>
-  <view class="page-shell-safe">
+  <view :class="['page-shell-safe', themeClass]">
     <view class="section-shell">
       <view class="section-copy">
         <view class="section-copy__title">编辑个人信息</view>
@@ -76,7 +76,7 @@
       type="primary"
       shape="circle"
       :hair-line="false"
-      color="linear-gradient(135deg, #c47c52 0%, #d7a648 100%)"
+      color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
       :loading="submitting"
       @click="submit"
     >
@@ -86,6 +86,9 @@
 </template>
 
 <script setup lang="ts">
+import { useTheme } from '@/composables/useTheme'
+const { themeClass } = useTheme()
+
 import { computed, onMounted, ref } from 'vue'
 import { updateUserProfile } from '@/api/user'
 import { useAppStore } from '@/stores/app'
@@ -117,7 +120,7 @@ const avatarText = computed(() => {
 })
 
 const textareaStyle = {
-  background: '#fcf5ec',
+  background: 'var(--color-surface-soft)',
   borderRadius: '20rpx',
   padding: '18rpx 22rpx',
   fontSize: '26rpx',
@@ -189,7 +192,7 @@ onMounted(() => {
   margin: 24rpx auto 18rpx;
   border-radius: 50%;
   overflow: hidden;
-  background: linear-gradient(135deg, #c47c52 0%, #d7a648 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -202,7 +205,7 @@ onMounted(() => {
 }
 
 .edit-profile-avatar__fallback {
-  color: #fffaf4;
+  color: var(--color-bg);
   font-size: 54rpx;
   font-weight: 700;
 }
@@ -211,7 +214,7 @@ onMounted(() => {
   margin-bottom: 24rpx;
   border: none;
   background: transparent;
-  color: #c47c52;
+  color: var(--color-primary);
   font-size: 26rpx;
   line-height: 1.6;
 }
@@ -223,9 +226,9 @@ onMounted(() => {
 .wechat-input {
   min-height: 84rpx;
   border-radius: 20rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
   padding: 0 22rpx;
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
   box-sizing: border-box;
 }
@@ -237,12 +240,12 @@ onMounted(() => {
   justify-content: space-between;
   gap: 16rpx;
   border-radius: 20rpx;
-  background: #fcf5ec;
+  background: var(--color-surface-soft);
   padding: 0 22rpx;
 }
 
 .picker-row__value {
-  color: #2b2118;
+  color: var(--color-text-primary);
   font-size: 28rpx;
 }
 
@@ -262,13 +265,13 @@ onMounted(() => {
   border-radius: 999rpx;
   border: 1rpx solid #ead9c7;
   background: #fff8ef;
-  color: #8a735f;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
 .edit-profile-gender__item--active {
-  border-color: #c47c52;
-  background: rgba(196, 124, 82, 0.12);
+  border-color: var(--color-primary);
+  background: var(--color-border-strong);
   color: #a15f3d;
 }
 </style>
