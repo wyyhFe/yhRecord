@@ -129,6 +129,16 @@
 - 为首页补充更丰富的纪念日和那年今日摘要
 - 增加更多统计和分析视图
 - 完善部署与提醒模板文档
+- 鉴权"无感登录"完善：
+  - 当前问题：`/auth/refresh` 也会校验 Redis `record:user:session:{userId}`，
+    一旦 Redis session 丢失（30 天 TTL 过期 / Redis 重启 / 单设备登录被顶替），
+    前端 refresh 也会拿到 401，最终 `redirectToLogin()` 跳首页要用户手动重登。
+  - 期望行为：refresh 失败时前端自动 `wx.login()` → `/auth/wx-login` → 重放原请求，用户无感。
+  - 涉及文件：
+    - 前端 `miniapp/src/utils/request.ts:131-141` 的 catch 分支
+    - 后端 `record/.../auth/service/impl/AuthServiceImpl.java:64-67`（决定 refresh 是否容错）
+  - 注意：后端如果让 `/auth/refresh` 在 Redis session 缺失时自动重建会绕开"单设备登录"约束，
+    取舍上更倾向只改前端，让 `wx.login` 兜底。
 
 ### P2
 

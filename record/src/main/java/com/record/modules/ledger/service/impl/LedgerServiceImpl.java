@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -186,6 +187,55 @@ public class LedgerServiceImpl implements LedgerService {
                                     .build();
                         })
                         .toList())
+                .build();
+    }
+
+    @Override
+    public List<LedgerEntryVO> rangeEntries(Long userId, Long bookId, LocalDate startDate, LocalDate endDate, Integer limit) {
+        // 调用方一般是 AI 模块做账单分析，这里做兜底校验，避免传错日期把数据库扫穿。
+        if (startDate == null || endDate == null) {
+            throw new LedgerException("分析时间范围不能为空");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new LedgerException("开始日期不能晚于结束日期");
+        }
+
+        LambdaQueryWrapper<LedgerEntry> wrapper = new LambdaQueryWrapper<LedgerEntry>()
+                .eq(LedgerEntry::getUserId, userId)
+                // bookId 可空：不传时分析所有账本
+                .eq(bookId != null, LedgerEntry::getBookId, bookId)
+                // 软删除的账单不参与分析
+                .isNull(LedgerEntry::getDeletedAt)
+                .ge(LedgerEntry::getEntryDate, startDate)
+                .le(LedgerEntry::getEntryDate, endDate)
+                // 按日期倒序，便于取最近 N 条样本，也方便分页
+                .orderByDesc(LedgerEntry::getEntryDate)
+                .orderByDesc(LedgerEntry::getId);
+        if (limit != null && limit > 0) {
+            // 直接拼 SQL 的 LIMIT，避免再走 MP 的 Page 包一层
+            wrapper.last("LIMIT " + limit);
+        }
+
+        // 复用 toVO 一次性把标签信息一起带上，AI 端聚合分类时直接用
+        return ledgerEntryMapper.selectList(wrapper).stream()
+                .map(this::toVO)
+                .toList();
+    }
+
+    @Override
+    public LedgerBookVO findBook(Long userId, Long bookId) {
+        if (bookId == null) {
+            return null;
+        }
+        LedgerBook book = ledgerBookMapper.selectById(bookId);
+        // 找不到或不属于当前用户，统一返回 null，避免返回别人的账本
+        if (book == null || !Objects.equals(book.getUserId(), userId)) {
+            return null;
+        }
+        return LedgerBookVO.builder()
+                .id(book.getId())
+                .name(book.getName())
+                .description(book.getDescription())
                 .build();
     }
 

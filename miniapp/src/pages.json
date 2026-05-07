@@ -137,6 +137,12 @@
       "style": {
         "navigationBarTitleText": "AI 聊天"
       }
+    },
+    {
+      "path": "pages/ai/bill-analysis",
+      "style": {
+        "navigationBarTitleText": "AI 账单分析"
+      }
     }
   ]
 }

@@ -1,0 +1,4 @@
+# Spring Boot 3.x 仍然通过这里注册 EnvironmentPostProcessor。
+# 这一类不像 @AutoConfiguration 那样走 META-INF/spring/...imports。
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  com.record.modules.ai.config.AiProviderEnvironmentPostProcessor

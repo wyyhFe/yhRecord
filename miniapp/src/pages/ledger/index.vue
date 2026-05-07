@@ -607,8 +607,11 @@ function goBooks() {
 }
 
 function goAiAnalysis() {
-  const bookName = selectedBookName.value || '当前账本'
-  uni.navigateTo({ url: `/pages/ai/index?scene=${encodeURIComponent(`请结合 ${bookName} 帮我整理一下账单分析思路。`)}` })
+  // 直接进 AI 账单分析页，把当前账本名带过去预填补充问题。
+  // 之前是跳到聊天页只给一段 prompt scene，现在改成跳真正的账单分析页。
+  const bookName = selectedBookName.value || ''
+  const query = bookName ? `?bookName=${encodeURIComponent(bookName)}` : ''
+  uni.navigateTo({ url: `/pages/ai/bill-analysis${query}` })
 }
 
 function goLedgerTags() {

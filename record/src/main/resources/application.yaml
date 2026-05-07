@@ -24,12 +24,11 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: Asia/Shanghai
   ai:
+    # spring.ai.openai.api-key / base-url / chat.options.model 由 AiProviderEnvironmentPostProcessor
+    # 按 app.ai.active 动态注入，这里只保留与供应商无关的固定参数。
     openai:
-      api-key: ${AI_API_KEY}
-      base-url: ${AI_BASE_URL:https://api.openai.com}
       chat:
         options:
-          model: gpt-4o-mini
           temperature: 0.2
           max-tokens: 1200
     chat:
@@ -141,7 +140,18 @@ app:
         remark-field: thing4
         name-field: thing5
   ai:
-    provider: openai-compatible
+    # 当前激活的 AI 供应商。可选：openai / zhipu / deepseek / dashscope
+    active: ${APP_AI_ACTIVE:zhipu}
+    # 各供应商端点配置。base-url / chat-model / embedding-model 没填的会用 AiProvider 枚举内置默认值。
+    providers:
+      openai:
+        api-key: ${OPENAI_API_KEY:}
+      zhipu:
+        api-key: ${ZHIPU_API_KEY:}
+      deepseek:
+        api-key: ${DEEPSEEK_API_KEY:}
+      dashscope:
+        api-key: ${DASHSCOPE_API_KEY:}
     system-prompt:
     chat:
       memory-enabled: true
@@ -154,5 +164,5 @@ app:
 alioss:
   endpoint: ${ALIOSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
   bucket-name: ${ALIOSS_BUCKET_NAME:wyhosskey}
-  access-key-id: ${ALIOSS_ACCESS_KEY_ID:your-access-key-id}
-  access-key-secret: ${ALIOSS_ACCESS_KEY_SECRET:your-access-key-secret}
+  access-key-id: ${ALIOSS_ACCESS_KEY_ID}
+  access-key-secret: ${ALIOSS_ACCESS_KEY_SECRET}

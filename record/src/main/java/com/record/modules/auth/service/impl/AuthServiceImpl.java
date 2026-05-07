@@ -13,6 +13,8 @@ import com.record.modules.user.model.entity.UserSession;
 import com.record.modules.user.service.UserService;
 import com.record.security.service.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,8 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class AuthServiceImpl implements AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     private final WechatAuthClient wechatAuthClient;
     private final UserService userService;
@@ -54,26 +58,56 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthTokenVO refreshToken(String refreshToken) {
-        Claims claims = jwtTokenProvider.parseToken(refreshToken);
+        // 每一步都打日志，定位 401 时直接看 IDE 控制台知道挂在哪
+        Claims claims;
+        try {
+            claims = jwtTokenProvider.parseToken(refreshToken);
+        } catch (Exception ex) {
+            // JWT 签名错或过期都走这里
+            log.warn("[refresh] 解析 refreshToken 失败: {}", ex.getMessage());
+            throw ex;
+        }
+
         if (!"refresh".equals(claims.get("typ", String.class))) {
+            log.warn("[refresh] 令牌类型错误，typ={}", claims.get("typ"));
             throw new AuthException("refreshToken 类型不正确");
         }
+
         Long userId = ((Number) claims.get("uid")).longValue();
         String sessionId = claims.get("sid", String.class);
+        log.info("[refresh] 开始刷新，userId={} tokenSid={}", userId, sessionId);
 
         String cachedSessionId = stringRedisTemplate.opsForValue().get(RedisKeyConstants.USER_SESSION + userId);
-        if (cachedSessionId == null || !cachedSessionId.equals(sessionId)) {
+        log.info("[refresh] Redis 中的 sessionId={}", cachedSessionId);
+        if (cachedSessionId == null) {
+            log.warn("[refresh] Redis 中没有该用户的 session（key={}）", RedisKeyConstants.USER_SESSION + userId);
+            throw new AuthException("登录会话已失效，请重新登录");
+        }
+        if (!cachedSessionId.equals(sessionId)) {
+            // 这是最常见的失败原因：用户在别处又登过一次，sid 被覆盖
+            log.warn("[refresh] sessionId 不匹配 token={} redis={}（多设备登录可能顶替了）", sessionId, cachedSessionId);
             throw new AuthException("登录会话已失效，请重新登录");
         }
 
         UserSession session = userSessionMapper.selectOne(new LambdaQueryWrapper<UserSession>()
                 .eq(UserSession::getUserId, userId)
                 .eq(UserSession::getSessionId, sessionId));
-        if (session == null || !refreshToken.equals(session.getRefreshToken()) || session.getRefreshExpireAt().isBefore(LocalDateTime.now())) {
+        if (session == null) {
+            log.warn("[refresh] DB 里查不到 user_session 记录 userId={} sessionId={}", userId, sessionId);
+            throw new AuthException("refreshToken 已失效");
+        }
+        if (!refreshToken.equals(session.getRefreshToken())) {
+            log.warn("[refresh] DB 中的 refreshToken 与传入的不一致，token 长度={} db 长度={}",
+                    refreshToken.length(), session.getRefreshToken() != null ? session.getRefreshToken().length() : 0);
+            throw new AuthException("refreshToken 已失效");
+        }
+        if (session.getRefreshExpireAt().isBefore(LocalDateTime.now())) {
+            log.warn("[refresh] refreshToken 已过期 expireAt={}", session.getRefreshExpireAt());
             throw new AuthException("refreshToken 已失效");
         }
 
         User user = userService.getOrCreateByOpenid(claims.get("openid", String.class));
+        log.info("[refresh] 刷新成功，userId={}", userId);
         return issueToken(user);
     }
 

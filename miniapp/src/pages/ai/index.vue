@@ -13,8 +13,8 @@
           <view class="section-copy__desc">支持新建、切换和删除当前会话。</view>
         </view>
         <view class="toolbar-actions">
-          <u-button size="mini" type="info" plain @tap="startNewConversation">新建</u-button>
-          <u-button size="mini" type="warning" plain :disabled="!activeConversationId" @tap="removeCurrentConversation">
+          <u-button size="mini" type="info" plain @click="startNewConversation">新建</u-button>
+          <u-button size="mini" type="warning" plain :disabled="!activeConversationId" @click="removeCurrentConversation">
             删除
           </u-button>
         </view>
@@ -83,10 +83,9 @@
         placeholder="请输入问题，例如：请解释一下 Spring AI 的 Flux 流式输出是怎么工作的。"
         @confirm="sendMessage"
       ></textarea>
-
       <view class="composer-actions">
-        <u-button type="info" plain :disabled="sending" @tap="fillExamplePrompt">示例问题</u-button>
-        <u-button type="warning" :disabled="sendDisabled" @tap="sendMessage">发送</u-button>
+        <u-button type="info" plain :disabled="sending" @click="fillExamplePrompt">示例问题</u-button>
+        <u-button type="warning" :disabled="sendDisabled" @click="sendMessage">发送</u-button>
       </view>
     </view>
   </view>
@@ -312,10 +311,14 @@ async function sendMessage() {
     return
   }
 
-  const conversationId = await ensureConversation()
-  appendPendingTurn(conversationId, message)
-  draft.value = ''
-  startStream(conversationId, message)
+  try {
+    const conversationId = await ensureConversation()
+    appendPendingTurn(conversationId, message)
+    draft.value = ''
+    startStream(conversationId, message)
+  } catch (error) {
+    uni.showToast({ title: error instanceof Error ? error.message : '发送失败', icon: 'none' })
+  }
 }
 
 function removeCurrentConversation() {

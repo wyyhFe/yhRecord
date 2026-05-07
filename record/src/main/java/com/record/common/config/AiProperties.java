@@ -1,24 +1,37 @@
 package com.record.common.config;
 
+import com.record.modules.ai.config.AiProvider;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import java.util.EnumMap;
+import java.util.Map;
 
 /**
  * AI 业务配置。
  * 与 spring.ai 下的模型连接参数分开，专门放业务默认值和风控阈值。
+ *
+ * 多供应商切换说明：
+ * - {@link #active} 决定当前激活的供应商
+ * - {@link #providers} 按枚举名映射到具体的 api-key / base-url / chat 模型
+ * - 启动时 {@code AiProviderEnvironmentPostProcessor} 会把激活供应商的参数注入到
+ *   {@code spring.ai.openai.*}，让 Spring AI auto-config 无感切换底层模型
  */
 @Data
 @ConfigurationProperties(prefix = "app.ai")
 public class AiProperties {
 
     /**
-     * 总开关，便于分环境控制。
+     * 当前激活的 AI 供应商。
+     * 默认 OpenAI；切换时只改这个字段（或对应的 APP_AI_ACTIVE 环境变量）。
      */
+    private AiProvider active = AiProvider.OPENAI;
 
     /**
-     * 当前使用的模型供应商标识，仅用于业务日志和路由判断。
+     * 各供应商的端点配置。
+     * 仅在覆盖 {@link AiProvider} 枚举内置默认值或填写 api-key 时才需要在 yaml 中出现。
      */
-    private String provider = "openai-compatible";
+    private Map<AiProvider, ProviderEndpoint> providers = new EnumMap<>(AiProvider.class);
 
     /**
      * 默认系统提示词。
@@ -27,6 +40,26 @@ public class AiProperties {
 
     private Chat chat = new Chat();
     private BillAnalysis billAnalysis = new BillAnalysis();
+
+    /**
+     * 单个供应商的端点参数。
+     * 任何字段为空都会回落到 {@link AiProvider} 的内置默认值。
+     */
+    @Data
+    public static class ProviderEndpoint {
+        /** OpenAI 兼容服务的 API key，**必填**，否则模型调用 401。 */
+        private String apiKey;
+        /** 服务端点，缺省时用枚举内置默认。 */
+        private String baseUrl;
+        /** chat 模型名。 */
+        private String chatModel;
+        /** embedding 模型名，没有 embedding 能力的供应商可留空。 */
+        private String embeddingModel;
+        /** chat 接口完整路径，比如 OpenAI 是 /v1/chat/completions，智谱是 /chat/completions。 */
+        private String chatCompletionsPath;
+        /** embedding 接口完整路径，没有 embedding 能力的供应商留空。 */
+        private String embeddingsPath;
+    }
 
     @Data
     public static class Chat {
