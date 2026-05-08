@@ -7,9 +7,12 @@
   "transformPx": false,
   "mp-weixin": {
     "appid": "wxc881594b9650474f",
+    "//debug": "开启后真机左上角会出现 vConsole 浮窗，可以看 console.log / network / storage。生产正式发布时改回 false 或删掉。",
+    "debug": true,
     "setting": {
       "urlCheck": false,
       "es6": true,
+      "enhance": true,
       "postcss": true,
       "minified": true
     },

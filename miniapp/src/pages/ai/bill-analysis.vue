@@ -381,7 +381,7 @@ onLoad((query) => {
 
 .bill-analysis-head {
   background:
-    radial-gradient(circle at top right, rgba(215, 166, 72, 0.16), transparent 34%),
+    radial-gradient(circle at top right, var(--color-primary-soft), transparent 34%),
     linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface) 100%);
 }
 
@@ -419,10 +419,11 @@ onLoad((query) => {
   margin-top: 12rpx;
   padding: 20rpx;
   border-radius: 18rpx;
-  background: #fffdf9;
+  background: var(--color-surface);
   border: 1rpx solid var(--color-border-strong);
   box-sizing: border-box;
-  color: var(--color-text-primary);
+  /* 用户输入内容 → 中性色，不带主题色调 */
+  color: var(--color-text-neutral);
   font-size: 26rpx;
   line-height: 1.6;
 }
@@ -464,7 +465,7 @@ onLoad((query) => {
 }
 
 .insight-item {
-  color: #4d3f33;
+  color: var(--color-text-primary);
   font-size: 26rpx;
   line-height: 1.8;
 }
@@ -489,14 +490,14 @@ onLoad((query) => {
 .category-row__amount {
   width: 180rpx;
   text-align: right;
-  color: #4d3f33;
+  color: var(--color-text-primary);
   font-size: 26rpx;
 }
 
 .category-row__ratio {
   width: 120rpx;
   text-align: right;
-  color: #9b6b47;
+  color: var(--color-primary-strong);
   font-size: 24rpx;
   font-weight: 600;
 }

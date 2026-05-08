@@ -53,8 +53,8 @@
           v-model="form.content"
           placeholder="时光易逝，点击记录。"
           :border="false"
-          :custom-style="contentStyle"
-          height="320"
+          :-style="contentStyle"
+          heigcustomht="320"
           :maxlength="3000"
         />
       </view>
@@ -461,8 +461,8 @@ onLoad((options) => {
 .diary-editor-topbar__tool {
   padding: 14rpx 24rpx;
   border-radius: 999rpx;
-  border: 1rpx solid #ead9c7;
-  background: #fff8ef;
+  border: 1rpx solid var(--color-border-strong);
+  background: var(--color-surface);
   color: var(--color-primary-strong);
   font-size: 22rpx;
 }
@@ -495,8 +495,8 @@ onLoad((options) => {
 .diary-editor-filter {
   padding: 10rpx 22rpx;
   border-radius: 999rpx;
-  border: 1rpx solid #ead9c7;
-  background: #fff8ef;
+  border: 1rpx solid var(--color-border-strong);
+  background: var(--color-surface);
 }
 
 .diary-editor-filter__text {
@@ -522,10 +522,10 @@ onLoad((options) => {
 .diary-editor-footer__chip {
   padding: 10rpx 20rpx;
   border-radius: 999rpx;
-  border: 1rpx solid #ead9c7;
+  border: 1rpx solid var(--color-border-strong);
   color: var(--color-primary-strong);
   font-size: 22rpx;
-  background: #fffdf8;
+  background: var(--color-surface);
 }
 
 .diary-editor-footer__count {
@@ -547,8 +547,8 @@ onLoad((options) => {
   justify-content: center;
   padding: 18rpx 12rpx;
   border-radius: 999rpx;
-  border: 1rpx solid #ead9c7;
-  background: #fff8ef;
+  border: 1rpx solid var(--color-border-strong);
+  background: var(--color-surface);
   color: var(--color-primary-strong);
   font-size: 24rpx;
 }
@@ -571,7 +571,7 @@ onLoad((options) => {
 }
 
 .editor-setting-row__label {
-  color: #7f6b58;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
 }
 

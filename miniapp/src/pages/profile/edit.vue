@@ -63,7 +63,7 @@
           v-model="form.signature"
           placeholder="写一句让自己喜欢的话"
           :border="true"
-          border-color="#eadfd0"
+          border-color="var(--color-border-strong)"
           :custom-style="textareaStyle"
           height="180"
           :maxlength="80"
@@ -228,7 +228,8 @@ onMounted(() => {
   border-radius: 20rpx;
   background: var(--color-surface-soft);
   padding: 0 22rpx;
-  color: var(--color-text-primary);
+  /* 用户输入内容 → 中性色 */
+  color: var(--color-text-neutral);
   font-size: 28rpx;
   box-sizing: border-box;
 }
@@ -250,7 +251,7 @@ onMounted(() => {
 }
 
 .picker-row__arrow {
-  color: #b08a6d;
+  color: var(--color-text-muted);
   font-size: 26rpx;
 }
 
@@ -263,8 +264,8 @@ onMounted(() => {
 .edit-profile-gender__item {
   padding: 12rpx 24rpx;
   border-radius: 999rpx;
-  border: 1rpx solid #ead9c7;
-  background: #fff8ef;
+  border: 1rpx solid var(--color-border-strong);
+  background: var(--color-surface);
   color: var(--color-text-muted);
   font-size: 24rpx;
 }
@@ -272,6 +273,6 @@ onMounted(() => {
 .edit-profile-gender__item--active {
   border-color: var(--color-primary);
   background: var(--color-border-strong);
-  color: #a15f3d;
+  color: var(--color-primary-strong);
 }
 </style>

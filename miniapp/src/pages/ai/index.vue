@@ -390,12 +390,12 @@ onUnload(() => {
 
 .ai-chat-head {
   background:
-    radial-gradient(circle at top right, rgba(215, 166, 72, 0.16), transparent 34%),
+    radial-gradient(circle at top right, var(--color-primary-soft), transparent 34%),
     linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface) 100%);
 }
 
 .page-head__eyebrow {
-  color: #9b6b47;
+  color: var(--color-primary-strong);
   font-size: 24rpx;
   font-weight: 700;
 }
@@ -435,14 +435,14 @@ onUnload(() => {
   min-height: 172rpx;
   padding: 22rpx;
   border-radius: 24rpx;
-  background: #fffdf8;
+  background: var(--color-surface);
   border: 1rpx solid var(--color-border);
   box-sizing: border-box;
 }
 
 .session-card--active {
   border-color: rgba(196, 124, 82, 0.36);
-  box-shadow: 0 16rpx 32rpx rgba(67, 41, 26, 0.08);
+  box-shadow: 0 16rpx 32rpx var(--shadow-card);
 }
 
 .session-card__title {
@@ -495,15 +495,15 @@ onUnload(() => {
 }
 
 .message-card--user {
-  background: linear-gradient(180deg, #fff6e9 0%, #fde7ca 100%);
+  background: linear-gradient(180deg, var(--color-surface-soft) 0%, var(--color-primary-soft) 100%);
 }
 
 .message-card--assistant {
-  background: linear-gradient(180deg, #fffefb 0%, #f7efe5 100%);
+  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-soft) 100%);
 }
 
 .message-card__meta {
-  color: #9b6b47;
+  color: var(--color-primary-strong);
   font-size: 22rpx;
   font-weight: 700;
 }
@@ -529,10 +529,11 @@ onUnload(() => {
   margin-top: 18rpx;
   padding: 24rpx;
   border-radius: 24rpx;
-  background: #fffdf9;
+  background: var(--color-surface);
   border: 1rpx solid var(--color-border-strong);
   box-sizing: border-box;
-  color: var(--color-text-primary);
+  /* 用户输入内容 → 中性色，不带主题色调 */
+  color: var(--color-text-neutral);
   font-size: 28rpx;
   line-height: 1.7;
 }

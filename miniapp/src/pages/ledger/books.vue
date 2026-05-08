@@ -65,7 +65,7 @@
             v-model="form.name"
             placeholder="例如：生活开销、旅行账本"
             :border="true"
-            border-color="#eadfd0"
+            border-color="var(--color-border-strong)"
             :custom-style="fieldStyle"
           />
         </view>
@@ -76,7 +76,7 @@
             v-model="form.description"
             placeholder="可选，用一句话说明这个账本的用途"
             :border="true"
-            border-color="#eadfd0"
+            border-color="var(--color-border-strong)"
             :custom-style="textareaStyle"
             height="150"
           />

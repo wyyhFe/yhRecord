@@ -51,11 +51,13 @@ page {
 }
 
 /**
- * 页面安全区容器。注意这里只给页面级背景；尺寸、内外边距由 UnoCSS 的同名 shortcut
- * 在编译期注入（min-h-screen / box-border / px-6 / pb-40 / pt-6）。两份规则会被
- * CSS 自然合并。
+ * 页面安全区容器：尺寸、内外边距由 UnoCSS 同名 shortcut 注入；这里补充：
+ *  - 显式 min-height: 100vh —— 防止内容短的页面（如详情页）撑不开，露出 page 的纯色底
+ *  - 主题渐变背景挂在这里 —— 因为 <page> 元素无法绑定 themeClass，主题切换才能感知到
+ *  - 字体色也走 token —— 部分页面没单独设 color 的话默认继承到这里
  */
 .page-shell-safe {
+  min-height: 100vh;
   background: var(--color-bg-gradient);
   color: var(--color-text-primary);
 }

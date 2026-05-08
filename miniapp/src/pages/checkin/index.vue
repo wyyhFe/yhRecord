@@ -271,10 +271,10 @@ onShow(() => {
 .checkin-date-chip,
 .history-tag {
   padding: 10rpx 18rpx;
-  border-radius: 999rpx;
-  background: #f4eadf;
-  color: #8a5f42;
-  font-size: 22rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
 }
 
 .checkin-actions {
@@ -298,7 +298,7 @@ onShow(() => {
   padding: 0 24rpx;
   border-radius: 999rpx;
   background: var(--color-surface-soft);
-  color: #5e4b3a;
+  color: var(--color-text-primary);
   font-size: 24rpx;
   font-weight: 600;
 }

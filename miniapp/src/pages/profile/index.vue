@@ -274,10 +274,16 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+/*
+ * 个人中心顶部 hero 卡片：在 .section-shell 之上叠一层渐变营造高光感。
+ * 两层渐变都走 token，主题切换跟着变：
+ *   - 顶层 radial 用 --color-primary-soft（主色 12% 透明）
+ *   - 底层 linear 用 surface → surface-soft，从亮到稍暗的过渡
+ */
 .profile-hero {
   background:
-    radial-gradient(circle at top right, rgba(234, 201, 160, 0.24), transparent 34%),
-    linear-gradient(135deg, var(--color-surface) 0%, rgba(252, 244, 234, 0.96) 100%);
+    radial-gradient(circle at top right, var(--color-primary-soft), transparent 34%),
+    linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-soft) 100%);
 }
 
 .profile-hero__main {
@@ -323,7 +329,7 @@ onMounted(() => {
 
 .profile-hero__signature {
   margin-top: 10rpx;
-  color: #6d5b4c;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
   line-height: 1.7;
 }
@@ -338,7 +344,7 @@ onMounted(() => {
 .profile-hero__meta-item {
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.78);
+  background: var(--color-surface);
   color: var(--color-text-muted);
   font-size: 22rpx;
 }
@@ -405,7 +411,7 @@ onMounted(() => {
   height: 8rpx;
   margin: 0 auto;
   border-radius: 999rpx;
-  background: #e7d7c7;
+  background: var(--color-border-strong);
 }
 
 .ai-entry-popup__title {
@@ -437,8 +443,8 @@ onMounted(() => {
   padding: 24rpx 22rpx;
   border-radius: 24rpx;
   background:
-    radial-gradient(circle at top right, rgba(215, 166, 72, 0.12), transparent 40%),
-    linear-gradient(180deg, #fffdf8 0%, #fcf4ea 100%);
+    radial-gradient(circle at top right, var(--color-primary-soft), transparent 40%),
+    linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-soft) 100%);
   border: 1rpx solid var(--color-border);
 }
 

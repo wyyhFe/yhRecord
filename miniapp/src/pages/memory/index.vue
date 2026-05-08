@@ -203,7 +203,7 @@ onShow(() => {
   padding: 0 20rpx;
   border-radius: 999rpx;
   background: var(--color-surface-soft);
-  color: #8a5f42;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
   font-weight: 600;
 }
@@ -225,8 +225,8 @@ onShow(() => {
 .memory-tag {
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
-  background: #f4eadf;
-  color: #8a5f42;
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
   font-size: 22rpx;
 }
 </style>

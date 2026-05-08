@@ -98,7 +98,7 @@ watch(
 <style scoped lang="scss">
 .selector-dialog {
   width: 640rpx;
-  background: #fffdf8;
+  background: var(--color-surface);
   border-radius: 28rpx;
   overflow: hidden;
 }
@@ -162,16 +162,16 @@ watch(
 .selector-dialog__chip {
   padding: 12rpx 24rpx;
   border-radius: 999rpx;
-  border: 1rpx solid #ead9c7;
-  background: #fff8ef;
-  color: #6d5b4c;
+  border: 1rpx solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
   font-size: 24rpx;
 }
 
 .selector-dialog__chip--active {
   border-color: var(--color-primary);
   background: var(--color-border-strong);
-  color: #a15f3d;
+  color: var(--color-primary-strong);
 }
 
 .selector-dialog__empty {

@@ -31,6 +31,8 @@
   --color-text-secondary: #a8b2bf;
   --color-text-muted: #6f7886;
   --color-text-inverse: #1d2128;
+  /* 暗色主题里中性文字反转为近白色，保证 input 内容仍然清晰可读。 */
+  --color-text-neutral: #f5f5f7;
 
   --color-success: #7ab07f;
   --color-warning: #d6b06a;

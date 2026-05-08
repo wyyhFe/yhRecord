@@ -103,9 +103,10 @@ setTheme('mint')   // 全站立即生效
 | `--color-surface` | 卡片、面板 |
 | `--color-surface-soft` | 弱化卡片（嵌套层 / 空状态） |
 | `--color-border` | 边框、分隔线 |
-| `--color-text-primary` | 标题、正文主文字 |
-| `--color-text-secondary` | 说明、次级文字 |
-| `--color-text-muted` | 时间戳、辅助标签 |
+| `--color-text-primary` | 标题、正文主文字（带主题色调，有性格） |
+| `--color-text-secondary` | 说明、次级文字（带主题色调） |
+| `--color-text-muted` | 时间戳、辅助标签（带主题色调） |
+| `--color-text-neutral` | **用户输入内容、代码、原始文本（不带主题色调）**，浅色主题近黑、暗色主题近白 |
 | `--color-success` | 成功状态、收入 |
 | `--color-warning` | 警告状态 |
 | `--color-danger` | 错误状态、删除、支出 |
@@ -176,6 +177,20 @@ setTheme('mint')   // 全站立即生效
 ---
 
 ## 4. 排版
+
+### 4.0 装饰性 vs 功能性文字
+
+文字按"是否需要主题性格"分两类：
+
+| 场景 | 用什么 |
+|---|---|
+| **装饰性**：标题、说明、内容、meta、提示 | `--color-text-primary` / `--color-text-secondary` / `--color-text-muted`（**带**主题色调，浅色主题里偏暖棕/暖绿/暖紫，墨夜里偏冷白） |
+| **功能性**：用户输入内容、代码片段、文本编辑器、原样回显 | `--color-text-neutral`（**不带**主题色调，浅色主题里近黑 `#1d1d1f`，墨夜里近白 `#f5f5f7`） |
+
+为什么要区分？
+- 装饰性文字让界面"有气质"，主题色调强化整体氛围
+- 用户输入的字是"用户的字"，不应该被主题渲染 —— 切到墨夜也希望看到"我打的字就是黑底白字"的稳定体感
+- 输入框、textarea、代码、可编辑文本等都用 `--color-text-neutral`
 
 ### 4.1 标题层级
 

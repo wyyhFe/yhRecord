@@ -65,7 +65,7 @@
               v-model="form.title"
               placeholder="例如：第一次旅行、生日、领证纪念日"
               :border="true"
-              border-color="#eadfd0"
+              border-color="var(--color-border-strong)"
               :custom-style="fieldStyle"
             />
           </view>
@@ -76,7 +76,7 @@
               v-model="form.type"
               placeholder="例如：LIFE / LOVE / FAMILY"
               :border="true"
-              border-color="#eadfd0"
+              border-color="var(--color-border-strong)"
               :custom-style="fieldStyle"
             />
           </view>
@@ -118,7 +118,7 @@
               v-model="form.remark"
               placeholder="补充一点背景信息，后面回顾时更容易看懂。"
               :border="true"
-              border-color="#eadfd0"
+              border-color="var(--color-border-strong)"
               :custom-style="textareaStyle"
               height="180"
             />
@@ -336,8 +336,8 @@ onShow(() => {
 .memorial-repeat-tag {
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
-  background: #f4eadf;
-  color: #8a5f42;
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
   font-size: 22rpx;
 }
 
@@ -401,7 +401,7 @@ onShow(() => {
 }
 
 .picker-card-row__label {
-  color: #7f6b58;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
 }
 

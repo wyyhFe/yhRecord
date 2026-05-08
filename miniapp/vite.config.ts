@@ -37,5 +37,14 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  // 微信小程序真机的 JS 引擎对 ES2020 支持不完整（可选链 ?. 和空值合并 ?? 在某些版本会报 Unexpected token ?）。
+  // 强制 esbuild 把所有产物降到 ES2017，再让微信的 "es6: true + enhance: true" 把剩余 ES6 语法转 ES5。
+  // 两层兜底，真机和模拟器都不会再撞这个语法坑。
+  esbuild: {
+    target: 'es2017'
+  },
+  build: {
+    target: 'es2017'
   }
 })

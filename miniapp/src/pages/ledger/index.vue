@@ -279,7 +279,7 @@
               v-model="entryForm.remark"
               placeholder="补充这一笔的备注"
               :border="true"
-              border-color="#eadfd0"
+              border-color="var(--color-border-strong)"
               :custom-style="remarkStyle"
             />
           </view>
@@ -937,7 +937,7 @@ onShow(() => {
   padding: 0 24rpx;
   border-radius: 999rpx;
   background: var(--color-surface-soft);
-  color: #5e4b3a;
+  color: var(--color-text-primary);
   font-size: 24rpx;
   font-weight: 600;
 }
@@ -966,7 +966,7 @@ onShow(() => {
   align-items: center;
   gap: 16rpx;
   padding: 24rpx 28rpx;
-  border-bottom: 1rpx solid #f0e6da;
+  border-bottom: 1rpx solid var(--color-surface-soft);
 }
 
 .ledger-day-card__date {
@@ -1014,7 +1014,7 @@ onShow(() => {
   justify-content: space-between;
   gap: 16rpx;
   padding: 24rpx 28rpx;
-  border-bottom: 1rpx solid #f5ecdf;
+  border-bottom: 1rpx solid var(--color-surface-soft);
 }
 
 .ledger-entry-row:last-child {
@@ -1063,7 +1063,7 @@ onShow(() => {
   width: 92rpx;
   height: 92rpx;
   border-radius: 18rpx;
-  background: #f3eadf;
+  background: var(--color-surface-soft);
 }
 
 .ledger-entry-row__amount {
@@ -1169,7 +1169,7 @@ onShow(() => {
 .entry-popup__section {
   margin-bottom: 18rpx;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #f0e6da;
+  border-bottom: 1rpx solid var(--color-surface-soft);
 }
 
 .entry-popup__section:last-child {
@@ -1245,7 +1245,7 @@ onShow(() => {
 }
 
 .entry-popup__amount-value {
-  color: #1f2937;
+  color: var(--color-text-primary);
   font-size: 72rpx;
   font-weight: 700;
   line-height: 1;
@@ -1265,7 +1265,7 @@ onShow(() => {
   width: 120rpx;
   height: 120rpx;
   border-radius: 20rpx;
-  background: #f3eadf;
+  background: var(--color-surface-soft);
 }
 
 .entry-keyboard {
@@ -1280,8 +1280,8 @@ onShow(() => {
   justify-content: center;
   min-height: 92rpx;
   border-radius: 20rpx;
-  background: #f5efe7;
-  color: #1f2937;
+  background: var(--color-surface-soft);
+  color: var(--color-text-primary);
   font-size: 40rpx;
   font-weight: 600;
 }

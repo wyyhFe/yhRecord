@@ -200,7 +200,7 @@ onLoad(() => {
   min-width: 144rpx;
   padding: 20rpx 18rpx;
   border-radius: 24rpx;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--color-surface);
   border: 1rpx solid var(--color-border);
 }
 
@@ -225,7 +225,7 @@ onLoad(() => {
 }
 
 .home-status-item__badge--todo {
-  background: #fdf1e6;
+  background: var(--color-surface-soft);
   color: #b06a42;
 }
 
@@ -243,25 +243,25 @@ onLoad(() => {
 
 .quick-action-card {
   min-height: 180rpx;
-  padding: 24rpx 22rpx;
-  border-radius: 28rpx;
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-large);
   background:
-    radial-gradient(circle at top right, rgba(215, 166, 72, 0.12), transparent 40%),
-    linear-gradient(180deg, #fffdf8 0%, #fcf4ea 100%);
+    radial-gradient(circle at top right, var(--color-primary-soft), transparent 40%),
+    linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-soft) 100%);
   border: 1rpx solid var(--color-border);
-  box-shadow: 0 14rpx 26rpx rgba(67, 41, 26, 0.06);
+  box-shadow: var(--shadow-card);
 }
 
 .quick-action-card__title {
   color: var(--color-text-primary);
-  font-size: 30rpx;
-  font-weight: 700;
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
 }
 
 .quick-action-card__desc {
-  margin-top: 14rpx;
-  color: #7f6a58;
-  font-size: 22rpx;
-  line-height: 1.7;
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  line-height: var(--leading-relaxed);
 }
 </style>

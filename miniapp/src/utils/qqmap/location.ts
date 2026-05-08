@@ -19,7 +19,14 @@ export interface CurrentLocationResult {
 }
 
 export async function pickCurrentLocationPayload(): Promise<CurrentLocationResult> {
-  const result = await uni.getLocation({ type: 'gcj02' })
+  // type 'gcj02' 是国测局坐标系（火星坐标），腾讯/高德地图用的就是这个，跟后端逆地址解析一致
+  // isHighAccuracy: true 让微信走真 GPS（精度到米级）；默认是 false 的话只到大致区域
+  // highAccuracyExpireTime: 3000ms 是允许等待 GPS 定位的最长时间，太长会卡住用户
+  const result = await uni.getLocation({
+    type: 'gcj02',
+    isHighAccuracy: true,
+    highAccuracyExpireTime: 3000
+  })
   const payload: DiaryLocationInput = {
     latitude: result.latitude,
     longitude: result.longitude,

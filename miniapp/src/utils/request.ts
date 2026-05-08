@@ -42,11 +42,30 @@ const http = new HttpRequest({
 let refreshingPromise: Promise<void> | null = null
 
 /**
- * 登录态失效后统一清空本地会话，并回到首页，由首页承接登录弹层。
+ * 登录态彻底失效（refresh 也救不回 + 静默 wx.login 也失败）时调。
+ * 清掉本地凭证，跳到登录页让用户手动操作。
  */
 function redirectToLogin() {
   tokenStorage.clearAll()
-  uni.reLaunch({ url: '/pages/home/index' })
+  uni.reLaunch({ url: '/pages/auth/login' })
+}
+
+/**
+ * 静默无感重登：调微信 wx.login 拿 code，再换 access/refresh token。
+ * session.ts 已经实现了这套（带去重 lock），这里走同一份避免逻辑分裂。
+ *
+ * 用动态 import 避免循环依赖：
+ *   request.ts → session.ts → api/auth.ts → request.ts
+ * 模块初始化期不解析这条链，运行期 lazy 拿到。
+ */
+async function silentReLogin(): Promise<boolean> {
+  try {
+    const { ensureSession } = await import('./session')
+    return await ensureSession()
+  } catch (error) {
+    console.error('[request] silent re-login failed', error)
+    return false
+  }
 }
 
 /**
@@ -110,7 +129,7 @@ http.interceptors.response.use(
     }
 
     if (statusCode === 401 && !config.custom?._retry) {
-      console.warn('[request] got 401, try refresh token', {
+      console.warn('[request] got 401, attempting recovery', {
         url: config.url,
         method: config.method ?? 'GET'
       })
@@ -121,23 +140,39 @@ http.interceptors.response.use(
         withAuth: config.custom?.withAuth
       }
 
+      // 三层兜底依次尝试：refresh → 静默 wx.login → 跳登录页
+      // 全程对调用方"无感"，能救就救，救不回再跳。
       const refreshValue = tokenStorage.getRefreshToken()
-      if (!refreshValue) {
-        console.warn('[request] no refresh token, redirect to login')
-        redirectToLogin()
-        throw new Error('登录已失效')
-      }
 
       if (!refreshingPromise) {
-        refreshingPromise = refreshSessionToken(refreshValue)
-          .catch((refreshError) => {
-            console.error('[request] refresh token failed', refreshError)
-            redirectToLogin()
-            throw refreshError
-          })
-          .finally(() => {
-            refreshingPromise = null
-          })
+        refreshingPromise = (async () => {
+          // 第一层：用 refreshToken 换新 access（不需要走微信登录链路）
+          if (refreshValue) {
+            try {
+              await refreshSessionToken(refreshValue)
+              return
+            } catch (refreshError) {
+              console.warn('[request] refresh failed, falling back to silent wx.login', refreshError)
+            }
+          } else {
+            console.warn('[request] no refresh token, falling back to silent wx.login')
+          }
+
+          // 第二层：refresh 没救回 → 自动 wx.login + /auth/wx-login（用户无感）
+          tokenStorage.clearAll()
+          const reLogged = await silentReLogin()
+          if (reLogged) {
+            return
+          }
+
+          // 第三层：彻底失败 → 跳登录页让用户手动登录
+          console.error('[request] all recovery failed, redirecting to login')
+          uni.$feedback?.info?.('登录已失效，请重新登录')
+          redirectToLogin()
+          throw new Error('登录已失效')
+        })().finally(() => {
+          refreshingPromise = null
+        })
       }
 
       await refreshingPromise

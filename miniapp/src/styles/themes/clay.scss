@@ -36,6 +36,9 @@
   --color-text-secondary: #6b5b4e;
   --color-text-muted: #9b866d;
   --color-text-inverse: #fffaf4;
+  /* 中性文字：用户输入内容、代码、原始文本等"功能性"文字。
+     不带主题色调，浅色主题里近黑、暗色主题里近白，保证输入可读性的一致体感。 */
+  --color-text-neutral: #1d1d1f;
 
   /* ============== 状态色 ============== */
   --color-success: #4f7a4a;

@@ -17,7 +17,7 @@
           :show-action="false"
           shape="round"
           bg-color="var(--color-surface-soft)"
-          border-color="#eadfd0"
+          border-color="var(--color-border-strong)"
           color="var(--color-text-primary)"
           placeholder-color="var(--color-text-muted)"
           search-icon-color="var(--color-primary-strong)"
@@ -129,7 +129,7 @@ onShow(() => {
   border-radius: 28rpx;
   border: 1rpx solid var(--color-border);
   background: var(--color-surface);
-  box-shadow: 0 18rpx 48rpx rgba(67, 41, 26, 0.08);
+  box-shadow: 0 18rpx 48rpx var(--shadow-card);
 }
 
 .diary-entry__head {
@@ -150,7 +150,7 @@ onShow(() => {
   flex-shrink: 0;
   padding: 8rpx 16rpx;
   border-radius: 999rpx;
-  background: #f4e4da;
+  background: var(--color-surface-soft);
   color: #9b6547;
   font-size: 20rpx;
 }

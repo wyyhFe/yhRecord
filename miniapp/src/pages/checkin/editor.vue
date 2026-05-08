@@ -13,7 +13,7 @@
           v-model="form.name"
           placeholder="例如：20 个俯卧撑"
           :border="true"
-          border-color="#eadfd0"
+          border-color="var(--color-border-strong)"
           :custom-style="fieldStyle"
         />
       </view>
@@ -22,7 +22,7 @@
           v-model="form.description"
           placeholder="描述一下任务规则和目标"
           :border="true"
-          border-color="#eadfd0"
+          border-color="var(--color-border-strong)"
           :custom-style="textareaStyle"
           height="180"
         />
@@ -121,7 +121,7 @@ async function submit() {
 }
 
 .picker-row__arrow {
-  color: #b08a6d;
+  color: var(--color-text-muted);
   font-size: 26rpx;
 }
 </style>

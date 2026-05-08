@@ -7,7 +7,7 @@
     @update:model-value="handlePopupChange"
   >
     <view class="px-[32rpx] pb-[48rpx] pt-[36rpx]">
-      <view class="mx-auto h-[8rpx] w-[88rpx] rounded-full bg-[#e7d7c7]" />
+      <view class="mx-auto h-[8rpx] w-[88rpx] rounded-full bg-[var(--color-border-strong)]" />
 
       <view class="mt-[24rpx] text-[38rpx] font-semibold text-[var(--color-text-primary)]">微信登录</view>
       <view class="mt-[16rpx] text-[26rpx] leading-[1.7] text-[var(--color-text-secondary)]">

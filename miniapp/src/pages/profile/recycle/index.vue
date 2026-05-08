@@ -132,7 +132,7 @@ onMounted(() => {
 }
 
 .list-card__summary {
-  color: #5e4b3a;
+  color: var(--color-text-primary);
   font-size: 26rpx;
   line-height: 1.6;
 }

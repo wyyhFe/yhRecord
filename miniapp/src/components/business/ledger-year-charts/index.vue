@@ -34,6 +34,11 @@
 import { computed, ref, watch } from 'vue'
 import type { ChartOption } from 'uni-echarts/shared'
 import EChartPanel from '@/components/business/echart-panel/index.vue'
+import { useThemeColors } from '@/composables/useThemeColors'
+
+// canvas 不解析 CSS 变量，必须用具体颜色字符串。主题切换时 colors.value 自动更新，
+// 下面所有 computed 的 chart options 会跟着重新计算 → ECharts 重新渲染。
+const colors = useThemeColors()
 
 interface DistributionItem {
   label: string
@@ -76,7 +81,8 @@ const activeMonthLabel = computed(() => {
 })
 
 const monthlyTrendOption = computed<ChartOption>(() => ({
-  color: ['#d35d56', '#2c9b67'],
+  // 支出红 + 收入绿，跟着主题切换。深色主题下用更柔和的版本（colors 自动给）
+  color: [colors.value.danger, colors.value.success],
   animation: false,
   grid: {
     left: 20,
@@ -94,7 +100,7 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
     itemWidth: 18,
     itemHeight: 10,
     textStyle: {
-      color: 'var(--color-text-secondary)',
+      color: colors.value.textSecondary,
       fontSize: 11
     }
   },
@@ -103,11 +109,11 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
     data: props.items.map((item) => `${item.month}月`),
     axisLine: {
       lineStyle: {
-        color: '#d8c6b3'
+        color: colors.value.border
       }
     },
     axisLabel: {
-      color: 'var(--color-text-muted)',
+      color: colors.value.textMuted,
       fontSize: 11
     },
     axisTick: {
@@ -124,11 +130,11 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
     },
     splitLine: {
       lineStyle: {
-        color: '#f0e6da'
+        color: colors.value.surfaceSoft
       }
     },
     axisLabel: {
-      color: 'var(--color-text-muted)',
+      color: colors.value.textMuted,
       fontSize: 11
     }
   },
@@ -153,15 +159,16 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
         width: 3
       },
       itemStyle: {
+        // 折线点的描边色：用 bg 是为了和卡片背景重合，描边像是把圆点"挖"出来
         borderWidth: 2,
-        borderColor: '#ffffff'
+        borderColor: colors.value.bg
       }
     }
   ]
 }))
 
 const distributionOption = computed<ChartOption>(() => ({
-  color: ['var(--color-primary)'],
+  color: [colors.value.primary],
   animation: false,
   grid: {
     left: 24,
@@ -192,11 +199,11 @@ const distributionOption = computed<ChartOption>(() => ({
     },
     splitLine: {
       lineStyle: {
-        color: '#f0e6da'
+        color: colors.value.surfaceSoft
       }
     },
     axisLabel: {
-      color: 'var(--color-text-muted)',
+      color: colors.value.textMuted,
       fontSize: 11
     }
   },
@@ -210,7 +217,7 @@ const distributionOption = computed<ChartOption>(() => ({
       show: false
     },
     axisLabel: {
-      color: '#5e4b3a',
+      color: colors.value.textPrimary,
       fontSize: 11
     }
   },
@@ -222,13 +229,14 @@ const distributionOption = computed<ChartOption>(() => ({
       label: {
         show: true,
         position: 'right',
-        color: 'var(--color-text-muted)',
+        color: colors.value.textMuted,
         formatter(params: { dataIndex: number }) {
           const ratio = activeDistributions.value[params.dataIndex]?.ratio || 0
           return `${(ratio * 100).toFixed(1)}%`
         }
       },
       itemStyle: {
+        // 渐变条：从 accent → primary，两个色都跟主题切换
         color: {
           type: 'linear',
           x: 0,
@@ -236,8 +244,8 @@ const distributionOption = computed<ChartOption>(() => ({
           x2: 1,
           y2: 0,
           colorStops: [
-            { offset: 0, color: '#e3ae6c' },
-            { offset: 1, color: 'var(--color-primary)' }
+            { offset: 0, color: colors.value.accent },
+            { offset: 1, color: colors.value.primary }
           ]
         },
         borderRadius: [0, 10, 10, 0]
@@ -286,7 +294,7 @@ const distributionOption = computed<ChartOption>(() => ({
   min-width: 92rpx;
   padding: 14rpx 20rpx;
   border-radius: 999rpx;
-  background: #f5ecdf;
+  background: var(--color-surface-soft);
   color: var(--color-text-secondary);
   font-size: 24rpx;
   text-align: center;
