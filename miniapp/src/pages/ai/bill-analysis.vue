@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page-shell-safe bill-analysis-page', themeClass]">
+  <view class="page-shell-safe bill-analysis-page">
     <!-- 页面头部，统一沿用项目里 page-head 风格 -->
     <view class="page-head bill-analysis-head">
       <view class="page-head__eyebrow">AI 账单分析</view>
@@ -205,9 +205,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
-const { themeClass } = useTheme()
-
 import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import {

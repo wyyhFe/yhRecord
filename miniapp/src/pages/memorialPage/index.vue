@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page-shell-safe memorial-page', themeClass]">
+  <view class="page-shell-safe memorial-page">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -143,9 +143,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
-const { themeClass } = useTheme()
-
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'

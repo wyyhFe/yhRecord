@@ -28,6 +28,8 @@ page {
   --space-8: 56rpx;
 
   /* ============== 字号阶梯（按用途命名，不按大小） ============== */
+  /* hero：仅在"首页问候""空状态大字"等一页一次的超大字使用，慎用 */
+  --font-hero: 56rpx;
   --font-display: 44rpx;
   --font-title: 36rpx;
   --font-section: 30rpx;

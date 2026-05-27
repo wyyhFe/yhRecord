@@ -1,5 +1,5 @@
 ﻿<template>
-  <view :class="['page-shell-safe', themeClass]">
+  <view class="page-shell-safe">
     <view class="section-shell">
       <view class="section-copy">
         <view class="section-copy__title">筛选</view>
@@ -65,9 +65,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
-const { themeClass } = useTheme()
-
 import { ref, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'

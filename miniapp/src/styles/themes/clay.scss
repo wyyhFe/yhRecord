@@ -1,21 +1,19 @@
 /**
- * 暖陶主题 · 默认主题（保留当前项目视觉调性）
+ * 暖陶主题 · 当前唯一主题
  * 关键词：温暖、纸感、复古、笔记本氛围。
  *
- * 设计目标：让"打开 lifeRecord = 翻开自己的本子"这个体感成立。
- * 颜色基底是陶土橙 + 米白 + 木质褐色，整体偏暖。
- *
- * 主题样式被定义在两个选择器上：
- *   1. page —— 默认主题，无需任何 class 即生效
- *   2. .theme-clay —— 显式主题，便于在切换时强制覆盖
+ * 早期支持多主题切换，CSS 变量挂在 page 选择器 + .theme-clay 双份。
+ * 撤回切换后简化为只挂 page，所有页面默认取这套色值，不再需要根 view 绑 themeClass。
  */
 
-@mixin theme-clay {
+page {
   /* ============== 主色 / 强调色 ============== */
   --color-primary: #c47c52;
   --color-primary-soft: rgba(196, 124, 82, 0.12);
   --color-primary-strong: #a56d4b;
   --color-accent: #d7a648;
+  /* 印记色：手账"墨水"质感的对比色，用于装订针、印章胶囊、手绘分隔等装饰元素 */
+  --color-mark: #3a5169;
 
   /* ============== 背景与表面 ============== */
   --color-bg: #fffaf4;
@@ -51,9 +49,4 @@
   --shadow-modal: 0 24rpx 64rpx rgba(67, 41, 26, 0.16);
   --shadow-press: 0 6rpx 16rpx rgba(67, 41, 26, 0.06);
   --shadow-none: none;
-}
-
-page,
-.theme-clay {
-  @include theme-clay;
 }

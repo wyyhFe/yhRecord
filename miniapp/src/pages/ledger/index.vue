@@ -1,6 +1,6 @@
 ﻿
 <template>
-  <view :class="['page-shell-safe ledger-page', themeClass]">
+  <view class="page-shell-safe ledger-page">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -321,9 +321,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
-const { themeClass } = useTheme()
-
 import { computed, ref, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import ChoiceChips from '@/components/business/choice-chips'

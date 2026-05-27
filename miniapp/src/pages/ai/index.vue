@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page-shell-safe ai-chat-page', themeClass]">
+  <view class="page-shell-safe ai-chat-page">
     <view class="page-head ai-chat-head">
       <view class="page-head__eyebrow">AI 聊天</view>
       <view class="page-head__title">基础会话</view>
@@ -92,9 +92,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
-const { themeClass } = useTheme()
-
 import { computed, ref } from 'vue'
 import { onLoad, onUnload } from '@dcloudio/uni-app'
 import {

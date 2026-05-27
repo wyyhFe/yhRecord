@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page-shell-safe diary-editor-page', themeClass]">
+  <view class="page-shell-safe diary-editor-page">
     <view class="section-shell diary-editor-topbar">
       <view class="diary-editor-topbar__date" @tap="openDatePicker">{{ displayDate }}</view>
 
@@ -139,9 +139,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
-const { themeClass } = useTheme()
-
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import PhotoPicker, { type SelectedPhoto } from '@/components/business/photo-picker/index.vue'

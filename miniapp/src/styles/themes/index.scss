@@ -1,14 +1,8 @@
 /**
- * 主题入口：导入所有主题。
+ * 主题入口：当前只保留 clay 一套主题。
  *
- * 加载顺序：clay 在最前是因为它会同时挂在 `page` 选择器上作为默认主题，
- * 后面其他主题用 .theme-{name} 覆盖；放后面的主题在样式优先级里更晚生效，
- * 但因为它们用的是不同的 class，不会和 clay 冲突。
- *
- * 切换主题的实现见 composables/useTheme.ts，store 见 stores/theme.ts。
+ * 历史：早期有 clay/mint/lilac/ink 四套可切换主题（见 docs/changelog/2026-05-07-UI主题token体系.md），
+ * 后撤回切换功能，整站固定使用 clay。CSS 变量体系仍然保留，便于后续局部调色与可能重启主题切换。
  */
 
 @import './clay.scss';
-@import './mint.scss';
-@import './lilac.scss';
-@import './ink.scss';

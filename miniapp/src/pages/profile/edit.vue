@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page-shell-safe', themeClass]">
+  <view class="page-shell-safe">
     <view class="section-shell">
       <view class="section-copy">
         <view class="section-copy__title">编辑个人信息</view>
@@ -86,9 +86,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
-const { themeClass } = useTheme()
-
 import { computed, onMounted, ref } from 'vue'
 import { updateUserProfile } from '@/api/user'
 import { useAppStore } from '@/stores/app'

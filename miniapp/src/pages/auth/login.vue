@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page-shell-safe login-page', themeClass]">
+  <view class="page-shell-safe login-page">
     <view class="login-page__hero">
       <view class="login-page__brand">Life Record</view>
       <view class="login-page__title">让记录变成一种长期关系</view>
@@ -23,9 +23,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
-const { themeClass } = useTheme()
-
 import { ref } from 'vue'
 import { wxLogin } from '@/api/auth'
 import { tokenStorage } from '@/utils/storage'

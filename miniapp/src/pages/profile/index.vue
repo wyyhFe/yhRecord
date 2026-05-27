@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page-shell-safe', themeClass]">
+  <view class="page-shell-safe">
     <view class="section-shell profile-hero">
       <view class="profile-hero__main">
         <view class="profile-hero__avatar">
@@ -35,7 +35,9 @@
         >
           去写日记
         </u-button>
+        <!-- 个人开发者主体暂不能上线 AI 聊天类目，入口先屏蔽；想放开把 aiChatEntryEnabled 改为 true -->
         <u-button
+          v-if="aiChatEntryEnabled"
           class="profile-hero__ai-trigger"
           plain
           shape="circle"
@@ -58,32 +60,6 @@
           <view class="metric-card__label">{{ item.label }}</view>
           <view class="metric-card__value">{{ item.value }}</view>
           <view class="metric-card__hint">{{ item.hint }}</view>
-        </view>
-      </view>
-    </view>
-
-    <view class="page-section section-shell">
-      <view class="section-copy">
-        <view class="section-copy__title">外观主题</view>
-        <view class="section-copy__desc">选择喜欢的视觉风格，整页颜色立即生效。</view>
-      </view>
-
-      <view class="theme-picker-grid">
-        <view
-          v-for="item in themeOptions"
-          :key="item.id"
-          :class="['theme-picker-card', `theme-${item.id}`, { 'theme-picker-card--active': item.id === active }]"
-          @tap="handleThemeChange(item.id)"
-        >
-          <!-- 用 var(--color-primary) 等变量取该卡片自己的主题色，预览即所见 -->
-          <view class="theme-picker-card__swatches">
-            <view class="theme-picker-card__swatch theme-picker-card__swatch--primary" />
-            <view class="theme-picker-card__swatch theme-picker-card__swatch--accent" />
-            <view class="theme-picker-card__swatch theme-picker-card__swatch--surface" />
-          </view>
-          <view class="theme-picker-card__label">{{ item.label }}</view>
-          <view class="theme-picker-card__desc">{{ item.description }}</view>
-          <view v-if="item.id === active" class="theme-picker-card__badge">已启用</view>
         </view>
       </view>
     </view>
@@ -139,25 +115,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { ALL_THEMES, THEME_META, useTheme, type ThemeId } from '@/composables/useTheme'
 
 const appStore = useAppStore()
 const profile = computed(() => appStore.profile)
 const showAiPopup = ref(false)
-
-// 主题切换：themeClass 绑到根 view 上保证整页随激活主题变色。
-const { themeClass, active, setTheme } = useTheme()
-
-// 给 UI 用的主题选项列表，顺序与 ALL_THEMES 保持一致便于以后增减。
-const themeOptions = ALL_THEMES.map((id) => ({
-  id,
-  label: THEME_META[id].label,
-  description: THEME_META[id].description
-}))
-
-function handleThemeChange(theme: ThemeId) {
-  setTheme(theme)
-}
+// 个人开发者主体不能上线 AI 聊天，先把入口屏蔽；恢复时改成 true 即可，弹层和跳转逻辑保留
+const aiChatEntryEnabled = false
 
 const avatarText = computed(() => {
   const name = profile.value?.nickname?.trim()
@@ -473,83 +436,4 @@ onMounted(() => {
   font-weight: 600;
 }
 
-/* ============== 外观主题切换器 ============== */
-/* 网格在主题切换时不需要动，所以放外层（不在 .theme-{id} 卡片内）。 */
-.theme-picker-grid {
-  margin-top: var(--space-4);
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-
-/*
- * 每张卡片自己带 .theme-{id} class，让 CSS 变量在卡内被该主题覆盖。
- * 这样卡片的 swatches 直接 var(--color-primary) 就能预览真实色，
- * 用户当前用什么主题不影响这些预览。
- */
-.theme-picker-card {
-  position: relative;
-  padding: var(--space-4) var(--space-3);
-  border-radius: var(--radius-large);
-  background: var(--color-surface);
-  border: 2rpx solid var(--color-border);
-  transition: border-color var(--motion-fast) var(--ease-standard),
-    box-shadow var(--motion-fast) var(--ease-standard);
-}
-
-.theme-picker-card--active {
-  /* 激活态用稍强的边框色 + 阴影，向用户明示当前选中 */
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-card);
-}
-
-.theme-picker-card__swatches {
-  display: flex;
-  gap: var(--space-1);
-  margin-bottom: var(--space-3);
-}
-
-.theme-picker-card__swatch {
-  width: 36rpx;
-  height: 36rpx;
-  border-radius: var(--radius-full);
-  border: 1rpx solid var(--color-border);
-}
-
-.theme-picker-card__swatch--primary {
-  background: var(--color-primary);
-}
-
-.theme-picker-card__swatch--accent {
-  background: var(--color-accent);
-}
-
-.theme-picker-card__swatch--surface {
-  background: var(--color-surface-soft);
-}
-
-.theme-picker-card__label {
-  color: var(--color-text-primary);
-  font-size: var(--font-section);
-  font-weight: var(--weight-semibold);
-}
-
-.theme-picker-card__desc {
-  margin-top: var(--space-1);
-  color: var(--color-text-secondary);
-  font-size: var(--font-meta);
-  line-height: var(--leading-snug);
-}
-
-.theme-picker-card__badge {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
-  padding: 4rpx var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  font-size: var(--font-tiny);
-  font-weight: var(--weight-medium);
-}
 </style>

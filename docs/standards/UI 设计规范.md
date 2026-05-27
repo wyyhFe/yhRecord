@@ -26,63 +26,38 @@
 
 ---
 
-## 2. 主题系统
+## 2. 主题（单 clay 方案）
+
+> **历史背景**：早期曾支持 `clay / mint / lilac / ink` 4 套主题运行时切换（见 `docs/changelog/2026-05-07-UI主题token体系.md`）。
+> **2026-05-27 撤回切换功能**：维护成本与 UI 重构方向未定的双重原因，整站固定使用 `clay`，删除其他 3 套主题与切换器 UI。
+> CSS 变量驱动 + 语义命名的 token 体系**保留**，未来如要重启多主题，只需重新加入 themes 文件 + composable，页面层无需改动。
 
 ### 2.1 设计
 
-主题切换通过 **CSS 变量** + **`useTheme()` composable** 实现。所有颜色 token 写成 CSS 变量挂在 `page` 上，切换主题 = 替换变量值。
+颜色全部走 **CSS 变量**，统一挂在 `page` 选择器上（小程序里 `page` 元素不能绑 class，所以变量必须在 `page` 选择器层定义才能全局生效）。
 
-**为什么不用 SCSS 变量？**
-SCSS 变量编译期就定型了，运行时无法切换。微信小程序 2020+ 已经支持 CSS 变量，可用。
+**为什么不用 SCSS 变量？** SCSS 变量编译期定型，运行时不可改；CSS 变量在小程序 2020+ 支持，可在 DevTools 实时调试，也方便未来恢复主题切换。
 
-### 2.2 主题清单
+### 2.2 当前主题：clay（暖陶）
 
-首版提供 **4 套主题**，覆盖典型生活类小程序氛围：
+| 关键词 | 主色 | 背景色 |
+|---|---|---|
+| 温暖、纸感、复古、笔记本氛围 | 陶土橙 `#c47c52` | 米白 `#fffaf4` |
 
-| 主题 ID | 名称 | 关键词 | 主色 | 背景色 | 适合人群 |
-|---|---|---|---|---|---|
-| `clay` | 暖陶 | 温暖、纸感、复古 | 陶土橙 `#c47c52` | 米白 `#fffaf4` | 默认（当前风格） |
-| `mint` | 薄荷 | 清爽、自然、平静 | 薄荷绿 `#5cab86` | 雾白 `#f5f9f5` | 偏好淡雅 |
-| `lilac` | 紫雾 | 柔软、梦幻、女性向 | 浅紫 `#9b7cb6` | 雪白 `#faf6fb` | 写日记记录心情 |
-| `ink` | 墨夜 | 沉稳、专注、夜间 | 蓝灰 `#7c93a8` | 深灰 `#1d2128` | 暗色模式 |
+完整色值见 `miniapp/src/styles/themes/clay.scss`。
 
-每套主题都遵守同一个 token 集合，只是 `--color-*` 系列变量值不同，**圆角/间距/字号/字重永远不变**。
-
-### 2.3 CSS 变量定义（节选）
-
-```scss
-// styles/themes/_clay.scss（默认主题）
-[data-theme='clay'] {
-  --color-primary: #c47c52;
-  --color-primary-soft: rgba(196, 124, 82, 0.12);
-  --color-accent: #d7a648;
-  --color-bg: #fffaf4;
-  --color-surface: rgba(255, 250, 244, 0.94);
-  --color-surface-soft: #fcf5ec;
-  --color-border: rgba(196, 124, 82, 0.08);
-  --color-text-primary: #2b2118;
-  --color-text-secondary: #6b5b4e;
-  --color-text-muted: #9b866d;
-  --color-success: #4f7a4a;
-  --color-warning: #d7a648;
-  --color-danger: #b94a3b;
-  --shadow-card: 0 18rpx 48rpx rgba(67, 41, 26, 0.08);
-}
-```
-
-切换时只需要：
-
-```ts
-const { setTheme } = useTheme()
-setTheme('mint')   // 全站立即生效
-```
-
-`useTheme` 内部：写入 `<page>` 的 `data-theme` 属性 + 写入本地存储 + 触发响应式更新。
-
-### 2.4 怎么用
+### 2.3 怎么用
 
 **禁止**：`color: #c47c52`、`background: rgba(196, 124, 82, 0.08)`
 **应当**：`color: var(--color-primary)`、`background: var(--color-border)`
+
+页面根 view 不再需要 `themeClass` 绑定，直接：
+
+```html
+<view class="page-shell-safe">
+  ...
+</view>
+```
 
 ---
 
@@ -107,6 +82,7 @@ setTheme('mint')   // 全站立即生效
 | `--color-text-secondary` | 说明、次级文字（带主题色调） |
 | `--color-text-muted` | 时间戳、辅助标签（带主题色调） |
 | `--color-text-neutral` | **用户输入内容、代码、原始文本（不带主题色调）**，浅色主题近黑、暗色主题近白 |
+| `--color-mark` | **印记/墨水色**：与 primary 拉开对比的装饰色，用于装订针、印章胶囊、手绘分隔等"手账"装饰元素 |
 | `--color-success` | 成功状态、收入 |
 | `--color-warning` | 警告状态 |
 | `--color-danger` | 错误状态、删除、支出 |
@@ -118,6 +94,7 @@ setTheme('mint')   // 全站立即生效
 
 | Token | 字号 | line-height | 用途 |
 |---|---|---|---|
+| `--font-hero` | 56rpx | 1.15 | **一页一次**的超大字（首页问候、空状态大字），慎用 |
 | `--font-display` | 44rpx | 1.15 | 页面级大标题（首页、登录） |
 | `--font-title` | 36rpx | 1.2 | 页面标题、对话标题 |
 | `--font-section` | 30rpx | 1.4 | 卡片标题、二级标题 |
@@ -417,12 +394,12 @@ pages/
 每个 token 在以下位置同时存在，缺一不可：
 
 1. 本文档：定义和说明
-2. `styles/tokens.scss`：CSS 变量定义
-3. `styles/themes/*.scss`：每套主题的覆盖
-4. `composables/useTheme.ts`：切换逻辑
-5. `components/ui/*.vue`：消费 token
+2. `styles/tokens.scss`：非主题相关原子 token（圆角/间距/字号/字重/动画）
+3. `styles/themes/clay.scss`：主题相关 CSS 变量（颜色 / 阴影）
+4. `composables/useThemeColors.ts`：canvas 类组件用的字面量色值副本
+5. `components/ui/*.vue` 与各页面：消费 token
 
-加 token 时必须 5 处同步更新，PR 中漏一处都要打回。
+加 token 时必须同步更新；色值修改要同时改 §3 与 useThemeColors.ts，PR 中漏一处都要打回。
 
 ---
 
@@ -445,10 +422,11 @@ pages/
 - [ ] 在 1 个原型页面（推荐"个人中心"）替换为新组件
 - [ ] 验收：原型页面所有视觉元素都来自 ui 组件，无内联样式
 
-### 第 3 步 — 主题切换功能
+### 第 3 步 — 主题切换功能（**已撤回**）
 
-- [ ] 在"个人中心 → 设置"加主题切换器
-- [ ] 验收：切换后整页颜色立即变，刷新后保持
+~~在"个人中心 → 设置"加主题切换器~~
+
+2026-05-27 撤回多主题切换，整站固定 clay。详情见 §2 顶部说明。
 
 ### 第 4 步 — 骨架屏与状态完善
 

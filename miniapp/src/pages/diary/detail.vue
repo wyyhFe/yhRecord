@@ -1,5 +1,5 @@
 <template>
-  <view :class="['page-shell-safe', themeClass]">
+  <view class="page-shell-safe">
     <view class="section-shell">
       <view class="section-head">
         <view class="section-copy">
@@ -73,9 +73,6 @@
 </template>
 
 <script setup lang="ts">
-import { useTheme } from '@/composables/useTheme'
-const { themeClass } = useTheme()
-
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { deleteDiary, fetchDiaryDetail } from '@/api/diary'
