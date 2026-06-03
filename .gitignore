@@ -39,3 +39,13 @@ miniapp/vite.config.ts.timestamp-*.mjs
 
 ### Claude Code 工作目录（本地工具临时文件，不入仓） ###
 **/.claude/
+
+### Admin (vue-pure-admin) ###
+admin/dist/
+admin/node_modules/
+admin/.env.local
+admin/.env.*.local
+admin/CHANGELOG*.md
+admin/pnpm-lock.yaml
+admin/public/wasm/
+admin/public/audio/
