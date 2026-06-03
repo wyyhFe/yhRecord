@@ -112,30 +112,30 @@ onMounted(() => {
   flex: 1;
   min-width: 0;
   flex-direction: column;
-  gap: 10rpx;
+  gap: var(--space-2);
 }
 
 .list-card__title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16rpx;
+  gap: var(--space-4);
 }
 
 .list-card__title {
   color: var(--color-text-primary);
-  font-size: 30rpx;
-  font-weight: 700;
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
 }
 
 .list-card__summary {
   color: var(--color-text-primary);
-  font-size: 26rpx;
-  line-height: 1.6;
+  font-size: var(--font-caption);
+  line-height: var(--leading-relaxed);
 }
 
 .list-card__meta {
   color: var(--color-text-muted);
-  font-size: 24rpx;
+  font-size: var(--font-caption);
 }
 </style>

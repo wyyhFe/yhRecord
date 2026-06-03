@@ -12,7 +12,9 @@ import com.record.modules.memorial.service.MemorialDayService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 纪念日服务实现。
@@ -67,6 +69,23 @@ public class MemorialDayServiceImpl implements MemorialDayService {
                 .filter(item -> isSameDay(item, date))
                 .map(this::toVO)
                 .toList();
+    }
+
+    @Override
+    public Map<LocalDate, Long> countByDateRange(Long userId, LocalDate start, LocalDate end) {
+        List<MemorialDay> all = memorialDayMapper.selectList(
+                new LambdaQueryWrapper<MemorialDay>()
+                        .eq(MemorialDay::getUserId, userId));
+
+        Map<LocalDate, Long> result = new HashMap<>();
+        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+            final LocalDate current = d;
+            long cnt = all.stream().filter(md -> isSameDay(md, current)).count();
+            if (cnt > 0) {
+                result.put(d, cnt);
+            }
+        }
+        return result;
     }
 
     private void fill(MemorialDay memorialDay, Long userId, CreateMemorialDayRequest request) {

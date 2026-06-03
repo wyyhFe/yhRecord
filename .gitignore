@@ -36,3 +36,6 @@ miniapp/.env.local
 miniapp/.env.*.local
 miniapp/dist/
 miniapp/vite.config.ts.timestamp-*.mjs
+
+### Claude Code 工作目录（本地工具临时文件，不入仓） ###
+**/.claude/

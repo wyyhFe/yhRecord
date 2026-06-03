@@ -197,19 +197,19 @@ onShow(() => {
   align-items: center;
   justify-content: center;
   min-height: 60rpx;
-  padding: 0 20rpx;
-  border-radius: 999rpx;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-full);
   background: var(--color-surface-soft);
   color: var(--color-text-secondary);
-  font-size: 24rpx;
-  font-weight: 600;
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
 }
 
 .memory-diary-card__content {
-  margin-top: 12rpx;
+  margin-top: var(--space-3);
   color: var(--color-text-secondary);
-  font-size: 24rpx;
-  line-height: 1.8;
+  font-size: var(--font-caption);
+  line-height: var(--leading-loose);
   display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -220,10 +220,10 @@ onShow(() => {
 
 .memory-checkin-count,
 .memory-tag {
-  padding: 10rpx 18rpx;
-  border-radius: 999rpx;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
   background: var(--color-surface-soft);
   color: var(--color-text-secondary);
-  font-size: 22rpx;
+  font-size: var(--font-tiny);
 }
 </style>

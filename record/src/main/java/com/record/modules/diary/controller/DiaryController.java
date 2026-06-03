@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.context.UserContext;
 import com.record.common.enums.VisibilityType;
 import com.record.common.model.ApiResponse;
+import com.record.common.util.PageQuery;
 import com.record.modules.diary.model.dto.CreateDiaryRequest;
 import com.record.modules.diary.model.dto.UpdateDiaryRequest;
 import com.record.modules.diary.model.vo.DiaryVO;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -49,12 +49,11 @@ public class DiaryController {
 
     @Operation(summary = "分页查询日记")
     @GetMapping("/list")
-    public ApiResponse<Page<DiaryVO>> list(@RequestParam(defaultValue = "1") long current,
-                                           @RequestParam(defaultValue = "10") long size,
-                                           @RequestParam(required = false) VisibilityType visibility,
-                                           @RequestParam(required = false) Long tagId,
-                                           @RequestParam(required = false) String keyword) {
-        return ApiResponse.success(diaryService.list(UserContext.getUserId(), current, size, visibility, tagId, keyword));
+    public ApiResponse<Page<DiaryVO>> list(PageQuery pageQuery,
+                                           VisibilityType visibility,
+                                           Long tagId,
+                                           String keyword) {
+        return ApiResponse.success(diaryService.list(UserContext.getUserId(), pageQuery, visibility, tagId, keyword));
     }
 
     @Operation(summary = "查询日记详情")
@@ -86,9 +85,7 @@ public class DiaryController {
 
     @Operation(summary = "搜索日记")
     @GetMapping("/search")
-    public ApiResponse<Page<DiaryVO>> search(@RequestParam String keyword,
-                                             @RequestParam(defaultValue = "1") long current,
-                                             @RequestParam(defaultValue = "10") long size) {
-        return ApiResponse.success(diaryService.list(UserContext.getUserId(), current, size, null, null, keyword));
+    public ApiResponse<Page<DiaryVO>> search(String keyword, PageQuery pageQuery) {
+        return ApiResponse.success(diaryService.list(UserContext.getUserId(), pageQuery, null, null, keyword));
     }
 }

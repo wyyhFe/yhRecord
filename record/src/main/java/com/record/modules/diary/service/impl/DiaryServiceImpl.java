@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.enums.ResourceType;
 import com.record.common.enums.VisibilityType;
 import com.record.common.exception.DiaryException;
+import com.record.common.util.PageQuery;
+import com.record.common.cache.DictionaryCacheService;
 import com.record.modules.diary.mapper.DiaryCommentMapper;
 import com.record.modules.diary.mapper.DiaryLikeMapper;
 import com.record.modules.diary.mapper.DiaryMapper;
@@ -25,7 +27,6 @@ import com.record.modules.diary.model.vo.DiaryVO;
 import com.record.modules.diary.service.DiaryService;
 import com.record.modules.location.service.LocationService;
 import com.record.modules.recycle.service.RecycleBinService;
-import com.record.modules.user.mapper.UserMapper;
 import com.record.modules.user.model.entity.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 日记服务实现。
@@ -47,7 +51,7 @@ public class DiaryServiceImpl implements DiaryService {
     private final DiaryTagRelMapper diaryTagRelMapper;
     private final DiaryCommentMapper diaryCommentMapper;
     private final DiaryLikeMapper diaryLikeMapper;
-    private final UserMapper userMapper;
+    private final DictionaryCacheService dictionaryCache;
     private final RecycleBinService recycleBinService;
     private final LocationService locationService;
 
@@ -56,7 +60,7 @@ public class DiaryServiceImpl implements DiaryService {
                             DiaryTagRelMapper diaryTagRelMapper,
                             DiaryCommentMapper diaryCommentMapper,
                             DiaryLikeMapper diaryLikeMapper,
-                            UserMapper userMapper,
+                            DictionaryCacheService dictionaryCache,
                             RecycleBinService recycleBinService,
                             LocationService locationService) {
         this.diaryMapper = diaryMapper;
@@ -64,7 +68,7 @@ public class DiaryServiceImpl implements DiaryService {
         this.diaryTagRelMapper = diaryTagRelMapper;
         this.diaryCommentMapper = diaryCommentMapper;
         this.diaryLikeMapper = diaryLikeMapper;
-        this.userMapper = userMapper;
+        this.dictionaryCache = dictionaryCache;
         this.recycleBinService = recycleBinService;
         this.locationService = locationService;
     }
@@ -92,8 +96,8 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
-    public Page<DiaryVO> list(Long userId, long current, long size, VisibilityType visibility, Long tagId, String keyword) {
-        Page<Diary> page = diaryMapper.selectPage(new Page<>(current, size), new LambdaQueryWrapper<Diary>()
+    public Page<DiaryVO> list(Long userId, PageQuery pageQuery, VisibilityType visibility, Long tagId, String keyword) {
+        Page<Diary> page = diaryMapper.selectPage(pageQuery.toPage(), new LambdaQueryWrapper<Diary>()
                 .eq(Diary::getUserId, userId)
                 .isNull(Diary::getDeletedAt)
                 .eq(visibility != null, Diary::getVisibility, visibility)
@@ -101,20 +105,50 @@ public class DiaryServiceImpl implements DiaryService {
                         wrapper -> wrapper.like(Diary::getTitle, keyword).or().like(Diary::getContent, keyword))
                 .orderByDesc(Diary::getRecordDate));
 
-        User user = userMapper.selectById(userId);
-        List<DiaryVO> records = page.getRecords().stream()
-                .filter(item -> tagId == null || hasTag(item.getId(), tagId))
-                .map(item -> buildVO(item, user))
+        List<Diary> diaryList = page.getRecords();
+        if (diaryList.isEmpty()) {
+            return new Page<>(pageQuery.getCurrent(), pageQuery.getSize(), 0);
+        }
+
+        // 批量加载关联数据，消除 N+1 查询
+        List<Long> diaryIds = diaryList.stream().map(Diary::getId).toList();
+
+        // 批量查 media: diaryId -> List<filePath>
+        Map<Long, List<String>> mediaMap = diaryMediaMapper.selectList(
+                        new LambdaQueryWrapper<DiaryMedia>()
+                                .in(DiaryMedia::getDiaryId, diaryIds)
+                                .orderByAsc(DiaryMedia::getSortOrder))
+                .stream()
+                .collect(Collectors.groupingBy(
+                        DiaryMedia::getDiaryId,
+                        Collectors.mapping(DiaryMedia::getFilePath, Collectors.toList())
+                ));
+
+        // 批量查 tag 关系: diaryId -> List<tagId>
+        Map<Long, List<Long>> tagMap = diaryTagRelMapper.selectList(
+                        new LambdaQueryWrapper<DiaryTagRel>()
+                                .in(DiaryTagRel::getDiaryId, diaryIds))
+                .stream()
+                .collect(Collectors.groupingBy(
+                        DiaryTagRel::getDiaryId,
+                        Collectors.mapping(DiaryTagRel::getTagId, Collectors.toList())
+                ));
+
+        // 按日期降序排列，在内存中过滤 tag
+        List<DiaryVO> records = diaryList.stream()
+                .filter(item -> tagId == null || tagMap.getOrDefault(item.getId(), List.of()).contains(tagId))
+                .map(item -> buildVO(item, mediaMap.getOrDefault(item.getId(), List.of()),
+                        tagMap.getOrDefault(item.getId(), List.of())))
                 .toList();
 
-        Page<DiaryVO> result = new Page<>(current, size, page.getTotal());
+        Page<DiaryVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         result.setRecords(records);
         return result;
     }
 
     @Override
     public DiaryVO detail(Long userId, Long diaryId) {
-        return buildVO(requireOwnedDiary(userId, diaryId, false), userMapper.selectById(userId));
+        return buildVO(requireOwnedDiary(userId, diaryId, false), dictionaryCache.getUserById(userId));
     }
 
     @Override
@@ -149,13 +183,37 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public List<DiaryVO> listByDate(Long userId, LocalDate date) {
-        User user = userMapper.selectById(userId);
-        return diaryMapper.selectList(new LambdaQueryWrapper<Diary>()
+        List<Diary> diaryList = diaryMapper.selectList(new LambdaQueryWrapper<Diary>()
                         .eq(Diary::getUserId, userId)
                         .eq(Diary::getRecordDate, date)
-                        .isNull(Diary::getDeletedAt))
+                        .isNull(Diary::getDeletedAt));
+        if (diaryList.isEmpty()) {
+            return List.of();
+        }
+
+        // 批量加载 media/tag 数据，消除 N+1
+        List<Long> diaryIds = diaryList.stream().map(Diary::getId).toList();
+        Map<Long, List<String>> mediaMap = diaryMediaMapper.selectList(
+                        new LambdaQueryWrapper<DiaryMedia>()
+                                .in(DiaryMedia::getDiaryId, diaryIds)
+                                .orderByAsc(DiaryMedia::getSortOrder))
                 .stream()
-                .map(item -> buildVO(item, user))
+                .collect(Collectors.groupingBy(
+                        DiaryMedia::getDiaryId,
+                        Collectors.mapping(DiaryMedia::getFilePath, Collectors.toList())
+                ));
+        Map<Long, List<Long>> tagMap = diaryTagRelMapper.selectList(
+                        new LambdaQueryWrapper<DiaryTagRel>()
+                                .in(DiaryTagRel::getDiaryId, diaryIds))
+                .stream()
+                .collect(Collectors.groupingBy(
+                        DiaryTagRel::getDiaryId,
+                        Collectors.mapping(DiaryTagRel::getTagId, Collectors.toList())
+                ));
+
+        return diaryList.stream()
+                .map(item -> buildVO(item, mediaMap.getOrDefault(item.getId(), List.of()),
+                        tagMap.getOrDefault(item.getId(), List.of())))
                 .toList();
     }
 
@@ -164,6 +222,18 @@ public class DiaryServiceImpl implements DiaryService {
         return diaryMapper.selectCount(new LambdaQueryWrapper<Diary>()
                 .eq(Diary::getUserId, userId)
                 .isNull(Diary::getDeletedAt));
+    }
+
+    @Override
+    public Map<LocalDate, Long> countByDateRange(Long userId, LocalDate start, LocalDate end) {
+        List<Map<String, Object>> rows = diaryMapper.countByDateRange(userId, start, end);
+        Map<LocalDate, Long> result = new HashMap<>();
+        for (Map<String, Object> row : rows) {
+            LocalDate date = (LocalDate) row.get("date");
+            Long cnt = ((Number) row.get("cnt")).longValue();
+            result.put(date, cnt);
+        }
+        return result;
     }
 
     @Override
@@ -310,12 +380,6 @@ public class DiaryServiceImpl implements DiaryService {
         }
     }
 
-    private boolean hasTag(Long diaryId, Long tagId) {
-        return diaryTagRelMapper.selectCount(new LambdaQueryWrapper<DiaryTagRel>()
-                .eq(DiaryTagRel::getDiaryId, diaryId)
-                .eq(DiaryTagRel::getTagId, tagId)) > 0;
-    }
-
     /**
      * 校验日记是否存在、是否归当前用户所有，以及是否允许读取已删除数据。
      */
@@ -328,7 +392,38 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     /**
-     * 组装前端需要的日记详情对象。
+     * 组装前端需要的日记详情对象（批量模式，接收预加载的 media/tag 数据）。
+     * 用于 list() 分页查询，避免逐条查询 N+1。
+     */
+    private DiaryVO buildVO(Diary diary, List<String> preloadedMediaPaths, List<Long> preloadedTagIds) {
+        User user = dictionaryCache.getUserById(diary.getUserId());
+        return DiaryVO.builder()
+                .id(diary.getId())
+                .title(diary.getTitle())
+                .content(diary.getContent())
+                .recordDate(diary.getRecordDate())
+                .weather(diary.getWeather())
+                .mood(diary.getMood())
+                .visibility(diary.getVisibility())
+                .locationName(diary.getLocationName())
+                .address(diary.getAddress())
+                .province(diary.getProvince())
+                .city(diary.getCity())
+                .district(diary.getDistrict())
+                .latitude(diary.getLatitude())
+                .longitude(diary.getLongitude())
+                .locationSourceType(diary.getLocationSourceType())
+                .likeCount(diary.getLikeCount())
+                .commentCount(diary.getCommentCount())
+                .mediaPaths(preloadedMediaPaths)
+                .tagIds(preloadedTagIds)
+                .ageLabel(buildAgeLabel(user, diary.getRecordDate()))
+                .build();
+    }
+
+    /**
+     * 组装前端需要的日记详情对象（单篇模式，逐条查关联数据）。
+     * 仅在 detail / create / update 等单日记操作中使用，不会产生 N+1。
      */
     private DiaryVO buildVO(Diary diary, User user) {
         List<String> mediaPaths = diaryMediaMapper.selectList(new LambdaQueryWrapper<DiaryMedia>()

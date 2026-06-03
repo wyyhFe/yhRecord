@@ -405,6 +405,26 @@ CREATE TABLE IF NOT EXISTS `knowledge_chunk_task` (
   CONSTRAINT `chk_knowledge_chunk_task_status` CHECK (`status` IN ('PENDING', 'RUNNING', 'SUCCESS', 'FAILED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库切片与向量任务表';
 
+-- 知识库文档切片表
+CREATE TABLE IF NOT EXISTS `knowledge_chunk` (
+  `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `document_id` BIGINT NOT NULL COMMENT '所属文档 ID',
+  `knowledge_base_id` BIGINT NOT NULL COMMENT '所属知识库 ID',
+  `chunk_index` INT NOT NULL DEFAULT 0 COMMENT '切片序号，从 0 开始',
+  `content` TEXT NOT NULL COMMENT '切片文本内容',
+  `content_length` INT DEFAULT 0 COMMENT '字符数',
+  `vector_id` VARCHAR(64) DEFAULT NULL COMMENT 'Milvus 向量主键 ID，用于删除/重建',
+  `status` VARCHAR(32) NOT NULL DEFAULT 'PENDING' COMMENT '状态：PENDING / VECTORIZED / FAILED',
+  `last_error` VARCHAR(1000) DEFAULT NULL COMMENT '向量化失败时的错误信息',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID',
+  `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID',
+  PRIMARY KEY (`id`),
+  KEY `idx_knowledge_chunk_doc` (`document_id`, `chunk_index`),
+  KEY `idx_knowledge_chunk_kb_status` (`knowledge_base_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库文档切片表';
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- 旧库升级参考 SQL

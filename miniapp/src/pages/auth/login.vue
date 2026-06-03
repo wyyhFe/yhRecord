@@ -77,7 +77,7 @@ async function handleLogin() {
 
 .login-page__desc {
   margin-top: 18rpx;
-  color: #72675c;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   line-height: 1.7;
 }

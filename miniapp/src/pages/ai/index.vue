@@ -382,7 +382,7 @@ onUnload(() => {
 
 <style scoped lang="scss">
 .ai-chat-page {
-  padding-bottom: 40rpx;
+  padding-bottom: var(--space-5);
 }
 
 .ai-chat-head {
@@ -393,45 +393,45 @@ onUnload(() => {
 
 .page-head__eyebrow {
   color: var(--color-primary-strong);
-  font-size: 24rpx;
-  font-weight: 700;
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-bold);
 }
 
 .page-head__title {
-  margin-top: 12rpx;
+  margin-top: var(--space-3);
   color: var(--color-text-primary);
-  font-size: 44rpx;
-  font-weight: 700;
+  font-size: var(--font-display);
+  font-weight: var(--weight-bold);
 }
 
 .page-head__desc {
-  margin-top: 14rpx;
+  margin-top: var(--space-3);
   color: var(--color-text-secondary);
-  font-size: 24rpx;
-  line-height: 1.7;
+  font-size: var(--font-caption);
+  line-height: var(--leading-relaxed);
 }
 
 .toolbar-actions {
   display: flex;
-  gap: 12rpx;
+  gap: var(--space-3);
 }
 
 .session-strip {
-  margin-top: 18rpx;
+  margin-top: var(--space-4);
   white-space: nowrap;
 }
 
 .session-strip__inner {
   display: inline-flex;
-  gap: 16rpx;
-  padding-bottom: 4rpx;
+  gap: var(--space-4);
+  padding-bottom: var(--space-1);
 }
 
 .session-card {
   width: 280rpx;
   min-height: 172rpx;
-  padding: 22rpx;
-  border-radius: 24rpx;
+  padding: var(--space-5);
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   border: 1rpx solid var(--color-border);
   box-sizing: border-box;
@@ -439,34 +439,34 @@ onUnload(() => {
 
 .session-card--active {
   border-color: rgba(196, 124, 82, 0.36);
-  box-shadow: 0 16rpx 32rpx var(--shadow-card);
+  box-shadow: 0 16rpx 32rpx rgba(67, 41, 26, 0.12);
 }
 
 .session-card__title {
   color: var(--color-text-primary);
-  font-size: 28rpx;
-  font-weight: 700;
+  font-size: var(--font-body);
+  font-weight: var(--weight-bold);
   white-space: normal;
 }
 
 .session-card__desc {
-  margin-top: 12rpx;
+  margin-top: var(--space-3);
   color: var(--color-text-secondary);
-  font-size: 22rpx;
-  line-height: 1.6;
+  font-size: var(--font-tiny);
+  line-height: var(--leading-relaxed);
   white-space: normal;
 }
 
 .session-card__meta {
-  margin-top: 14rpx;
+  margin-top: var(--space-3);
   color: var(--color-primary-strong);
-  font-size: 20rpx;
+  font-size: var(--font-tiny);
 }
 
 .message-list {
   display: flex;
   flex-direction: column;
-  gap: 18rpx;
+  gap: var(--space-4);
 }
 
 .message-row {
@@ -485,8 +485,8 @@ onUnload(() => {
   display: inline-block;
   width: fit-content;
   max-width: 72%;
-  padding: 22rpx 24rpx;
-  border-radius: 24rpx;
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-large);
   border: 1rpx solid var(--color-border-strong);
   box-sizing: border-box;
 }
@@ -501,44 +501,43 @@ onUnload(() => {
 
 .message-card__meta {
   color: var(--color-primary-strong);
-  font-size: 22rpx;
-  font-weight: 700;
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-bold);
 }
 
 .message-card__content {
-  margin-top: 12rpx;
+  margin-top: var(--space-3);
   color: var(--color-text-primary);
-  font-size: 28rpx;
-  line-height: 1.8;
+  font-size: var(--font-body);
+  line-height: var(--leading-loose);
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .message-card__time {
-  margin-top: 12rpx;
+  margin-top: var(--space-3);
   color: var(--color-text-muted);
-  font-size: 20rpx;
+  font-size: var(--font-tiny);
 }
 
 .composer {
   width: 100%;
   min-height: 220rpx;
-  margin-top: 18rpx;
-  padding: 24rpx;
-  border-radius: 24rpx;
+  margin-top: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-large);
   background: var(--color-surface);
   border: 1rpx solid var(--color-border-strong);
   box-sizing: border-box;
-  /* 用户输入内容 → 中性色，不带主题色调 */
   color: var(--color-text-neutral);
-  font-size: 28rpx;
-  line-height: 1.7;
+  font-size: var(--font-body);
+  line-height: var(--leading-relaxed);
 }
 
 .composer-actions {
   display: flex;
   justify-content: space-between;
-  gap: 16rpx;
-  margin-top: 20rpx;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
 }
 </style>

@@ -180,7 +180,7 @@ const showMoodDialog = ref(false)
 const showTagDialog = ref(false)
 
 const titleStyle = {
-  background: '#ffffff',
+  background: 'var(--color-surface)',
   borderRadius: '0',
   padding: '0',
   fontSize: '40rpx',
@@ -190,7 +190,7 @@ const titleStyle = {
 }
 
 const contentStyle = {
-  background: '#ffffff',
+  background: 'var(--color-surface)',
   borderRadius: '0',
   padding: '0',
   fontSize: '30rpx',

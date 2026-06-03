@@ -1,52 +1,75 @@
 /**
- * 暖陶主题 · 当前唯一主题
- * 关键词：温暖、纸感、复古、笔记本氛围。
+ * Warm Modern 主题 · 有温度的现代设计
  *
- * 早期支持多主题切换，CSS 变量挂在 page 选择器 + .theme-clay 双份。
- * 撤回切换后简化为只挂 page，所有页面默认取这套色值，不再需要根 view 绑 themeClass。
+ * 设计理念：
+ * - 背景：暖灰渐变，不是纯平面，有微妙的方向感
+ * - 卡片：白底 + 轻阴影 + 可选渐变头部，有层次但不浮夸
+ * - 主色：暖陶色系，优雅精致
+ * - 强调色：琥珀金，用于高亮和进度
+ * - 功能色：日记蓝、记账绿、打卡紫、记忆橙 —— 用色彩区分模块
+ * - 阴影：有方向的中等阴影，营造卡片"浮起来"的感觉
  */
 
 page {
   /* ============== 主色 / 强调色 ============== */
-  --color-primary: #c47c52;
-  --color-primary-soft: rgba(196, 124, 82, 0.12);
-  --color-primary-strong: #a56d4b;
-  --color-accent: #d7a648;
-  /* 印记色：手账"墨水"质感的对比色，用于装订针、印章胶囊、手绘分隔等装饰元素 */
-  --color-mark: #3a5169;
+  --color-primary: #BF7B5E;
+  --color-primary-soft: rgba(191, 123, 94, 0.10);
+  --color-primary-strong: #A56948;
+  --color-accent: #CFA052;
+
+  /* ============== 功能模块色 ============== */
+  --color-diary: #5B8DBE;
+  --color-diary-soft: rgba(91, 141, 190, 0.12);
+  --color-diary-gradient: linear-gradient(135deg, #5B8DBE 0%, #7BA8D4 100%);
+  --color-ledger: #5BAE7C;
+  --color-ledger-soft: rgba(91, 174, 124, 0.12);
+  --color-ledger-gradient: linear-gradient(135deg, #5BAE7C 0%, #7DC99A 100%);
+  --color-checkin: #9B7EC8;
+  --color-checkin-soft: rgba(155, 126, 200, 0.12);
+  --color-checkin-gradient: linear-gradient(135deg, #9B7EC8 0%, #B49AD8 100%);
+  --color-memory: #D4956B;
+  --color-memory-soft: rgba(212, 149, 107, 0.12);
+  --color-memory-gradient: linear-gradient(135deg, #D4956B 0%, #E4B08A 100%);
+  --color-primary-gradient: linear-gradient(135deg, #BF7B5E 0%, #D4956B 100%);
+  --color-accent-gradient: linear-gradient(135deg, #CFA052 0%, #E4BE7A 100%);
 
   /* ============== 背景与表面 ============== */
-  --color-bg: #fffaf4;
-  --color-bg-gradient: radial-gradient(circle at top left, rgba(216, 124, 134, 0.16), transparent 34%),
-    radial-gradient(circle at top right, rgba(215, 166, 72, 0.14), transparent 28%),
-    linear-gradient(180deg, #fffaf4 0%, #f6efe5 100%);
-  --color-surface: rgba(255, 250, 244, 0.94);
-  --color-surface-soft: #fcf5ec;
-  --color-surface-strong: #ffffff;
+  --color-bg: #F5F3F0;
+  --color-bg-gradient: linear-gradient(180deg, #F8F5F1 0%, #F0EDEA 100%);
+  --color-surface: #FFFFFF;
+  --color-surface-soft: #F2EFEB;
+  --color-surface-hover: #EAE7E3;
+  --color-surface-strong: #FFFFFF;
+
+  /* ============== Hero 渐变（用于页面顶部装饰区域） ============== */
+  --hero-gradient: linear-gradient(160deg, #E8D5C4 0%, #F5F0EB 40%, #F5F3F0 100%);
+  --hero-diary-gradient: linear-gradient(160deg, #D5E3F0 0%, #F0F4F8 40%, #F5F3F0 100%);
 
   /* ============== 边框 / 分隔 ============== */
-  --color-border: rgba(196, 124, 82, 0.08);
-  --color-border-strong: rgba(196, 124, 82, 0.24);
-  --color-divider: rgba(196, 124, 82, 0.12);
+  --color-border: rgba(0, 0, 0, 0.06);
+  --color-border-strong: rgba(0, 0, 0, 0.10);
+  --color-divider: rgba(0, 0, 0, 0.05);
 
   /* ============== 文字 ============== */
-  --color-text-primary: #2b2118;
-  --color-text-secondary: #6b5b4e;
-  --color-text-muted: #9b866d;
-  --color-text-inverse: #fffaf4;
-  /* 中性文字：用户输入内容、代码、原始文本等"功能性"文字。
-     不带主题色调，浅色主题里近黑、暗色主题里近白，保证输入可读性的一致体感。 */
-  --color-text-neutral: #1d1d1f;
+  --color-text-primary: #1C1C1E;
+  --color-text-secondary: #6E6E73;
+  --color-text-muted: #AEAEB2;
+  --color-text-inverse: #FFFFFF;
+  --color-text-neutral: #1C1C1E;
 
   /* ============== 状态色 ============== */
-  --color-success: #4f7a4a;
-  --color-warning: #d7a648;
-  --color-danger: #b94a3b;
-  --color-info: #6b8a9c;
+  --color-success: #34C759;
+  --color-warning: #FF9F0A;
+  --color-danger: #FF3B30;
+  --color-info: #5AC8FA;
 
-  /* ============== 阴影（与背景呼应的暖色调阴影） ============== */
-  --shadow-card: 0 18rpx 48rpx rgba(67, 41, 26, 0.08);
-  --shadow-modal: 0 24rpx 64rpx rgba(67, 41, 26, 0.16);
-  --shadow-press: 0 6rpx 16rpx rgba(67, 41, 26, 0.06);
+  /* ============== 阴影（方向性、有层次） ============== */
+  --shadow-card: 0 4rpx 16rpx rgba(0, 0, 0, 0.05), 0 1rpx 3rpx rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0 8rpx 28rpx rgba(0, 0, 0, 0.08), 0 2rpx 6rpx rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 16rpx 48rpx rgba(0, 0, 0, 0.12);
+  --shadow-press: 0 1rpx 4rpx rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 12rpx 36rpx rgba(0, 0, 0, 0.10);
+  --shadow-btn: 0 6rpx 20rpx rgba(191, 123, 94, 0.25);
+  --shadow-btn-danger: 0 6rpx 20rpx rgba(255, 59, 48, 0.20);
   --shadow-none: none;
 }

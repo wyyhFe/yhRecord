@@ -157,7 +157,7 @@ const swipeOptions = [
   {
     text: '删除',
     style: {
-      backgroundColor: '#d35d56',
+      backgroundColor: 'var(--color-danger)',
       color: 'var(--color-bg)'
     }
   }
@@ -258,16 +258,16 @@ onShow(() => {
 }
 
 .checkin-count {
-  border-radius: 999rpx;
-  background: #edf4ef;
-  padding: 10rpx 20rpx;
-  color: #4b6b57;
-  font-size: 22rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  padding: var(--space-2) var(--space-5);
+  color: var(--color-success);
+  font-size: var(--font-tiny);
 }
 
 .checkin-date-chip,
 .history-tag {
-  padding: 10rpx 18rpx;
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
   background: var(--color-surface-soft);
   color: var(--color-text-secondary);
@@ -275,16 +275,16 @@ onShow(() => {
 }
 
 .checkin-actions {
-  margin-top: 16rpx;
+  margin-top: var(--space-4);
 }
 
 .checkin-history-toolbar {
-  margin-top: 16rpx;
-  margin-bottom: 20rpx;
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-5);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16rpx;
+  gap: var(--space-4);
 }
 
 .checkin-history-toolbar__date {
@@ -292,16 +292,16 @@ onShow(() => {
   align-items: center;
   justify-content: center;
   min-height: 68rpx;
-  padding: 0 24rpx;
-  border-radius: 999rpx;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-full);
   background: var(--color-surface-soft);
   color: var(--color-text-primary);
-  font-size: 24rpx;
-  font-weight: 600;
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
 }
 
 .task-history-popup {
-  padding: 28rpx 24rpx calc(28rpx + env(safe-area-inset-bottom));
+  padding: var(--space-6) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
   background: var(--color-bg);
 }
 
@@ -311,17 +311,17 @@ onShow(() => {
 
 .task-history-popup__title {
   color: var(--color-text-primary);
-  font-size: 34rpx;
-  font-weight: 700;
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
 }
 
 .task-history-popup__subtitle {
-  margin-top: 8rpx;
+  margin-top: var(--space-2);
   color: var(--color-text-muted);
-  font-size: 24rpx;
+  font-size: var(--font-meta);
 }
 
 .task-history-popup__action {
-  margin-top: 20rpx;
+  margin-top: var(--space-5);
 }
 </style>

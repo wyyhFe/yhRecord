@@ -14,9 +14,9 @@
         登录后即可同步你的日记、记账、打卡和提醒设置，后端会统一维护当前设备的会话状态。
       </view>
 
-      <view class="mt-[24rpx] rounded-[28rpx] bg-[#f7efe4] px-[24rpx] py-[24rpx]">
+      <view class="mt-[24rpx] rounded-[28rpx] bg-[var(--color-surface-soft)] px-[24rpx] py-[24rpx]">
         <view class="flex items-start gap-[12rpx]">
-          <u-icon name="weixin-fill" size="36" color="#4b6b57" />
+          <u-icon name="weixin-fill" size="36" color="var(--color-success)" />
           <view class="flex-1 text-[24rpx] leading-[1.8] text-[var(--color-text-muted)]">
             当前通过微信身份完成登录，前端只负责获取临时 code，真正的 accessToken、refreshToken
             和单设备会话都由后端统一签发。
@@ -35,7 +35,7 @@
         {{ loading ? '登录中...' : '使用微信登录' }}
       </u-button>
 
-      <view class="mt-[20rpx] text-center text-[22rpx] text-[#9c8b7b]">
+      <view class="mt-[20rpx] text-center text-[22rpx] text-[var(--color-text-muted)]">
         关闭后仍可浏览首页，但进入日记、记账、打卡等页面时需要先登录。
       </view>
     </view>

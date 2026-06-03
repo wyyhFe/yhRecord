@@ -10,6 +10,7 @@ import com.record.common.config.AiProperties;
 import com.record.common.enums.LedgerType;
 import com.record.common.exception.BusinessException;
 import com.record.common.exception.ErrorCode;
+import com.record.common.util.PageQuery;
 import com.record.modules.ai.mapper.AiBillAnalysisRecordMapper;
 import com.record.modules.ai.mapper.AiCallLogMapper;
 import com.record.modules.ai.model.dto.AiChatRequest;
@@ -60,7 +61,6 @@ public class AiServiceImpl implements AiService {
     private static final int MAX_CONVERSATIONS = 50;
     private static final int BILL_ANALYSIS_SAMPLE_LIMIT = 12;
     private static final int BILL_ANALYSIS_SUMMARY_MAX_LENGTH = 1000;
-    private static final long BILL_ANALYSIS_HISTORY_MAX_SIZE = 50L;
     private static final String CATEGORY_UNCATEGORIZED = "未分类";
     private static final TypeReference<AiConversationSummaryVO> CONVERSATION_TYPE = new TypeReference<>() { };
     private static final TypeReference<AiConversationMessageVO> MESSAGE_TYPE = new TypeReference<>() { };
@@ -291,20 +291,16 @@ public class AiServiceImpl implements AiService {
     }
 
     @Override
-    public Page<BillAnalysisHistoryVO> listBillAnalysisHistory(Long userId, long current, long size) {
-        // 兜底：current 至少为 1；size 钳制在 [1, BILL_ANALYSIS_HISTORY_MAX_SIZE]，避免一次拉太多
-        long safeCurrent = Math.max(current, 1);
-        long safeSize = Math.min(Math.max(size, 1), BILL_ANALYSIS_HISTORY_MAX_SIZE);
-
+    public Page<BillAnalysisHistoryVO> listBillAnalysisHistory(Long userId, PageQuery pageQuery) {
         Page<AiBillAnalysisRecord> page = aiBillAnalysisRecordMapper.selectPage(
-                new Page<>(safeCurrent, safeSize),
+                pageQuery.toPage(),
                 new LambdaQueryWrapper<AiBillAnalysisRecord>()
                         .eq(AiBillAnalysisRecord::getUserId, userId)
                         .orderByDesc(AiBillAnalysisRecord::getCreatedAt)
                         .orderByDesc(AiBillAnalysisRecord::getId)
         );
 
-        Page<BillAnalysisHistoryVO> result = new Page<>(safeCurrent, safeSize, page.getTotal());
+        Page<BillAnalysisHistoryVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         result.setRecords(page.getRecords().stream()
                 .map(this::toBillAnalysisHistoryVO)
                 .toList());

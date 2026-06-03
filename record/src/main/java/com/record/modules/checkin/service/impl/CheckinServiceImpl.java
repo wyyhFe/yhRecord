@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CheckinServiceImpl implements CheckinService {
@@ -97,6 +99,18 @@ public class CheckinServiceImpl implements CheckinService {
             return List.of();
         }
         return checkinTaskMapper.selectBatchIds(taskIds).stream().map(this::toVO).toList();
+    }
+
+    @Override
+    public Map<LocalDate, Long> countByDateRange(Long userId, LocalDate start, LocalDate end) {
+        List<Map<String, Object>> rows = checkinRecordMapper.countByDateRange(userId, start, end);
+        Map<LocalDate, Long> result = new HashMap<>();
+        for (Map<String, Object> row : rows) {
+            LocalDate date = (LocalDate) row.get("date");
+            Long cnt = ((Number) row.get("cnt")).longValue();
+            result.put(date, cnt);
+        }
+        return result;
     }
 
     private CheckinTask requireOwnedTask(Long userId, Long taskId) {

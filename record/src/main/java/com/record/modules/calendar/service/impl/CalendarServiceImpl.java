@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 日历服务实现。
@@ -57,6 +58,38 @@ public class CalendarServiceImpl implements CalendarService {
                 .diaries(diaryService.listByDate(userId, date))
                 .checkins(checkinService.listByDate(userId, date))
                 .memorialDays(memorialDayService.listByDate(userId, date))
+                .build();
+    }
+
+    @Override
+    public CalendarSummaryVO summaryRecent(Long userId, int days) {
+        LocalDate end = LocalDate.now();
+        LocalDate start = end.minusDays(days - 1);
+
+        Map<LocalDate, Long> diaryCounts = diaryService.countByDateRange(userId, start, end);
+        Map<LocalDate, Long> checkinCounts = checkinService.countByDateRange(userId, start, end);
+        Map<LocalDate, Long> memorialCounts = memorialDayService.countByDateRange(userId, start, end);
+
+        List<CalendarSummaryVO.DaySummary> items = new ArrayList<>();
+        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+            long diaryCount = diaryCounts.getOrDefault(d, 0L);
+            long checkinCount = checkinCounts.getOrDefault(d, 0L);
+            long memorialCount = memorialCounts.getOrDefault(d, 0L);
+
+            items.add(CalendarSummaryVO.DaySummary.builder()
+                    .date(d)
+                    .hasDiary(diaryCount > 0)
+                    .diaryCount(diaryCount)
+                    .hasCheckin(checkinCount > 0)
+                    .checkinCount(checkinCount)
+                    .memorialCount(memorialCount)
+                    .build());
+        }
+
+        return CalendarSummaryVO.builder()
+                .year(0)
+                .month(0)
+                .days(items)
                 .build();
     }
 

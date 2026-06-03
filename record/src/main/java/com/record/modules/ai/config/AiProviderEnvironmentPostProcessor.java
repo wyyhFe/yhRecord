@@ -81,8 +81,10 @@ public class AiProviderEnvironmentPostProcessor implements EnvironmentPostProces
             overrides.put("spring.ai.openai.chat.options.model", chatModel);
         }
         if (StringUtils.hasText(embeddingModel)) {
-            // P1 接 RAG 时 spring-ai-openai-embedding starter 会读这个属性
+            // Milvus RAG: spring-ai-openai-embedding starter 会读这个属性
             overrides.put("spring.ai.openai.embedding.options.model", embeddingModel);
+            // embedding 维度必须与 Milvus collection 维度一致，统一设为 1536
+            overrides.put("spring.ai.openai.embedding.options.dimensions", "1536");
         }
         // chat 接口路径覆盖：Spring AI 1.x 的属性是 spring.ai.openai.chat.completions-path
         if (StringUtils.hasText(chatCompletionsPath)) {

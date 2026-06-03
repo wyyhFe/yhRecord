@@ -7,9 +7,9 @@
   },
   "globalStyle": {
     "navigationBarTitleText": "Life Record",
-    "navigationBarBackgroundColor": "#fffaf4",
+    "navigationBarBackgroundColor": "#FFF8F0",
     "navigationBarTextStyle": "black",
-    "backgroundColor": "#f6efe5"
+    "backgroundColor": "#F6EFE5"
   },
   "tabBar": {
     "color": "#7b6c5a",

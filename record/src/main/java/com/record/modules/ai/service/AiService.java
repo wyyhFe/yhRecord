@@ -1,6 +1,7 @@
 package com.record.modules.ai.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.record.common.util.PageQuery;
 import com.record.modules.ai.model.dto.AiChatRequest;
 import com.record.modules.ai.model.dto.BillAnalysisRequest;
 import com.record.modules.ai.model.dto.CreateConversationRequest;
@@ -25,16 +26,7 @@ public interface AiService {
 
     void deleteConversation(Long userId, String conversationId);
 
-    /**
-     * 账单分析。
-     * 后端先聚合统计（金额、分类占比、样本），再让模型生成总结/观察/风险/建议。
-     * 模型只输出 JSON，由服务端解析；解析失败时只回填 summary，其余三段为空数组。
-     */
     BillAnalysisResponse analyzeBills(Long userId, BillAnalysisRequest request);
 
-    /**
-     * 查询当前用户的账单分析历史，倒序分页。
-     * 列表只展示概要，详情内容（observations/risks/suggestions 等）当前不持久化。
-     */
-    Page<BillAnalysisHistoryVO> listBillAnalysisHistory(Long userId, long current, long size);
+    Page<BillAnalysisHistoryVO> listBillAnalysisHistory(Long userId, PageQuery pageQuery);
 }

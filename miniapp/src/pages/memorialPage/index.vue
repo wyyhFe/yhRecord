@@ -173,17 +173,17 @@ const form = reactive({
 
 const fieldStyle = {
   background: 'var(--color-surface-soft)',
-  borderRadius: '20rpx',
-  padding: '0 22rpx',
-  fontSize: '28rpx',
+  borderRadius: 'var(--radius-medium)',
+  padding: '0 var(--space-5)',
+  fontSize: 'var(--font-body)',
   minHeight: '84rpx'
 }
 
 const textareaStyle = {
   background: 'var(--color-surface-soft)',
-  borderRadius: '20rpx',
-  padding: '18rpx 22rpx',
-  fontSize: '26rpx',
+  borderRadius: 'var(--radius-medium)',
+  padding: 'var(--space-4) var(--space-5)',
+  fontSize: 'var(--font-caption)',
   width: '100%',
   boxSizing: 'border-box' as const
 }
@@ -327,24 +327,24 @@ onShow(() => {
 
 <style scoped lang="scss">
 .memorial-page {
-  padding-bottom: 40rpx;
+  padding-bottom: var(--space-5);
 }
 
 .memorial-repeat-tag {
-  padding: 10rpx 18rpx;
-  border-radius: 999rpx;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
   background: var(--color-surface-soft);
   color: var(--color-text-secondary);
-  font-size: 22rpx;
+  font-size: var(--font-tiny);
 }
 
 .memorial-remark {
-  margin-top: 10rpx;
+  margin-top: var(--space-3);
 }
 
 .memorial-popup {
   max-height: 74vh;
-  padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  padding: var(--space-6) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
   background: var(--color-bg);
 }
 
@@ -358,32 +358,32 @@ onShow(() => {
 
 .memorial-popup__title {
   color: var(--color-text-primary);
-  font-size: 34rpx;
-  font-weight: 700;
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
 }
 
 .memorial-popup__subtitle {
-  margin-top: 8rpx;
+  margin-top: var(--space-2);
   color: var(--color-text-muted);
-  font-size: 24rpx;
+  font-size: var(--font-meta);
 }
 
 .memorial-switch-row {
-  margin-top: 18rpx;
+  margin-top: var(--space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20rpx;
+  gap: var(--space-5);
 }
 
 .memorial-popup__actions {
-  margin-top: 24rpx;
+  margin-top: var(--space-6);
 }
 
 .picker-card-list {
   display: flex;
   flex-direction: column;
-  gap: 14rpx;
+  gap: var(--space-3);
 }
 
 .picker-card-row {
@@ -391,20 +391,20 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16rpx;
-  padding: 0 22rpx;
-  border-radius: 20rpx;
+  gap: var(--space-4);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-medium);
   background: var(--color-surface-soft);
 }
 
 .picker-card-row__label {
   color: var(--color-text-secondary);
-  font-size: 24rpx;
+  font-size: var(--font-meta);
 }
 
 .picker-card-row__value {
   color: var(--color-text-primary);
-  font-size: 28rpx;
-  font-weight: 600;
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
 }
 </style>

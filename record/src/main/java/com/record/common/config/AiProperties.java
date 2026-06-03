@@ -40,6 +40,7 @@ public class AiProperties {
 
     private Chat chat = new Chat();
     private BillAnalysis billAnalysis = new BillAnalysis();
+    private Rag rag = new Rag();
 
     /**
      * 单个供应商的端点参数。
@@ -90,5 +91,38 @@ public class AiProperties {
          * 账单分析系统提示词。
          */
         private String systemPrompt;
+    }
+
+    @Data
+    public static class Rag {
+        /**
+         * 是否启用 RAG 知识库问答。
+         */
+        private boolean enabled = true;
+
+        /**
+         * 检索返回的最相关切片数量。
+         */
+        private int topK = 5;
+
+        /**
+         * 相似度阈值，低于此值的切片不纳入上下文。
+         */
+        private double similarityThreshold = 0.65;
+
+        /**
+         * 切片目标字符数。
+         */
+        private int chunkSize = 600;
+
+        /**
+         * 切片重叠字符数。
+         */
+        private int chunkOverlap = 100;
+
+        /**
+         * Embedding 向量维度（必须与 Milvus collection 一致）。
+         */
+        private int embeddingDimension = 1536;
     }
 }

@@ -43,4 +43,10 @@ public class CalendarController {
     public ApiResponse<CalendarDayDetailVO> onThisDay(@RequestParam LocalDate date) {
         return ApiResponse.success(calendarService.onThisDay(UserContext.getUserId(), date));
     }
+
+    @Operation(summary = "查询最近 N 天日历摘要")
+    @GetMapping("/calendar/summary-recent")
+    public ApiResponse<CalendarSummaryVO> summaryRecent(@RequestParam(defaultValue = "7") int days) {
+        return ApiResponse.success(calendarService.summaryRecent(UserContext.getUserId(), days));
+    }
 }

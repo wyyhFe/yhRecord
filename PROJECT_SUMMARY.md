@@ -89,20 +89,15 @@
 
 ---
 
-## 4. 未完成（已规划，未实现）
+## 4. 待完成（已规划，未实现）
 
-### 4.1 AI / RAG 路线（按 P0-P3 推进）
+### 4.1 AI / RAG 路线
 
-- **P1 知识库 RAG（待启动）**
-  - 文档上传接口
-  - OSS 文件写入
-  - 文档解析任务执行器（PDF / DOCX / TXT / MD）
-  - 文本切片（建议 500–800 字符，overlap 80–120）
-  - Embedding 调用
-  - 检索接口
-  - 基于知识库的 RAG 问答接口
-  - **轻方案兜底**：先用 pgvector 或 MySQL 拼 prompt，再上 Milvus
-- **P2 Milvus 接入**：`docs/plans/Milvus接入改造步骤清单.md` 已就绪，`pom.xml` 还没加依赖
+- ✅ **知识库 RAG — 已完成（Milvus 直接落地）**
+  - 文档上传接口 → 文本切片 → Embedding 生成 → Milvus 向量入库
+  - Milvus 相似度检索（按知识库/用户维度过滤）
+  - RAG 问答接口（检索 → 拼 prompt → LLM 生成 → 返回引用）
+  - 依赖: `spring-ai-starter-vector-store-milvus` + `spring.ai.vectorstore.milvus.*` 配置
 - **P3 Agent 编排层**：prompt 模板已备好（`prompts/ai/agent/general.md`、`life-record.md`），Service / Controller 路由不存在
 - **Function Calling 工具体系**：上一版 `POST /ai/function-call/demo` 已删除，等重新设计
 - **Prompt 版本管理 / 灰度**
@@ -127,16 +122,15 @@
 
 ### 5.1 短期（1–2 周）
 
-1. **知识库 P1 闭环**：先把文档上传 → OSS → 解析 → 切片 → MySQL 存切片（无向量）→ MySQL 全文检索拼 prompt 跑通，验证产品形态
-2. **AI 账单分析 P0.5**：把 `observations / risks / suggestions` 明细也持久化，做"分析对比"页（这个月 vs 上个月 AI 视角的变化）
-3. **页面截图 + 部署模板**：补 README 标注的两项 TODO
+1. **知识库 RAG 前端对接**：MySQL + Milvus 均已就绪，管理后台和用户端接 `/knowledge/rag/ask` 即可使用
+2. **AI 账单分析增强**：把 `observations / risks / suggestions` 明细也持久化，做"分析对比"页（这个月 vs 上个月 AI 视角的变化）
 
 ### 5.2 中期（1–2 月）
 
-1. **知识库 P2**：接 Milvus，迁出 MySQL 兜底方案
-2. **Function Calling**：定义工具体系（查日记 / 查账单 / 创建提醒），让聊天可以触发实际操作
-3. **统计分析增强**：年度报告、消费趋势、心情曲线（基于已有数据 + AI 洞察）
-4. **分享能力**：日记/年度报告生成图片分享（参考小红书年度总结）
+1. **Function Calling**：定义工具体系（查日记 / 查账单 / 创建提醒），让聊天可以触发实际操作
+2. **统计分析增强**：年度报告、消费趋势、心情曲线（基于已有数据 + AI 洞察）
+3. **分享能力**：日记/年度报告生成图片分享（参考小红书年度总结）
+4. **知识库运维**：文档删除同步删向量、失败任务重试、监控耗时和命中率
 
 ### 5.3 长期
 

@@ -25,27 +25,16 @@
       </view>
 
       <view class="profile-hero__actions">
-        <u-button plain shape="circle" :hair-line="false" @click="goEditProfile">编辑个人信息</u-button>
-        <u-button
-          type="primary"
-          shape="circle"
-          :hair-line="false"
-          color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
-          @click="goDiaryEditor"
-        >
-          去写日记
-        </u-button>
+        <view class="btn-secondary" @click="goEditProfile">编辑个人信息</view>
+        <view class="btn-primary" @click="goDiaryEditor">去写日记</view>
         <!-- 个人开发者主体暂不能上线 AI 聊天类目，入口先屏蔽；想放开把 aiChatEntryEnabled 改为 true -->
-        <u-button
+        <view
           v-if="aiChatEntryEnabled"
-          class="profile-hero__ai-trigger"
-          plain
-          shape="circle"
-          :hair-line="false"
+          class="btn-ghost profile-hero__ai-trigger"
           @click="openAiPopup"
         >
           AI 助手
-        </u-button>
+        </view>
       </view>
     </view>
 
@@ -238,15 +227,14 @@ onMounted(() => {
 
 <style scoped lang="scss">
 /*
- * 个人中心顶部 hero 卡片：在 .section-shell 之上叠一层渐变营造高光感。
- * 两层渐变都走 token，主题切换跟着变：
- *   - 顶层 radial 用 --color-primary-soft（主色 12% 透明）
- *   - 底层 linear 用 surface → surface-soft，从亮到稍暗的过渡
+ * 个人中心 Hero：渐变背景 + 圆角底部
+ * 使用主色渐变营造温暖氛围
  */
 .profile-hero {
   background:
-    radial-gradient(circle at top right, var(--color-primary-soft), transparent 34%),
-    linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-soft) 100%);
+    radial-gradient(circle at top right, rgba(191, 123, 94, 0.15), transparent 50%),
+    linear-gradient(160deg, #E8D5C4 0%, var(--color-surface) 50%);
+  border-radius: var(--radius-xlarge);
 }
 
 .profile-hero__main {

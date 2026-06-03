@@ -1,73 +1,59 @@
 <template>
-  <view class="page-shell-safe">
-    <view class="section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">{{ detail?.title || '正在加载...' }}</view>
-          <view class="section-copy__desc">
-            {{ detail?.ageLabel || '把这一天的内容和照片完整保留下来。' }}
-          </view>
-        </view>
-        <u-tag text="日记" type="warning" plain shape="circle" />
-      </view>
-
-      <view v-if="metaItems.length" class="detail-meta">
-        <view v-for="item in metaItems" :key="item.key" class="detail-meta__item">
-          <text class="detail-meta__label">{{ item.label }}</text>
-          <text class="detail-meta__value">{{ item.value }}</text>
+  <view class="page-shell-safe detail-page">
+    <!-- Hero 头部 -->
+    <view class="detail-hero">
+      <view class="detail-hero__tags">
+        <view v-for="item in metaItems" :key="item.key" class="detail-hero__tag">
+          <text class="detail-hero__tag-label">{{ item.label }}</text>
+          <text class="detail-hero__tag-value">{{ item.value }}</text>
         </view>
       </view>
+      <text class="detail-hero__title">{{ detail?.title || '正在加载...' }}</text>
+      <text class="detail-hero__subtitle">
+        {{ detail?.ageLabel || '把这一天的内容完整保留下来。' }}
+      </text>
     </view>
 
-    <view class="page-section section-shell">
-      <view class="content-block">
-        <view class="content-block__title">正文</view>
-        <view class="content-block__body">
-          {{ detail?.content || '暂无内容' }}
-        </view>
-      </view>
+    <!-- 正文 -->
+    <view class="detail-section">
+      <text class="detail-section__text">{{ detail?.content || '暂无内容' }}</text>
     </view>
 
-    <view class="page-section section-shell">
-      <view class="section-copy">
-        <view class="section-copy__title">照片</view>
-        <view class="section-copy__desc">保留当天上传的图片内容。</view>
-      </view>
-      <view v-if="detail?.mediaPaths?.length" class="detail-media-grid">
+    <!-- 照片 -->
+    <view v-if="detail?.mediaPaths?.length" class="detail-section">
+      <view class="detail-media">
         <image
           v-for="path in detail.mediaPaths"
           :key="path"
           :src="resolveImage(path)"
           mode="aspectFill"
-          class="detail-media-grid__image"
+          class="detail-media__item"
         />
       </view>
-      <view v-else class="note-card">
-        这篇日记还没有照片，后续可以在编辑页里继续补充图片。
-      </view>
     </view>
 
-    <view v-if="detail?.address || detail?.visibility" class="page-section section-shell">
-      <view class="section-copy">
-        <view class="section-copy__title">补充信息</view>
-      </view>
+    <!-- 补充信息 -->
+    <view v-if="detail?.address || detail?.visibility" class="detail-section">
       <view class="detail-extra">
-        <view v-if="detail?.address" class="detail-extra__card">
-          <view class="detail-extra__label">地址</view>
-          <view class="detail-extra__value">{{ detail.address }}</view>
+        <view v-if="detail?.address" class="detail-extra__item">
+          <text class="detail-extra__label">地址</text>
+          <text class="detail-extra__value">{{ detail.address }}</text>
         </view>
-        <view v-if="detail?.visibility" class="detail-extra__card">
-          <view class="detail-extra__label">可见范围</view>
-          <view class="detail-extra__value">{{ visibilityText }}</view>
+        <view v-if="detail?.visibility" class="detail-extra__item">
+          <text class="detail-extra__label">可见范围</text>
+          <text class="detail-extra__value">{{ visibilityText }}</text>
         </view>
       </view>
     </view>
 
-    <view class="action-grid-2">
-      <u-button type="primary" shape="circle" color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)" @click="goEdit">
-        编辑这篇日记
-      </u-button>
-      <u-button type="error" shape="circle" plain @click="removeDiary">删除到回收站</u-button>
+    <!-- 操作按钮 -->
+    <view class="detail-actions">
+      <view class="btn-secondary" @click="goEdit">
+        <text>编辑日记</text>
+      </view>
+      <view class="btn-ghost btn-ghost--danger" @click="removeDiary">
+        <text>删除</text>
+      </view>
     </view>
   </view>
 </template>
@@ -126,13 +112,11 @@ function goEdit() {
 
 async function removeDiary() {
   if (!diaryId.value) return
-
   const result = await uni.showModal({
     title: '确认删除',
     content: '删除后会进入回收站，并保留 15 天。'
   })
   if (!result.confirm) return
-
   await deleteDiary(diaryId.value)
   uni.$feedback.success('已移入回收站')
   setTimeout(() => {
@@ -154,71 +138,129 @@ onLoad((options) => {
 </script>
 
 <style scoped lang="scss">
-.detail-meta {
-  margin-top: 20rpx;
+/* ============================================================
+ * Diary Detail v4 · Warm Modern
+ * ========================================================= */
+
+.detail-page {
+  padding-bottom: var(--space-10);
+}
+
+/* Hero 渐变头部 */
+.detail-hero {
+  background: var(--hero-diary-gradient);
+  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
+  padding: var(--space-7) var(--space-6) var(--space-6);
+}
+
+.detail-hero__tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 14rpx;
+  gap: var(--space-2);
 }
 
-.detail-meta__item {
+.detail-hero__tag {
   display: inline-flex;
   align-items: center;
-  gap: 10rpx;
-  min-width: 0;
-  padding: 12rpx 18rpx;
-  border-radius: 999rpx;
-  background: var(--color-surface-soft);
-  border: 1rpx solid var(--color-border-strong);
+  gap: var(--space-2);
+  padding: 8rpx 18rpx;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
 }
 
-.detail-meta__label {
-  color: #8c735c;
-  font-size: 22rpx;
+.detail-hero__tag-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
 }
 
-.detail-meta__value {
-  max-width: 280rpx;
+.detail-hero__tag-value {
   color: var(--color-text-primary);
-  font-size: 24rpx;
-  font-weight: 600;
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-semibold);
 }
 
-.detail-media-grid {
-  margin-top: 18rpx;
+.detail-hero__title {
+  margin-top: var(--space-4);
+  color: var(--color-text-primary);
+  font-size: var(--font-display);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
+}
+
+.detail-hero__subtitle {
+  margin-top: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-body);
+  line-height: var(--leading-relaxed);
+}
+
+/* 内容区块 */
+.detail-section {
+  margin-top: var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-6);
+}
+
+.detail-section__text {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  line-height: var(--leading-loose);
+}
+
+/* 照片网格 */
+.detail-media {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16rpx;
+  gap: var(--space-3);
 }
 
-.detail-media-grid__image {
+.detail-media__item {
   width: 100%;
-  height: 180rpx;
-  border-radius: 24rpx;
+  height: 200rpx;
+  border-radius: var(--radius-medium);
 }
 
+/* 补充信息 */
 .detail-extra {
   display: flex;
   flex-direction: column;
-  gap: 14rpx;
+  gap: var(--space-4);
 }
 
-.detail-extra__card {
-  padding: 20rpx 22rpx;
-  border-radius: 22rpx;
-  background: var(--color-bg);
-  border: 1rpx solid var(--color-border);
+.detail-extra__item {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+  border-left: 6rpx solid var(--color-primary);
 }
 
 .detail-extra__label {
   color: var(--color-text-muted);
-  font-size: 22rpx;
+  font-size: var(--font-meta);
 }
 
 .detail-extra__value {
-  margin-top: 10rpx;
+  margin-top: var(--space-2);
   color: var(--color-text-primary);
-  font-size: 26rpx;
-  line-height: 1.6;
+  font-size: var(--font-caption);
+  line-height: var(--leading-relaxed);
+}
+
+/* 操作按钮 */
+.detail-actions {
+  margin-top: var(--space-7);
+  display: flex;
+  gap: var(--space-4);
+}
+
+.detail-actions .btn-secondary {
+  flex: 1;
+}
+
+.btn-ghost--danger {
+  color: var(--color-danger) !important;
 }
 </style>

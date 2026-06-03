@@ -1,11 +1,15 @@
 /**
- * lifeRecord 设计系统 · 原子 Token
+ * lifeRecord 设计系统 · 原子 Token v3
  *
- * 这里定义的所有 token 跨主题不变：圆角、间距、字号、字重、动画时长。
- * 主题相关的颜色在 styles/themes/ 下分别定义，按 active 主题覆盖。
+ * Warm Modern — 有温度的现代设计
+ * 核心理念：渐变营造氛围、色彩区分功能、按钮有质感、卡片有层次
  *
- * ⚠️ 任何新加的视觉常量都先来这里加 token，禁止页面里写 magic number。
- * 详见 docs/standards/UI 设计规范.md。
+ * 设计原则：
+ * - 渐变不是装饰，是信息层级的表达
+ * - 色彩用来区分功能区域，不是随便涂色
+ * - 圆角统一 28rpx 体系，温润不刻板
+ * - 阴影有方向感，营造空间层次
+ * - 按钮必须有一致的视觉语言
  */
 
 page {
@@ -26,35 +30,36 @@ page {
   --space-6: 32rpx;
   --space-7: 40rpx;
   --space-8: 56rpx;
+  --space-9: 72rpx;
+  --space-10: 96rpx;
 
-  /* ============== 字号阶梯（按用途命名，不按大小） ============== */
-  /* hero：仅在"首页问候""空状态大字"等一页一次的超大字使用，慎用 */
+  /* ============== 字号阶梯（按用途命名） ============== */
   --font-hero: 56rpx;
   --font-display: 44rpx;
-  --font-title: 36rpx;
-  --font-section: 30rpx;
+  --font-title: 34rpx;
+  --font-section: 28rpx;
   --font-body: 28rpx;
   --font-caption: 24rpx;
   --font-meta: 22rpx;
   --font-tiny: 20rpx;
 
   /* ============== line-height ============== */
-  --leading-tight: 1.15;
+  --leading-tight: 1.2;
   --leading-snug: 1.4;
   --leading-normal: 1.6;
   --leading-relaxed: 1.7;
   --leading-loose: 1.8;
 
-  /* ============== 字重（只用 4 档） ============== */
+  /* ============== 字重 ============== */
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
 
   /* ============== 动画 ============== */
-  --motion-fast: 160ms;
-  --motion-base: 240ms;
-  --motion-slow: 360ms;
+  --motion-fast: 150ms;
+  --motion-base: 250ms;
+  --motion-slow: 400ms;
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);

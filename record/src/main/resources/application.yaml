@@ -36,6 +36,19 @@ spring:
         repository:
           jdbc:
             initialize-schema: never
+    vectorstore:
+      milvus:
+        client:
+          host: ${MILVUS_HOST:127.0.0.1}
+          port: ${MILVUS_PORT:19530}
+          username: ${MILVUS_USERNAME:root}
+          password: ${MILVUS_PASSWORD:milvus}
+        databaseName: default
+        collectionName: knowledge_chunk_vector
+        embeddingDimension: 1536
+        indexType: IVF_FLAT
+        metricType: COSINE
+        initialize-schema: true
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
@@ -160,6 +173,13 @@ app:
       max-entries: 200
       default-days: 30
       system-prompt:
+    rag:
+      enabled: true
+      top-k: 5
+      similarity-threshold: 0.65
+      chunk-size: 600
+      chunk-overlap: 100
+      embedding-dimension: 1536
 
 alioss:
   endpoint: ${ALIOSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}

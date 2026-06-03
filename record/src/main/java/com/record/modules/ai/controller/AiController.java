@@ -3,6 +3,7 @@ package com.record.modules.ai.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
+import com.record.common.util.PageQuery;
 import com.record.modules.ai.model.dto.AiChatRequest;
 import com.record.modules.ai.model.dto.BillAnalysisRequest;
 import com.record.modules.ai.model.dto.CreateConversationRequest;
@@ -86,9 +87,7 @@ public class AiController {
      */
     @Operation(summary = "账单分析历史")
     @GetMapping("/bill-analysis/history")
-    public ApiResponse<Page<BillAnalysisHistoryVO>> billAnalysisHistory(
-            @RequestParam(defaultValue = "1") long current,
-            @RequestParam(defaultValue = "10") long size) {
-        return ApiResponse.success(aiService.listBillAnalysisHistory(UserContext.getUserId(), current, size));
+    public ApiResponse<Page<BillAnalysisHistoryVO>> billAnalysisHistory(PageQuery pageQuery) {
+        return ApiResponse.success(aiService.listBillAnalysisHistory(UserContext.getUserId(), pageQuery));
     }
 }

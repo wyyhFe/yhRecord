@@ -8,6 +8,7 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 interface RequestCustomConfig {
   withAuth?: boolean
   _retry?: boolean
+  _retryCount?: number
 }
 
 /**
@@ -30,6 +31,12 @@ interface RefreshTokenResult {
   accessToken: string
   refreshToken: string
 }
+
+/** 请求失败时自动重试的最大次数 */
+const MAX_RETRY_COUNT = 3
+
+/** 重试间的退避延迟基数（毫秒），每次翻倍：1s → 2s → 4s */
+const RETRY_BASE_DELAY_MS = 1000
 
 const http = new HttpRequest({
   baseURL: API_BASE_URL,
@@ -92,6 +99,31 @@ async function refreshSessionToken(refreshTokenValue: string) {
   tokenStorage.setRefreshToken(result.data.refreshToken)
 }
 
+/**
+ * 判断当前错误是否应该重试。
+ * 可重试条件：网络错误（无 statusCode）或服务端 5xx 错误。
+ * 不可重试：4xx 客户端错误（401/403/404 等）。
+ */
+function isRetryable(error: HttpResponse<ApiResponse<unknown>>): boolean {
+  const statusCode = error?.statusCode
+  // 无 statusCode = 网络/超时错误，可重试
+  if (statusCode === undefined || statusCode === null) {
+    return true
+  }
+  // 5xx 服务端错误可重试
+  if (statusCode >= 500 && statusCode < 600) {
+    return true
+  }
+  return false
+}
+
+/**
+ * 延迟指定毫秒数。
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 http.interceptors.request.use((config) => {
   const nextConfig = config as HttpRequestConfig & {
     custom?: RequestCustomConfig
@@ -128,6 +160,30 @@ http.interceptors.response.use(
       custom?: RequestCustomConfig
     }
 
+    // ─── 自动重试逻辑（仅对可重试错误生效） ─────────────────────────────
+    if (isRetryable(response)) {
+      const retryCount = config.custom?._retryCount ?? 0
+      if (retryCount < MAX_RETRY_COUNT) {
+        const attempt = retryCount + 1
+        const delay = RETRY_BASE_DELAY_MS * Math.pow(2, retryCount)
+        console.warn('[request] retrying', {
+          url: config.url,
+          method: config.method ?? 'GET',
+          attempt,
+          maxRetries: MAX_RETRY_COUNT,
+          delayMs: delay,
+          statusCode
+        })
+        config.custom = {
+          ...(config.custom ?? {}),
+          _retryCount: attempt
+        }
+        await sleep(delay)
+        return http.request(config)
+      }
+    }
+
+    // ─── 401 鉴权恢复逻辑 ──────────────────────────────────────
     if (statusCode === 401 && !config.custom?._retry) {
       console.warn('[request] got 401, attempting recovery', {
         url: config.url,
@@ -190,7 +246,8 @@ http.interceptors.response.use(
       url: config.url,
       method: config.method ?? 'GET',
       statusCode,
-      message
+      message,
+      retryAttempts: config.custom?._retryCount ?? 0
     })
     throw new Error(message)
   }

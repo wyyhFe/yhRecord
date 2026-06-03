@@ -11,12 +11,12 @@ export interface CalendarSummaryResult {
 }
 
 /**
- * 获取某年某月的日历摘要。
- * 首页和日历状态条都会依赖这组数据。
+ * 获取最近 N 天的日历摘要（后端按日期范围直接返回，高效）。
+ * 首页「近七天」时间轴专用。
  */
-export function fetchCalendarSummary(year: number, month: number) {
+export function fetchCalendarSummaryRecent(days: number = 7) {
   return request<CalendarSummaryResult>({
-    url: `/calendar/summary?year=${year}&month=${month}`,
+    url: `/calendar/summary-recent?days=${days}`,
     method: 'GET'
   })
 }

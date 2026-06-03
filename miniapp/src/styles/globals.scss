@@ -1,37 +1,32 @@
 /**
- * 全局组件级样式。
+ * 全局组件级样式 v3 — Warm Modern
  *
- * 设计原则（详见 docs/standards/UI 设计规范.md）：
- * - 所有颜色用 var(--color-*)，禁止硬编码 hex / rgba
- * - 所有圆角、间距、字号、阴影都用 var(--radius-*) / var(--space-*) / var(--font-*) / var(--shadow-*)
- * - 这里只放跨页面复用的"通用块"，单页面专用的样式留在各页面 <style scoped> 里
- *
- * 命名约定：BEM 简化版（block__element--modifier），可读性优先。
- *
- * ⚠️ 后续做 §11 第 2 步把这些通用块抽成 components/ui/* 组件后，
- * 这个文件会进一步瘦身。现在过渡期 page 还在用这些 class，先全保留。
+ * 设计原则：
+ * - 卡片：白底 + 中等阴影 + 圆角，有"浮起来"的感觉
+ * - 按钮：渐变背景 + 阴影 + 圆角，有质感和按压反馈
+ * - 间距：适度呼吸感，不过分空旷
+ * - 层级：字号 + 字重 + 颜色 + 间距 四维分层
  */
 
 /* ============================================================
- * Page Head：页面顶部大标题卡片
- * 首页、列表页、详情页统一复用。
+ * Page Head：页面顶部标题卡片
  * ========================================================= */
 .page-head {
   background: var(--color-surface);
-  border: 1rpx solid var(--color-border);
   box-shadow: var(--shadow-card);
   border-radius: var(--radius-large);
-  overflow: hidden;
-  padding: var(--space-6) var(--space-5);
+  padding: var(--space-7) var(--space-6);
 }
 
 .page-head__eyebrow {
   color: var(--color-text-muted);
   font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
+  letter-spacing: 1rpx;
 }
 
 .page-head__title {
-  margin-top: var(--space-1);
+  margin-top: var(--space-2);
   color: var(--color-text-primary);
   font-size: var(--font-display);
   font-weight: var(--weight-bold);
@@ -39,40 +34,35 @@
 }
 
 .page-head__desc {
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
   color: var(--color-text-secondary);
-  font-size: var(--font-caption);
+  font-size: var(--font-body);
   line-height: var(--leading-relaxed);
 }
 
 /* ============================================================
  * Section Shell：通用内容卡片
- * 设置区、详情区、编辑区等主体容器。
  * ========================================================= */
 .section-shell {
   background: var(--color-surface);
-  border: 1rpx solid var(--color-border);
   box-shadow: var(--shadow-card);
   border-radius: var(--radius-large);
-  padding: var(--space-5);
+  padding: var(--space-6);
 }
 
-/* 页面内各模块之间的标准间距。 */
 .page-section {
-  margin-top: var(--space-5);
-}
-
-/* 卡片内部常见的纵向字段堆叠间距。 */
-.block-stack {
   margin-top: var(--space-4);
 }
 
-/* 卡片头部：左边说明，右边操作或状态。 */
+.block-stack {
+  margin-top: var(--space-5);
+}
+
 .section-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .section-copy {
@@ -81,33 +71,119 @@
 
 .section-copy__title {
   color: var(--color-text-primary);
-  font-size: var(--font-section);
-  font-weight: var(--weight-semibold);
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
 }
 
 .section-copy__desc {
-  margin-top: var(--space-1);
+  margin-top: var(--space-2);
   color: var(--color-text-muted);
-  font-size: var(--font-meta);
+  font-size: var(--font-caption);
   line-height: var(--leading-relaxed);
 }
 
 /* ============================================================
- * 表单字段标签：天气 / 心情 / 标签等小标题
+ * 按钮系统 — 有质感、一致的语言
+ * ========================================================= */
+
+/* 主按钮：渐变背景 + 阴影 */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  padding: 0 40rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-gradient);
+  color: #FFFFFF;
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 1rpx;
+  box-shadow: var(--shadow-btn);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+.btn-primary:active {
+  transform: scale(0.97);
+  box-shadow: var(--shadow-press);
+}
+
+/* 次要按钮：浅色背景 */
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  padding: 0 40rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-medium);
+  border: 1rpx solid var(--color-border-strong);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+.btn-secondary:active {
+  transform: scale(0.97);
+  background: var(--color-surface-hover);
+}
+
+/* 危险按钮 */
+.btn-danger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  padding: 0 40rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  color: #FFFFFF;
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+  box-shadow: var(--shadow-btn-danger);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+.btn-danger:active {
+  transform: scale(0.97);
+  box-shadow: var(--shadow-press);
+}
+
+/* 小按钮（用于内联场景） */
+.btn-sm {
+  height: 64rpx;
+  padding: 0 28rpx;
+  font-size: var(--font-caption);
+}
+
+/* Ghost 按钮（透明底，只有文字色） */
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  padding: 0 28rpx;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-caption);
+  font-weight: var(--weight-medium);
+}
+.btn-ghost:active {
+  background: var(--color-primary-soft);
+}
+
+/* ============================================================
+ * 表单字段标签
  * ========================================================= */
 .field-label {
   color: var(--color-text-secondary);
   font-size: var(--font-caption);
+  font-weight: var(--weight-medium);
 }
 
 /* ============================================================
  * Content Block：长文本正文块
- * 用于详情、说明、描述等大段文字。
  * ========================================================= */
-.content-block {
-  margin-top: var(--space-4);
-}
-
 .content-block__title {
   color: var(--color-text-primary);
   font-size: var(--font-section);
@@ -122,11 +198,11 @@
 }
 
 /* ============================================================
- * Note Card：空数据 / 补充说明小提示
+ * Note Card：空数据 / 补充说明
  * ========================================================= */
 .note-card {
   margin-top: var(--space-4);
-  padding: var(--space-6) var(--space-5);
+  padding: var(--space-5) var(--space-5);
   border-radius: var(--radius-medium);
   background: var(--color-surface-soft);
   color: var(--color-text-secondary);
@@ -137,54 +213,51 @@
 /* ============================================================
  * 操作按钮区
  * ========================================================= */
-/* 两列并排操作。 */
 .action-grid-2 {
-  margin-top: var(--space-6);
+  margin-top: var(--space-7);
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
 }
 
-/* 单个主操作按钮的标准间距。 */
 .primary-action {
-  margin-top: var(--space-6);
+  margin-top: var(--space-7);
 }
 
-/* 表单或调试区内纵向按钮堆叠。 */
 .action-stack {
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
 
 /* ============================================================
- * Metric Grid：三列统计卡片
- * 首页、个人中心等概览区统一复用。
+ * Metric Grid：统计卡片
  * ========================================================= */
 .metric-grid {
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .metric-card {
   border-radius: var(--radius-medium);
-  background: var(--color-surface-strong);
-  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-soft);
+  padding: var(--space-4) var(--space-4);
 }
 
 .metric-card__label {
   color: var(--color-text-muted);
   font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
 }
 
 .metric-card__value {
-  margin-top: var(--space-1);
+  margin-top: var(--space-2);
   color: var(--color-text-primary);
   font-size: var(--font-section);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
 }
 
 .metric-card__hint {
@@ -194,10 +267,10 @@
 }
 
 /* ============================================================
- * List：列表项与堆叠
+ * List：列表项
  * ========================================================= */
 .list-stack {
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -206,16 +279,15 @@
 .list-card {
   border-radius: var(--radius-large);
   background: var(--color-surface);
-  border: 1rpx solid var(--color-border);
   box-shadow: var(--shadow-card);
-  padding: var(--space-5);
+  padding: var(--space-5) var(--space-5);
 }
 
 .list-card__head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .list-card__title {
@@ -225,13 +297,14 @@
 }
 
 .list-card__meta {
-  margin-top: var(--space-1);
-  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
   font-size: var(--font-meta);
   line-height: var(--leading-relaxed);
 }
 
 .list-card__aside {
-  color: var(--color-primary-strong);
+  color: var(--color-primary);
   font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
 }

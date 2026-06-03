@@ -124,8 +124,8 @@ defineExpose({
 .photo-picker__card {
   position: relative;
   overflow: hidden;
-  border-radius: 24rpx;
-  background: #f2e8db;
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
 }
 
 .photo-picker__image {
@@ -161,7 +161,7 @@ defineExpose({
 .photo-picker__action--retry {
   right: 10rpx;
   bottom: 10rpx;
-  background: #c15b52;
+  background: var(--color-danger);
 }
 
 .photo-picker__add {
@@ -169,8 +169,8 @@ defineExpose({
   align-items: center;
   justify-content: center;
   height: 180rpx;
-  border: 1rpx dashed #d0b79f;
-  border-radius: 24rpx;
+  border: 2rpx dashed var(--color-border-strong);
+  border-radius: var(--radius-medium);
   background: var(--color-surface-soft);
 }
 
@@ -179,13 +179,13 @@ defineExpose({
 }
 
 .photo-picker__add-icon {
-  color: #b57a55;
+  color: var(--color-primary);
   font-size: 38rpx;
 }
 
 .photo-picker__add-text {
   margin-top: 8rpx;
-  color: #8d7d6d;
-  font-size: 22rpx;
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
 }
 </style>

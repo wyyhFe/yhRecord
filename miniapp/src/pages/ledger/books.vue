@@ -177,28 +177,28 @@ onShow(() => {
 <style scoped lang="scss">
 .book-card__id {
   color: var(--color-text-muted);
-  font-size: 24rpx;
+  font-size: var(--font-caption);
 }
 
 .book-card__actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 20rpx;
+  margin-top: var(--space-4);
 }
 
 .book-popup {
-  padding: 28rpx;
+  padding: var(--space-6);
   background: var(--color-bg);
 }
 
 .book-popup__head {
-  margin-bottom: 20rpx;
+  margin-bottom: var(--space-4);
   text-align: center;
 }
 
 .book-popup__title {
   color: var(--color-text-primary);
-  font-size: 34rpx;
-  font-weight: 700;
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
 }
 </style>

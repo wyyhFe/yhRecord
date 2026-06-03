@@ -19,6 +19,11 @@ spring:
         repository:
           jdbc:
             initialize-schema: always
+    vectorstore:
+      milvus:
+        client:
+          host: 123.207.210.150
+          port: 19530
 
 logging:
   level:
