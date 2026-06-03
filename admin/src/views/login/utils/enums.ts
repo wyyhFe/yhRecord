@@ -12,23 +12,48 @@ const operates = [
   }
 ];
 
-const thirdParty = [
+/** 默认展示的第三方登录（GitHub + Google） */
+const thirdPartyPrimary = [
   {
-    title: $t("login.pureWeChatLogin"),
-    icon: "wechat"
+    title: "GitHub",
+    icon: "github",
+    provider: "github",
+    action: "oauth"
   },
   {
-    title: $t("login.pureAlipayLogin"),
-    icon: "alipay"
-  },
-  {
-    title: $t("login.pureQQLogin"),
-    icon: "qq"
-  },
-  {
-    title: $t("login.pureWeiBoLogin"),
-    icon: "weibo"
+    title: "Google",
+    icon: "google",
+    provider: "google",
+    action: "oauth"
   }
 ];
 
-export { operates, thirdParty };
+/** 展开后展示更多（微信/支付宝/QQ/微博，暂无实际逻辑） */
+const thirdPartyMore = [
+  {
+    title: $t("login.pureWeChatLogin"),
+    icon: "wechat",
+    provider: "wechat",
+    action: "none"
+  },
+  {
+    title: $t("login.pureAlipayLogin"),
+    icon: "alipay",
+    provider: "alipay",
+    action: "none"
+  },
+  {
+    title: $t("login.pureQQLogin"),
+    icon: "qq",
+    provider: "qq",
+    action: "none"
+  },
+  {
+    title: $t("login.pureWeiBoLogin"),
+    icon: "weibo",
+    provider: "weibo",
+    action: "none"
+  }
+];
+
+export { operates, thirdPartyPrimary, thirdPartyMore };

@@ -3,6 +3,7 @@ package com.record.modules.user.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.CommonStatus;
 import com.record.common.enums.GenderType;
+import com.record.common.enums.LoginType;
 import com.record.modules.diary.service.DiaryService;
 import com.record.modules.user.mapper.UserMapper;
 import com.record.modules.user.model.dto.UserProfileUpdateRequest;
@@ -37,6 +38,40 @@ public class UserServiceImpl implements UserService {
         user.setOpenid(openid);
         user.setNickname("微信用户");
         user.setGender(GenderType.UNKNOWN);
+        user.setStatus(CommonStatus.ENABLED);
+        userMapper.insert(user);
+        return user;
+    }
+
+    @Override
+    public User getOrCreateByGithubId(String githubId, String nickname, String avatarUrl) {
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getGithubId, githubId));
+        if (user != null) {
+            return user;
+        }
+        user = new User();
+        user.setGithubId(githubId);
+        user.setNickname(nickname != null ? nickname : "GitHub 用户");
+        user.setAvatarPath(avatarUrl);
+        user.setGender(GenderType.UNKNOWN);
+        user.setLoginType(LoginType.GITHUB);
+        user.setStatus(CommonStatus.ENABLED);
+        userMapper.insert(user);
+        return user;
+    }
+
+    @Override
+    public User getOrCreateByGoogleId(String googleId, String nickname, String avatarUrl) {
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getGoogleId, googleId));
+        if (user != null) {
+            return user;
+        }
+        user = new User();
+        user.setGoogleId(googleId);
+        user.setNickname(nickname != null ? nickname : "Google 用户");
+        user.setAvatarPath(avatarUrl);
+        user.setGender(GenderType.UNKNOWN);
+        user.setLoginType(LoginType.GOOGLE);
         user.setStatus(CommonStatus.ENABLED);
         userMapper.insert(user);
         return user;

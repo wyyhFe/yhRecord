@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.record.common.enums.CommonStatus;
 import com.record.common.enums.GenderType;
+import com.record.common.enums.LoginType;
 import com.record.common.model.BaseEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -26,6 +27,15 @@ public class User extends BaseEntity {
 
     @Schema(description = "小程序 openid")
     private String openid;
+
+    @Schema(description = "GitHub 用户唯一 ID")
+    private String githubId;
+
+    @Schema(description = "Google 用户唯一 ID")
+    private String googleId;
+
+    @Schema(description = "注册来源", example = "WECHAT")
+    private LoginType loginType;
 
     @Schema(description = "昵称", example = "wyh")
     private String nickname;

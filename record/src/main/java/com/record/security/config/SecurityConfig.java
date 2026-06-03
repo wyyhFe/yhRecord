@@ -33,7 +33,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/wx-login", "/auth/refresh", "/doc.html", "/swagger-ui/**",
-                                "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                                "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**",
+                                "/auth/github/**", "/auth/google/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {

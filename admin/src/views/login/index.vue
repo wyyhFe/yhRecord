@@ -10,7 +10,7 @@ import { useNav } from "@/layout/hooks/useNav";
 import { useEventListener } from "@vueuse/core";
 import type { FormInstance } from "element-plus";
 import { $t, transformI18n } from "@/plugins/i18n";
-import { operates, thirdParty } from "./utils/enums";
+import { operates, thirdPartyPrimary, thirdPartyMore } from "./utils/enums";
 import { useLayout } from "@/layout/hooks/useLayout";
 import LoginPhone from "./components/LoginPhone.vue";
 import LoginRegist from "./components/LoginRegist.vue";
@@ -33,6 +33,8 @@ import Check from "~icons/ep/check";
 import User from "~icons/ri/user-3-fill";
 import Info from "~icons/ri/information-line";
 import Keyhole from "~icons/ri/shield-keyhole-line";
+import ArrowDown from "~icons/ri/arrow-down-s-line";
+import ArrowUp from "~icons/ri/arrow-up-s-line";
 
 defineOptions({
   name: "Login"
@@ -40,6 +42,7 @@ defineOptions({
 
 const imgCode = ref("");
 const loginDay = ref(7);
+const showMoreThirdParty = ref(false);
 const router = useRouter();
 const loading = ref(false);
 const checked = ref(false);
@@ -116,6 +119,12 @@ watch(checked, bool => {
 watch(loginDay, value => {
   useUserStoreHook().SET_LOGINDAY(value);
 });
+
+/** OAuth 登录：跳转到后端授权接口 */
+const handleOAuthLogin = (provider: string) => {
+  // 通过 vite proxy 转发到后端，后端返回 302 重定向到 OAuth 授权页
+  window.location.href = `/api/auth/${provider}/authorize`;
+};
 </script>
 
 <template>
@@ -307,18 +316,57 @@ watch(loginDay, value => {
                   {{ t("login.pureThirdLogin") }}
                 </p>
               </el-divider>
-              <div class="w-full flex justify-evenly">
-                <span
-                  v-for="(item, index) in thirdParty"
-                  :key="index"
-                  :title="t(item.title)"
+              <div class="w-full flex flex-col items-center gap-3">
+                <!-- 默认展示：GitHub + Google -->
+                <div class="w-full flex justify-evenly">
+                  <span
+                    v-for="item in thirdPartyPrimary"
+                    :key="item.provider"
+                    :title="item.title"
+                  >
+                    <IconifyIconOnline
+                      :icon="`ri:${item.icon}-fill`"
+                      width="20"
+                      class="cursor-pointer text-gray-500 hover:text-blue-400 transition-colors duration-200"
+                      @click="handleOAuthLogin(item.provider)"
+                    />
+                  </span>
+                </div>
+                <!-- 展开收起按钮 -->
+                <el-button
+                  link
+                  type="info"
+                  size="small"
+                  class="!text-xs !text-gray-400"
+                  @click="showMoreThirdParty = !showMoreThirdParty"
                 >
-                  <IconifyIconOnline
-                    :icon="`ri:${item.icon}-fill`"
-                    width="20"
-                    class="cursor-pointer text-gray-500 hover:text-blue-400"
-                  />
-                </span>
+                  <span class="flex items-center gap-0.5">
+                    {{ showMoreThirdParty ? "收起" : "更多登录方式" }}
+                    <component
+                      :is="showMoreThirdParty ? ArrowUp : ArrowDown"
+                      class="inline-block w-3 h-3"
+                    />
+                  </span>
+                </el-button>
+                <!-- 展开后的更多登录方式 -->
+                <transition name="el-zoom-in-top">
+                  <div
+                    v-if="showMoreThirdParty"
+                    class="w-full flex justify-evenly"
+                  >
+                    <span
+                      v-for="item in thirdPartyMore"
+                      :key="item.provider"
+                      :title="item.title"
+                    >
+                      <IconifyIconOnline
+                        :icon="`ri:${item.icon}-fill`"
+                        width="20"
+                        class="cursor-pointer text-gray-500 hover:text-blue-400 transition-colors duration-200"
+                      />
+                    </span>
+                  </div>
+                </transition>
               </div>
             </el-form-item>
           </Motion>

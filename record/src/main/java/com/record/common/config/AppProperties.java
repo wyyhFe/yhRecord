@@ -16,6 +16,7 @@ public class AppProperties {
 
     private Security security = new Security();
     private Wechat wechat = new Wechat();
+    private OAuth oauth = new OAuth();
     private Map map = new Map();
     private File file = new File();
     private Reminder reminder = new Reminder();
@@ -77,6 +78,26 @@ public class AppProperties {
 
         /** 允许保存的对象存储路径前缀。 */
         private List<String> allowedPathPrefixes = new ArrayList<>();
+    }
+
+    @Data
+    public static class OAuth {
+        private Github github = new Github();
+        private Google google = new Google();
+
+        @Data
+        public static class Github {
+            private String clientId;
+            private String clientSecret;
+            private String redirectUri;
+        }
+
+        @Data
+        public static class Google {
+            private String clientId;
+            private String clientSecret;
+            private String redirectUri;
+        }
     }
 
     @Data
