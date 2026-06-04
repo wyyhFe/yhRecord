@@ -8,7 +8,7 @@ import lombok.Data;
  * 角色-菜单关联实体。
  */
 @Data
-@TableName("role_menu")
+@TableName("sys_role_menu")
 public class RoleMenu {
 
     @TableId

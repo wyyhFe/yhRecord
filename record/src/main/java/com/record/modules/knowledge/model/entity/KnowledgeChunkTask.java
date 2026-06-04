@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("knowledge_chunk_task")
+@TableName("biz_knowledge_chunk_task")
 public class KnowledgeChunkTask extends BaseEntity {
 
     @TableId

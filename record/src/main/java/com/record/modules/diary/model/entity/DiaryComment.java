@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("diary_comment")
+@TableName("biz_diary_comment")
 @Schema(description = "日记评论记录")
 public class DiaryComment extends BaseEntity {
 

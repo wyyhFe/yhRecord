@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("checkin_record")
+@TableName("biz_checkin_record")
 @Schema(description = "打卡记录")
 public class CheckinRecord extends BaseEntity {
 

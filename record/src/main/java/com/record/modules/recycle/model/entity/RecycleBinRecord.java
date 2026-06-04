@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("recycle_bin")
+@TableName("biz_recycle_bin")
 @Schema(description = "回收站记录实体")
 public class RecycleBinRecord extends BaseEntity {
 

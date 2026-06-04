@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("menu")
+@TableName("sys_menu")
 public class Menu extends BaseEntity {
 
     @TableId

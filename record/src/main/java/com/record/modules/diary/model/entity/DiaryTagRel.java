@@ -9,7 +9,7 @@ import lombok.Data;
  * 日记与标签关联实体。
  */
 @Data
-@TableName("diary_tag_rel")
+@TableName("biz_diary_tag_rel")
 @Schema(description = "日记与标签关联实体")
 public class DiaryTagRel {
 

@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("reminder_setting")
+@TableName("biz_reminder_setting")
 @Schema(description = "用户提醒设置实体")
 public class ReminderSetting extends BaseEntity {
 

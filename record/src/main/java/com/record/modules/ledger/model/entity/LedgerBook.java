@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("ledger_book")
+@TableName("biz_ledger_book")
 @Schema(description = "账本实体")
 public class LedgerBook extends BaseEntity {
 

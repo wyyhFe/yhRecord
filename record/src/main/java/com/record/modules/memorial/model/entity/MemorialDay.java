@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("memorial_day")
+@TableName("biz_memorial_day")
 @Schema(description = "纪念日实体")
 public class MemorialDay extends BaseEntity {
 

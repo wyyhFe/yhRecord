@@ -15,7 +15,7 @@ import java.time.LocalDate;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("checkin_task")
+@TableName("biz_checkin_task")
 @Schema(description = "打卡任务实体")
 public class CheckinTask extends BaseEntity {
 

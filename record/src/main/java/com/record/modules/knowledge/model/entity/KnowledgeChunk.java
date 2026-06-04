@@ -15,7 +15,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("knowledge_chunk")
+@TableName("biz_knowledge_chunk")
 public class KnowledgeChunk extends BaseEntity {
 
     @TableId

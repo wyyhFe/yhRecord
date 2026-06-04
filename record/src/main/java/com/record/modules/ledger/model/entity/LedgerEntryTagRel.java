@@ -9,7 +9,7 @@ import lombok.Data;
  * 流水与标签关联实体。
  */
 @Data
-@TableName("ledger_entry_tag_rel")
+@TableName("biz_ledger_entry_tag_rel")
 @Schema(description = "流水与标签关联实体")
 public class LedgerEntryTagRel {
 

@@ -17,7 +17,7 @@ public interface RoleMenuMapper extends BaseMapper<RoleMenu> {
      * 根据角色 ID 列表查询关联的菜单 ID。
      */
     @Select("<script>" +
-            "SELECT DISTINCT menu_id FROM role_menu WHERE role_id IN " +
+            "SELECT DISTINCT menu_id FROM sys_role_menu WHERE role_id IN " +
             "<foreach item='id' collection='roleIds' open='(' separator=',' close=')'>" +
             "#{id}" +
             "</foreach>" +

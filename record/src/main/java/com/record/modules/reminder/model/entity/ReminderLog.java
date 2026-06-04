@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("reminder_log")
+@TableName("biz_reminder_log")
 @Schema(description = "提醒发送日志实体")
 public class ReminderLog extends BaseEntity {
 

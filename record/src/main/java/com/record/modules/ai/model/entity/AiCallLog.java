@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("ai_call_log")
+@TableName("biz_ai_call_log")
 public class AiCallLog extends BaseEntity {
 
     @TableId

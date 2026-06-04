@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("knowledge_base")
+@TableName("biz_knowledge_base")
 public class KnowledgeBase extends BaseEntity {
 
     @TableId

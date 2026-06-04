@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `user_session` (
   UNIQUE KEY `uk_user_session_session` (`session_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户登录会话表';
 
-CREATE TABLE IF NOT EXISTS `tag_template` (
+CREATE TABLE IF NOT EXISTS `biz_tag_template` (
   `id` BIGINT NOT NULL COMMENT '模板 ID',
   `name` VARCHAR(64) NOT NULL COMMENT '模板名称',
   `color` VARCHAR(32) DEFAULT NULL COMMENT '模板颜色',
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `tag_template` (
   CONSTRAINT `chk_tag_template_status` CHECK (`status` IN ('ENABLED', 'DISABLED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统标签模板表';
 
-CREATE TABLE IF NOT EXISTS `user_tag` (
+CREATE TABLE IF NOT EXISTS `biz_user_tag` (
   `id` BIGINT NOT NULL COMMENT '标签 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `template_id` BIGINT DEFAULT NULL COMMENT '来源模板 ID',
@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS `user_tag` (
   CONSTRAINT `chk_user_tag_ledger_type` CHECK (`ledger_type` IS NULL OR `ledger_type` IN ('EXPENSE', 'INCOME'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户标签表';
 
-CREATE TABLE IF NOT EXISTS `diary` (
+CREATE TABLE IF NOT EXISTS `biz_diary` (
   `id` BIGINT NOT NULL COMMENT '日记 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `title` VARCHAR(128) NOT NULL COMMENT '标题',
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `diary` (
   CONSTRAINT `chk_diary_location_source` CHECK (`location_source_type` IS NULL OR `location_source_type` IN ('CURRENT', 'MANUAL'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日记表';
 
-CREATE TABLE IF NOT EXISTS `diary_media` (
+CREATE TABLE IF NOT EXISTS `biz_diary_media` (
   `id` BIGINT NOT NULL COMMENT '主键 ID',
   `diary_id` BIGINT NOT NULL COMMENT '日记 ID',
   `media_type` VARCHAR(16) NOT NULL COMMENT '附件类型：IMAGE / VIDEO / AUDIO',
@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS `diary_media` (
   KEY `idx_diary_media_diary` (`diary_id`, `sort_order`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日记附件表';
 
-CREATE TABLE IF NOT EXISTS `diary_tag_rel` (
+CREATE TABLE IF NOT EXISTS `biz_diary_tag_rel` (
   `id` BIGINT NOT NULL COMMENT '主键 ID',
   `diary_id` BIGINT NOT NULL COMMENT '日记 ID',
   `tag_id` BIGINT NOT NULL COMMENT '标签 ID',
@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS `diary_tag_rel` (
   KEY `idx_diary_tag_rel_tag` (`tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日记与标签关联表';
 
-CREATE TABLE IF NOT EXISTS `diary_comment` (
+CREATE TABLE IF NOT EXISTS `biz_diary_comment` (
   `id` BIGINT NOT NULL COMMENT '评论 ID',
   `diary_id` BIGINT NOT NULL COMMENT '日记 ID',
   `user_id` BIGINT NOT NULL COMMENT '评论用户 ID',
@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS `diary_comment` (
   KEY `idx_diary_comment_parent` (`parent_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日记评论表';
 
-CREATE TABLE IF NOT EXISTS `diary_like` (
+CREATE TABLE IF NOT EXISTS `biz_diary_like` (
   `id` BIGINT NOT NULL COMMENT '主键 ID',
   `diary_id` BIGINT NOT NULL COMMENT '日记 ID',
   `user_id` BIGINT NOT NULL COMMENT '点赞用户 ID',
@@ -162,7 +162,7 @@ CREATE TABLE IF NOT EXISTS `diary_like` (
   UNIQUE KEY `uk_diary_like_diary_user` (`diary_id`, `user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='日记点赞表';
 
-CREATE TABLE IF NOT EXISTS `ledger_book` (
+CREATE TABLE IF NOT EXISTS `biz_ledger_book` (
   `id` BIGINT NOT NULL COMMENT '账本 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `name` VARCHAR(64) NOT NULL COMMENT '账本名称',
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `ledger_book` (
   KEY `idx_ledger_book_user` (`user_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='账本表';
 
-CREATE TABLE IF NOT EXISTS `ledger_entry` (
+CREATE TABLE IF NOT EXISTS `biz_ledger_entry` (
   `id` BIGINT NOT NULL COMMENT '流水 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `book_id` BIGINT NOT NULL COMMENT '账本 ID',
@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS `ledger_entry` (
   CONSTRAINT `chk_ledger_entry_amount` CHECK (`amount` > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='记账流水表';
 
-CREATE TABLE IF NOT EXISTS `ledger_entry_tag_rel` (
+CREATE TABLE IF NOT EXISTS `biz_ledger_entry_tag_rel` (
   `id` BIGINT NOT NULL COMMENT '主键 ID',
   `entry_id` BIGINT NOT NULL COMMENT '流水 ID',
   `tag_id` BIGINT NOT NULL COMMENT '标签 ID',
@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS `ledger_entry_tag_rel` (
   KEY `idx_ledger_entry_tag_rel_tag` (`tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='流水与标签关联表';
 
-CREATE TABLE IF NOT EXISTS `checkin_task` (
+CREATE TABLE IF NOT EXISTS `biz_checkin_task` (
   `id` BIGINT NOT NULL COMMENT '任务 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `name` VARCHAR(128) NOT NULL COMMENT '任务名称',
@@ -222,7 +222,7 @@ CREATE TABLE IF NOT EXISTS `checkin_task` (
   CONSTRAINT `chk_checkin_task_status` CHECK (`status` IN ('ENABLED', 'DISABLED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='打卡任务表';
 
-CREATE TABLE IF NOT EXISTS `checkin_record` (
+CREATE TABLE IF NOT EXISTS `biz_checkin_record` (
   `id` BIGINT NOT NULL COMMENT '打卡记录 ID',
   `task_id` BIGINT NOT NULL COMMENT '任务 ID',
   `user_id` BIGINT NOT NULL COMMENT '打卡用户 ID',
@@ -238,7 +238,7 @@ CREATE TABLE IF NOT EXISTS `checkin_record` (
   KEY `idx_checkin_record_user_date` (`user_id`, `checkin_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='打卡记录表';
 
-CREATE TABLE IF NOT EXISTS `memorial_day` (
+CREATE TABLE IF NOT EXISTS `biz_memorial_day` (
   `id` BIGINT NOT NULL COMMENT '纪念日 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `title` VARCHAR(128) NOT NULL COMMENT '标题',
@@ -257,7 +257,7 @@ CREATE TABLE IF NOT EXISTS `memorial_day` (
   CONSTRAINT `chk_memorial_day_status` CHECK (`status` IN ('ENABLED', 'DISABLED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='纪念日表';
 
-CREATE TABLE IF NOT EXISTS `recycle_bin` (
+CREATE TABLE IF NOT EXISTS `biz_recycle_bin` (
   `id` BIGINT NOT NULL COMMENT '回收站记录 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `resource_type` VARCHAR(32) NOT NULL COMMENT '资源类型：DIARY / LEDGER_ENTRY / CHECKIN_TASK / MEMORIAL_DAY',
@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS `recycle_bin` (
   CONSTRAINT `chk_recycle_bin_resource_type` CHECK (`resource_type` IN ('DIARY', 'LEDGER_ENTRY', 'CHECKIN_TASK', 'MEMORIAL_DAY'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='回收站表';
 
-CREATE TABLE IF NOT EXISTS `reminder_setting` (
+CREATE TABLE IF NOT EXISTS `biz_reminder_setting` (
   `id` BIGINT NOT NULL COMMENT '主键 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `diary_reminder_enabled` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用日记提醒',
@@ -287,7 +287,7 @@ CREATE TABLE IF NOT EXISTS `reminder_setting` (
   UNIQUE KEY `uk_reminder_setting_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='提醒设置表';
 
-CREATE TABLE IF NOT EXISTS `reminder_log` (
+CREATE TABLE IF NOT EXISTS `biz_reminder_log` (
   `id` BIGINT NOT NULL COMMENT '日志 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `business_type` VARCHAR(32) NOT NULL COMMENT '业务类型：DIARY_DAILY / LEDGER_DAILY / LEDGER_MONTHLY / MEMORIAL_DAY',
@@ -308,7 +308,7 @@ CREATE TABLE IF NOT EXISTS `reminder_log` (
   CONSTRAINT `chk_reminder_log_channel` CHECK (`channel` IN ('MINI_PROGRAM', 'OFFICIAL_ACCOUNT'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='提醒发送日志表';
 
-CREATE TABLE IF NOT EXISTS `ai_bill_analysis_record` (
+CREATE TABLE IF NOT EXISTS `biz_ai_bill_analysis_record` (
   `id` BIGINT NOT NULL COMMENT '分析记录 ID',
   `user_id` BIGINT NOT NULL COMMENT '所属用户 ID',
   `book_id` BIGINT DEFAULT NULL COMMENT '账本 ID',
@@ -327,7 +327,7 @@ CREATE TABLE IF NOT EXISTS `ai_bill_analysis_record` (
   KEY `idx_ai_bill_analysis_user_range` (`user_id`, `start_date`, `end_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI 账单分析历史表';
 
-CREATE TABLE IF NOT EXISTS `ai_call_log` (
+CREATE TABLE IF NOT EXISTS `biz_ai_call_log` (
   `id` BIGINT NOT NULL COMMENT '日志 ID',
   `user_id` BIGINT DEFAULT NULL COMMENT '所属用户 ID',
   `scene` VARCHAR(32) NOT NULL COMMENT '调用场景：CHAT / CHAT_STREAM / BILL_ANALYSIS',
@@ -347,7 +347,7 @@ CREATE TABLE IF NOT EXISTS `ai_call_log` (
   KEY `idx_ai_call_log_scene_called` (`scene`, `called_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI 调用日志表';
 
-CREATE TABLE IF NOT EXISTS `knowledge_base` (
+CREATE TABLE IF NOT EXISTS `biz_knowledge_base` (
   `id` BIGINT NOT NULL COMMENT '知识库 ID',
   `user_id` BIGINT DEFAULT NULL COMMENT '所属用户 ID，公共知识库可为空',
   `name` VARCHAR(128) NOT NULL COMMENT '知识库名称',
@@ -366,7 +366,7 @@ CREATE TABLE IF NOT EXISTS `knowledge_base` (
   CONSTRAINT `chk_knowledge_base_visibility` CHECK (`visibility` IN ('PRIVATE', 'PUBLIC'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库表';
 
-CREATE TABLE IF NOT EXISTS `knowledge_document` (
+CREATE TABLE IF NOT EXISTS `biz_knowledge_document` (
   `id` BIGINT NOT NULL COMMENT '文档 ID',
   `knowledge_base_id` BIGINT NOT NULL COMMENT '所属知识库 ID',
   `user_id` BIGINT DEFAULT NULL COMMENT '上传用户 ID',
@@ -390,7 +390,7 @@ CREATE TABLE IF NOT EXISTS `knowledge_document` (
   CONSTRAINT `chk_knowledge_document_status` CHECK (`status` IN ('PENDING', 'PARSING', 'VECTORIZED', 'FAILED'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库文档表';
 
-CREATE TABLE IF NOT EXISTS `knowledge_chunk_task` (
+CREATE TABLE IF NOT EXISTS `biz_knowledge_chunk_task` (
   `id` BIGINT NOT NULL COMMENT '任务 ID',
   `knowledge_base_id` BIGINT NOT NULL COMMENT '知识库 ID',
   `document_id` BIGINT NOT NULL COMMENT '文档 ID',
@@ -412,7 +412,7 @@ CREATE TABLE IF NOT EXISTS `knowledge_chunk_task` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库切片与向量任务表';
 
 -- 知识库文档切片表
-CREATE TABLE IF NOT EXISTS `knowledge_chunk` (
+CREATE TABLE IF NOT EXISTS `biz_knowledge_chunk` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
   `document_id` BIGINT NOT NULL COMMENT '所属文档 ID',
   `knowledge_base_id` BIGINT NOT NULL COMMENT '所属知识库 ID',
@@ -435,34 +435,34 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- 旧库升级参考 SQL
 -- 日记模块已移除单篇提醒字段，仅保留全局日记提醒开关，固定每天 22:00 发送提醒。
--- 如果你的数据库还是旧表结构，请执行下面这条语句删除 diary.remind_at。
+-- 如果你的数据库还是旧表结构，请执行下面这条语句删除 biz_diary.remind_at。
 --
--- ALTER TABLE diary DROP COLUMN remind_at;
+-- ALTER TABLE biz_diary DROP COLUMN remind_at;
 
 -- 旧库升级参考 SQL
 -- 记账标签现已支持区分支出标签和收入标签。
 -- 需要在标签模板表和用户标签表中补充 ledger_type 字段。
--- 唯一索引也要从“用户 + 模块 + 名称”调整为“用户 + 模块 + 记账标签类型 + 名称”。
+-- 唯一索引也要从"用户 + 模块 + 名称"调整为"用户 + 模块 + 记账标签类型 + 名称"。
 --
--- ALTER TABLE tag_template
+-- ALTER TABLE biz_tag_template
 --   ADD COLUMN ledger_type VARCHAR(16) NULL COMMENT '记账标签类型：EXPENSE / INCOME' AFTER module_type;
 --
--- ALTER TABLE user_tag
+-- ALTER TABLE biz_user_tag
 --   ADD COLUMN ledger_type VARCHAR(16) NULL COMMENT '记账标签类型：EXPENSE / INCOME' AFTER module_type;
 --
--- ALTER TABLE tag_template
+-- ALTER TABLE biz_tag_template
 --   ADD CONSTRAINT chk_tag_template_ledger_type CHECK (ledger_type IS NULL OR ledger_type IN ('EXPENSE', 'INCOME'));
 --
--- ALTER TABLE user_tag
+-- ALTER TABLE biz_user_tag
 --   ADD CONSTRAINT chk_user_tag_ledger_type CHECK (ledger_type IS NULL OR ledger_type IN ('EXPENSE', 'INCOME'));
 --
--- DROP INDEX uk_user_tag_user_module_name ON user_tag;
--- CREATE UNIQUE INDEX uk_user_tag_user_module_ledger_name ON user_tag (user_id, module_type, ledger_type, name);
+-- DROP INDEX uk_user_tag_user_module_name ON biz_user_tag;
+-- CREATE UNIQUE INDEX uk_user_tag_user_module_ledger_name ON biz_user_tag (user_id, module_type, ledger_type, name);
 
 -- 记账流水回收站升级 SQL
--- 如果你的库里 ledger_entry 还没有 deleted_at 字段，请执行：
+-- 如果你的库里 biz_ledger_entry 还没有 deleted_at 字段，请执行：
 --
--- ALTER TABLE ledger_entry
+-- ALTER TABLE biz_ledger_entry
 --   ADD COLUMN deleted_at DATETIME NULL COMMENT '软删除时间' AFTER image_path;
 --
--- CREATE INDEX idx_ledger_entry_user_deleted_at ON ledger_entry (user_id, deleted_at);
+-- CREATE INDEX idx_ledger_entry_user_deleted_at ON biz_ledger_entry (user_id, deleted_at);

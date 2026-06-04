@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("ledger_entry")
+@TableName("biz_ledger_entry")
 @Schema(description = "记账流水实体")
 public class LedgerEntry extends BaseEntity {
 

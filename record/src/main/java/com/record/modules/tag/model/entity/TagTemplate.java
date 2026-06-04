@@ -15,7 +15,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("tag_template")
+@TableName("biz_tag_template")
 @Schema(description = "标签模板实体")
 public class TagTemplate extends BaseEntity {
 
