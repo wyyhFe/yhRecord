@@ -15,7 +15,7 @@ const route = useRoute();
 const loading = ref(true);
 
 onMounted(async () => {
-  const { accessToken, refreshToken, userId, provider } = route.query;
+  const { accessToken, refreshToken, userId, provider, roles } = route.query;
 
   if (!accessToken || !refreshToken) {
     message("授权失败，未获取到登录信息", { type: "error" });
@@ -27,16 +27,27 @@ onMounted(async () => {
     // 计算过期时间（默认 2 小时后）
     const expires = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
-    // 复用现有 token 存储机制
+    // 解析 roles（后端传的是逗号分隔或 JSON 数组）
+    let parsedRoles: string[] = [];
+    if (roles) {
+      try {
+        parsedRoles = JSON.parse(roles as string);
+      } catch {
+        parsedRoles = (roles as string).split(",");
+      }
+    }
+
+    // 复用现有 token 存储机制（包含 roles）
     setToken({
       accessToken: accessToken as string,
       refreshToken: refreshToken as string,
-      expires
+      expires,
+      roles: parsedRoles
     } as any);
 
     // 获取后端路由并跳转首页
     await initRouter();
-    message(`通过 ${provider} 登录成功`, { type: "success" });
+    message(`通过 ${provider || "OAuth"} 登录成功`, { type: "success" });
     router.push(getTopMenu(true).path);
   } catch (err) {
     message("登录处理失败", { type: "error" });

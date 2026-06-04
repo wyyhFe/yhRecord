@@ -1,15 +1,16 @@
-// 首页路由骨架
+// 系统管理路由骨架
 // 实际菜单由后端动态返回，这里仅保留 Layout 外壳作为兜底
 const Layout = () => import("@/layout/index.vue");
 
 export default {
-  path: "/",
-  name: "Home",
+  path: "/system",
+  name: "System",
   component: Layout,
-  redirect: "/dashboard",
+  redirect: "/system/menu",
   meta: {
-    icon: "ep/home-filled",
-    title: "首页"
+    icon: "ep/setting",
+    title: "系统管理",
+    rank: 99
   },
   children: []
 } satisfies RouteConfigsTable;

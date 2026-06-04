@@ -1,0 +1,32 @@
+package com.record.modules.system.service;
+
+import com.record.modules.system.model.entity.Menu;
+import com.record.modules.system.model.vo.AsyncRouteVO;
+
+import java.util.List;
+
+/**
+ * 菜单服务。
+ */
+public interface MenuService {
+
+    /**
+     * 根据用户 ID 获取动态路由（PureAdmin 格式）。
+     */
+    List<AsyncRouteVO> getAsyncRoutesByUserId(Long userId);
+
+    /**
+     * 获取所有启用的菜单列表（扁平）。
+     */
+    List<Menu> listAllEnabled();
+
+    /**
+     * 创建或更新菜单。
+     */
+    Menu saveOrUpdateMenu(Menu menu);
+
+    /**
+     * 删除菜单。
+     */
+    void deleteMenu(Long menuId);
+}

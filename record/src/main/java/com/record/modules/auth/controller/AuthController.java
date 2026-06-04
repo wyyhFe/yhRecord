@@ -83,11 +83,15 @@ public class AuthController {
                               HttpServletResponse response) throws IOException {
         AuthTokenVO token = authService.oauthLogin(provider, code);
         // 签发成功后重定向回前端，将 token 信息附加在 URL 参数里
-        String callbackUrl = appProperties.getOauth().getFrontendCallbackUrl()
-                + "?accessToken=" + URLEncoder.encode(token.getAccessToken(), StandardCharsets.UTF_8)
-                + "&refreshToken=" + URLEncoder.encode(token.getRefreshToken(), StandardCharsets.UTF_8)
-                + "&userId=" + token.getUserId()
-                + "&provider=" + provider;
-        response.sendRedirect(callbackUrl);
+        StringBuilder callbackUrl = new StringBuilder(appProperties.getOauth().getFrontendCallbackUrl())
+                .append("?accessToken=").append(URLEncoder.encode(token.getAccessToken(), StandardCharsets.UTF_8))
+                .append("&refreshToken=").append(URLEncoder.encode(token.getRefreshToken(), StandardCharsets.UTF_8))
+                .append("&userId=").append(token.getUserId())
+                .append("&provider=").append(provider);
+        // 附加角色信息
+        if (token.getRoles() != null && !token.getRoles().isEmpty()) {
+            callbackUrl.append("&roles=").append(URLEncoder.encode(String.join(",", token.getRoles()), StandardCharsets.UTF_8));
+        }
+        response.sendRedirect(callbackUrl.toString());
     }
 }

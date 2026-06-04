@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 登录成功后的令牌信息。
  */
@@ -29,4 +31,7 @@ public class AuthTokenVO {
 
     @Schema(description = "当前登录会话 ID")
     private String sessionId;
+
+    @Schema(description = "用户角色列表", example = "[\"admin\"]")
+    private List<String> roles;
 }

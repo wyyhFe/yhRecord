@@ -15,6 +15,7 @@ import com.record.modules.user.model.entity.User;
 import com.record.modules.user.model.entity.UserSession;
 import com.record.common.enums.LoginType;
 import com.record.modules.user.service.UserService;
+import com.record.modules.system.service.RoleService;
 import com.record.security.service.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -41,19 +43,22 @@ public class AuthServiceImpl implements AuthService {
     private final UserSessionMapper userSessionMapper;
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisTemplate stringRedisTemplate;
+    private final RoleService roleService;
 
     public AuthServiceImpl(WechatAuthClient wechatAuthClient,
                            OAuthProviderRegistry oAuthProviderRegistry,
                            UserService userService,
                            UserSessionMapper userSessionMapper,
                            JwtTokenProvider jwtTokenProvider,
-                           StringRedisTemplate stringRedisTemplate) {
+                           StringRedisTemplate stringRedisTemplate,
+                           RoleService roleService) {
         this.wechatAuthClient = wechatAuthClient;
         this.oAuthProviderRegistry = oAuthProviderRegistry;
         this.userService = userService;
         this.userSessionMapper = userSessionMapper;
         this.jwtTokenProvider = jwtTokenProvider;
         this.stringRedisTemplate = stringRedisTemplate;
+        this.roleService = roleService;
     }
 
     @Override
@@ -167,12 +172,17 @@ public class AuthServiceImpl implements AuthService {
         upsertUserSession(user.getId(), sessionId, refreshToken);
 
         stringRedisTemplate.opsForValue().set(RedisKeyConstants.USER_SESSION + user.getId(), sessionId, 30, TimeUnit.DAYS);
+
+        // 查询用户角色
+        List<String> roles = roleService.getRoleNamesByUserId(user.getId());
+
         return AuthTokenVO.builder()
                 .userId(user.getId())
                 .openid(user.getOpenid())
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .sessionId(sessionId)
+                .roles(roles)
                 .build();
     }
 
