@@ -6,7 +6,10 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 CREATE TABLE IF NOT EXISTS `user` (
   `id` BIGINT NOT NULL COMMENT '用户 ID',
-  `openid` VARCHAR(64) NOT NULL COMMENT '小程序 openid',
+  `openid` VARCHAR(64) DEFAULT NULL COMMENT '小程序 openid（OAuth 用户可为空）',
+  `github_id` VARCHAR(64) DEFAULT NULL COMMENT 'GitHub 用户唯一 ID',
+  `google_id` VARCHAR(128) DEFAULT NULL COMMENT 'Google 用户唯一 ID（sub claim）',
+  `login_type` VARCHAR(20) NOT NULL DEFAULT 'WECHAT' COMMENT '注册来源：WECHAT / GITHUB / GOOGLE',
   `nickname` VARCHAR(64) NOT NULL COMMENT '昵称',
   `avatar_path` VARCHAR(255) DEFAULT NULL COMMENT '头像路径',
   `gender` VARCHAR(16) NOT NULL DEFAULT 'UNKNOWN' COMMENT '性别：UNKNOWN / MALE / FEMALE',
@@ -20,8 +23,11 @@ CREATE TABLE IF NOT EXISTS `user` (
   `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_openid` (`openid`),
+  KEY `idx_user_github_id` (`github_id`),
+  KEY `idx_user_google_id` (`google_id`),
   CONSTRAINT `chk_user_gender` CHECK (`gender` IN ('UNKNOWN', 'MALE', 'FEMALE')),
-  CONSTRAINT `chk_user_status` CHECK (`status` IN ('ENABLED', 'DISABLED'))
+  CONSTRAINT `chk_user_status` CHECK (`status` IN ('ENABLED', 'DISABLED')),
+  CONSTRAINT `chk_user_login_type` CHECK (`login_type` IN ('WECHAT', 'GITHUB', 'GOOGLE'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 CREATE TABLE IF NOT EXISTS `user_session` (
