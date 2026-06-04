@@ -17,7 +17,7 @@ public interface DiaryMapper extends BaseMapper<Diary> {
      */
     @Select("""
         SELECT record_date AS date, COUNT(*) AS cnt
-        FROM diary
+        FROM biz_diary
         WHERE user_id = #{userId} AND deleted_at IS NULL
         AND record_date BETWEEN #{start} AND #{end}
         GROUP BY record_date

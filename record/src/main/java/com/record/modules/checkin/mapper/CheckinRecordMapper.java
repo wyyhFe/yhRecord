@@ -17,7 +17,7 @@ public interface CheckinRecordMapper extends BaseMapper<CheckinRecord> {
      */
     @Select("""
         SELECT checkin_date AS date, COUNT(*) AS cnt
-        FROM checkin_record
+        FROM biz_checkin_record
         WHERE user_id = #{userId}
         AND checkin_date BETWEEN #{start} AND #{end}
         GROUP BY checkin_date
