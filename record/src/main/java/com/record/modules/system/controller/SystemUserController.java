@@ -2,6 +2,7 @@ package com.record.modules.system.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.record.common.enums.CommonStatus;
 import com.record.common.model.ApiResponse;
 import com.record.modules.system.model.entity.UserRole;
 import com.record.modules.system.service.RoleService;
@@ -67,5 +68,5 @@ public class SystemUserController {
     }
 
     /** 状态更新请求体。 */
-    record StatusUpdateRequest(String status) {}
+    record StatusUpdateRequest(CommonStatus status) {}
 }
