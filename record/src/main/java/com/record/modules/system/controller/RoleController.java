@@ -35,10 +35,23 @@ public class RoleController {
         return ApiResponse.success(roleService.saveOrUpdateRole(role));
     }
 
+    @Operation(summary = "删除角色")
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> delete(@PathVariable Long id) {
+        roleService.deleteRole(id);
+        return ApiResponse.success();
+    }
+
     @Operation(summary = "分配角色菜单权限")
     @PostMapping("/assign-menus")
     public ApiResponse<Void> assignMenus(@RequestParam Long roleId, @RequestBody List<Long> menuIds) {
         roleService.assignMenus(roleId, menuIds);
         return ApiResponse.success();
+    }
+
+    @Operation(summary = "获取角色已分配的菜单 ID 列表")
+    @GetMapping("/menu-ids")
+    public ApiResponse<List<Long>> getMenuIds(@RequestParam Long id) {
+        return ApiResponse.success(roleService.getMenuIdsByRoleId(id));
     }
 }

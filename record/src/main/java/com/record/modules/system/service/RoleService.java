@@ -34,4 +34,19 @@ public interface RoleService {
      * 分配角色菜单权限。
      */
     void assignMenus(Long roleId, List<Long> menuIds);
+
+    /**
+     * 删除角色。
+     */
+    void deleteRole(Long roleId);
+
+    /**
+     * 获取角色已分配的菜单 ID 列表。
+     */
+    List<Long> getMenuIdsByRoleId(Long roleId);
+
+    /**
+     * 分配用户角色（全量替换）。
+     */
+    void assignUserRoles(Long userId, List<Long> roleIds);
 }

@@ -72,4 +72,35 @@ public class RoleServiceImpl implements RoleService {
             roleMenuMapper.insert(rm);
         }
     }
+
+    @Override
+    public void deleteRole(Long roleId) {
+        // 先删除角色-菜单关联
+        roleMenuMapper.delete(new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRoleId, roleId));
+        // 再删除用户-角色关联
+        userRoleMapper.delete(new LambdaQueryWrapper<UserRole>().eq(UserRole::getRoleId, roleId));
+        // 最后删除角色
+        roleMapper.deleteById(roleId);
+    }
+
+    @Override
+    public List<Long> getMenuIdsByRoleId(Long roleId) {
+        List<RoleMenu> roleMenus = roleMenuMapper.selectList(
+                new LambdaQueryWrapper<RoleMenu>().eq(RoleMenu::getRoleId, roleId));
+        return roleMenus.stream().map(RoleMenu::getMenuId).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void assignUserRoles(Long userId, List<Long> roleIds) {
+        // 先删除旧关联
+        userRoleMapper.delete(new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
+        // 插入新关联
+        for (Long roleId : roleIds) {
+            UserRole ur = new UserRole();
+            ur.setUserId(userId);
+            ur.setRoleId(roleId);
+            userRoleMapper.insert(ur);
+        }
+    }
 }

@@ -2,6 +2,7 @@
 import { ref, onMounted } from "vue";
 import { message } from "@/utils/message";
 import { http } from "@/utils/http";
+import { handleTree } from "@/utils/tree";
 
 defineOptions({ name: "RoleManage" });
 
@@ -10,6 +11,7 @@ const roleList = ref([]);
 const dialogVisible = ref(false);
 const roleForm = ref<any>({});
 const menuList = ref([]);
+const menuTreeRef = ref();
 const assignDialogVisible = ref(false);
 const assignForm = ref<any>({});
 const checkedMenus = ref<number[]>([]);
@@ -43,18 +45,38 @@ async function handleSave() {
 
 async function handleAssign(row: any) {
   assignForm.value = { ...row };
-  // 加载菜单列表
+  checkedMenus.value = [];
+
+  // 加载菜单列表（扁平 → 树结构）
   const { data: menus } = await http.request<any>("get", "/system/menu/list");
-  menuList.value = menus || [];
+  menuList.value = handleTree(menus || []);
+
+  // 加载角色已有菜单 ID
+  const { data: ids } = await http.request<any>("get", "/system/role/menu-ids", {
+    params: { id: row.id }
+  });
+  checkedMenus.value = ids || [];
+
   assignDialogVisible.value = true;
 }
 
 async function handleAssignSave() {
+  // 合并全选和半选节点
+  const checked = menuTreeRef.value?.getCheckedKeys() || [];
+  const halfChecked = menuTreeRef.value?.getHalfCheckedKeys() || [];
+  const allIds = [...checked, ...halfChecked].map(Number);
+
   await http.request("post", `/system/role/assign-menus?roleId=${assignForm.value.id}`, {
-    data: checkedMenus.value
+    data: allIds
   });
   message("权限分配成功", { type: "success" });
   assignDialogVisible.value = false;
+}
+
+async function handleDelete(row: any) {
+  await http.request("delete", `/system/role/${row.id}`);
+  message("删除成功", { type: "success" });
+  loadRoles();
 }
 
 onMounted(loadRoles);
@@ -78,14 +100,21 @@ onMounted(loadRoles);
         </template>
       </el-table-column>
       <el-table-column prop="remark" label="备注" min-width="200" />
-      <el-table-column label="操作" width="240" fixed="right">
+      <el-table-column prop="createdAt" label="创建时间" min-width="160">
+        <template #default="{ row }">
+          {{ row.createdAt?.replace('T', ' ') }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="280" fixed="right">
         <template #default="{ row }">
           <el-button size="small" type="primary" @click="handleEdit(row)">编辑</el-button>
           <el-button size="small" type="warning" @click="handleAssign(row)">分配权限</el-button>
+          <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
+    <!-- 新增/编辑角色弹窗 -->
     <el-dialog v-model="dialogVisible" :title="roleForm.id ? '编辑角色' : '新增角色'" width="500px">
       <el-form :model="roleForm" label-width="100px">
         <el-form-item label="角色标识">
@@ -110,13 +139,15 @@ onMounted(loadRoles);
       </template>
     </el-dialog>
 
+    <!-- 分配菜单权限弹窗 -->
     <el-dialog v-model="assignDialogVisible" title="分配菜单权限" width="500px">
       <el-tree
+        ref="menuTreeRef"
         :data="menuList"
         show-checkbox
         node-key="id"
         :props="{ label: 'title', children: 'children' }"
-        v-model:checked-keys="checkedMenus"
+        :default-checked-keys="checkedMenus"
         default-expand-all
       />
       <template #footer>
