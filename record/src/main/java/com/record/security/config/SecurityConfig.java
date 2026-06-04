@@ -32,9 +32,11 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/wx-login", "/auth/refresh", "/doc.html", "/swagger-ui/**",
-                                "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**",
-                                "/auth/github/**", "/auth/google/**").permitAll()
+                        .requestMatchers("/auth/wx-login", "/auth/refresh",
+                                "/auth/github/**", "/auth/google/**",
+                                "/api/auth/github/**", "/api/auth/google/**",
+                                "/doc.html", "/swagger-ui/**",
+                                "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {
