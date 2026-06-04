@@ -55,7 +55,11 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public Role saveOrUpdateRole(Role role) {
-        roleMapper.insertOrUpdate(role);
+        if (role.getId() == null) {
+            roleMapper.insert(role);
+        } else {
+            roleMapper.updateById(role);
+        }
         return role;
     }
 

@@ -79,7 +79,11 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public Menu saveOrUpdateMenu(Menu menu) {
-        menuMapper.insertOrUpdate(menu);
+        if (menu.getId() == null) {
+            menuMapper.insert(menu);
+        } else {
+            menuMapper.updateById(menu);
+        }
         return menu;
     }
 
