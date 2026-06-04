@@ -71,13 +71,14 @@ app:
     app-secret: ${WECHAT_APP_SECRET:dc5e4819af366f49a71214eda8b28015}
     code2session-url: https://api.weixin.qq.com/sns/jscode2session
   oauth:
+    frontend-callback-url: ${OAUTH_FRONTEND_CALLBACK_URL:http://localhost:8848/#/auth/callback}
     github:
-      client-id: ${GITHUB_CLIENT_ID:your-github-client-id}
-      client-secret: ${GITHUB_CLIENT_SECRET:your-github-client-secret}
+      client-id: ${GITHUB_CLIENT_ID:Ov23lipiiNRBF3Tjpl5A}
+      client-secret: ${GITHUB_CLIENT_SECRET:bc305877a6a9ddf01f724a00dcd8cfbc4bc20737}
       redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8080/auth/github/callback}
     google:
-      client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
-      client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+      client-id: ${GOOGLE_CLIENT_ID:483959084584-rdqn4mnhaidbu3l37qqt6tdb08lm3jjd.apps.googleusercontent.com}
+      client-secret: ${GOOGLE_CLIENT_SECRET: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}
       redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/auth/google/callback}
   map:
     provider: tencent

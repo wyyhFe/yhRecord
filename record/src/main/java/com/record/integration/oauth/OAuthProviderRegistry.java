@@ -1,6 +1,7 @@
 package com.record.integration.oauth;
 
 import com.record.common.exception.BusinessException;
+import com.record.common.exception.ErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -44,7 +45,7 @@ public class OAuthProviderRegistry {
     public OAuthProvider getProvider(String providerName) {
         OAuthProvider provider = providers.get(providerName);
         if (provider == null) {
-            throw new BusinessException("不支持的登录方式: " + providerName);
+            throw new BusinessException(ErrorCode.AUTH_ERROR, "不支持的登录方式: " + providerName);
         }
         return provider;
     }

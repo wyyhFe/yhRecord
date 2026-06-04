@@ -1,7 +1,10 @@
 package com.record.integration.oauth.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.record.common.config.AppProperties;
+import com.record.common.exception.BusinessException;
+import com.record.common.exception.ErrorCode;
 import com.record.integration.oauth.OAuthProvider;
 import com.record.integration.oauth.OAuthUserInfo;
 import org.slf4j.Logger;
@@ -31,6 +34,7 @@ public class GoogleOAuthProvider implements OAuthProvider {
 
     private final AppProperties.OAuth.Google config;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GoogleOAuthProvider(AppProperties appProperties) {
         this.config = appProperties.getOauth().getGoogle();
@@ -54,42 +58,43 @@ public class GoogleOAuthProvider implements OAuthProvider {
 
     @Override
     public OAuthUserInfo handleCallback(String code) {
-        // 1. 用 code 换 access_token
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        try {
+            // 1. 用 code 换 access_token
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add("client_id", config.getClientId());
-        params.add("client_secret", config.getClientSecret());
-        params.add("code", code);
-        params.add("redirect_uri", config.getRedirectUri());
-        params.add("grant_type", "authorization_code");
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+            params.add("client_id", config.getClientId());
+            params.add("client_secret", config.getClientSecret());
+            params.add("code", code);
+            params.add("redirect_uri", config.getRedirectUri());
+            params.add("grant_type", "authorization_code");
 
-        HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(params, headers);
-        ResponseEntity<String> tokenResponse = restTemplate.exchange(TOKEN_URL, HttpMethod.POST, tokenRequest, String.class);
+            HttpEntity<MultiValueMap<String, String>> tokenRequest = new HttpEntity<>(params, headers);
+            ResponseEntity<String> tokenResponse = restTemplate.exchange(TOKEN_URL, HttpMethod.POST, tokenRequest, String.class);
 
-        JsonNode tokenNode = objectMapper().readTree(tokenResponse.getBody());
-        String accessToken = tokenNode.get("access_token").asText();
+            JsonNode tokenNode = objectMapper.readTree(tokenResponse.getBody());
+            String accessToken = tokenNode.get("access_token").asText();
 
-        log.info("[Google OAuth] 成功获取 access_token");
+            log.info("[Google OAuth] 成功获取 access_token");
 
-        // 2. 用 access_token 获取用户信息
-        HttpHeaders userHeaders = new HttpHeaders();
-        userHeaders.setBearerAuth(accessToken);
+            // 2. 用 access_token 获取用户信息
+            HttpHeaders userHeaders = new HttpHeaders();
+            userHeaders.setBearerAuth(accessToken);
 
-        HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
-        ResponseEntity<String> userResponse = restTemplate.exchange(USER_URL, HttpMethod.GET, userRequest, String.class);
+            HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
+            ResponseEntity<String> userResponse = restTemplate.exchange(USER_URL, HttpMethod.GET, userRequest, String.class);
 
-        JsonNode userNode = objectMapper().readTree(userResponse.getBody());
+            JsonNode userNode = objectMapper.readTree(userResponse.getBody());
 
-        return OAuthUserInfo.builder()
-                .providerUserId(userNode.has("id") ? userNode.get("id").asText() : userNode.get("sub").asText())
-                .nickname(userNode.has("name") ? userNode.get("name").asText() : null)
-                .avatarUrl(userNode.has("picture") ? userNode.get("picture").asText() : null)
-                .build();
-    }
-
-    private static com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
-        return new com.fasterxml.jackson.databind.ObjectMapper();
+            return OAuthUserInfo.builder()
+                    .providerUserId(userNode.has("id") ? userNode.get("id").asText() : userNode.get("sub").asText())
+                    .nickname(userNode.has("name") ? userNode.get("name").asText() : null)
+                    .avatarUrl(userNode.has("picture") ? userNode.get("picture").asText() : null)
+                    .build();
+        } catch (Exception e) {
+            log.error("[Google OAuth] 回调处理失败", e);
+            throw new BusinessException(ErrorCode.AUTH_ERROR, "Google 登录失败: " + e.getMessage());
+        }
     }
 }

@@ -82,6 +82,7 @@ public class AppProperties {
 
     @Data
     public static class OAuth {
+        private String frontendCallbackUrl = "http://localhost:8848/#/auth/callback";
         private Github github = new Github();
         private Google google = new Google();
 

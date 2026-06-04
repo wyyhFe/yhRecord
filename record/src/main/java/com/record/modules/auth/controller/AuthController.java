@@ -1,5 +1,6 @@
 package com.record.modules.auth.controller;
 
+import com.record.common.config.AppProperties;
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
 import com.record.modules.auth.model.dto.RefreshTokenRequest;
@@ -32,9 +33,11 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final AppProperties appProperties;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, AppProperties appProperties) {
         this.authService = authService;
+        this.appProperties = appProperties;
     }
 
     @Operation(summary = "微信登录")
@@ -64,8 +67,6 @@ public class AuthController {
 
     // ==================== OAuth 第三方登录 ====================
 
-    private static final String FRONTEND_OAUTH_CALLBACK = "http://localhost:8849/#/auth/callback";
-
     @Operation(summary = "OAuth 授权跳转")
     @GetMapping("/{provider}/authorize")
     public void oauthAuthorize(@PathVariable String provider, HttpServletResponse response) throws IOException {
@@ -82,7 +83,7 @@ public class AuthController {
                               HttpServletResponse response) throws IOException {
         AuthTokenVO token = authService.oauthLogin(provider, code);
         // 签发成功后重定向回前端，将 token 信息附加在 URL 参数里
-        String callbackUrl = FRONTEND_OAUTH_CALLBACK
+        String callbackUrl = appProperties.getOauth().getFrontendCallbackUrl()
                 + "?accessToken=" + URLEncoder.encode(token.getAccessToken(), StandardCharsets.UTF_8)
                 + "&refreshToken=" + URLEncoder.encode(token.getRefreshToken(), StandardCharsets.UTF_8)
                 + "&userId=" + token.getUserId()

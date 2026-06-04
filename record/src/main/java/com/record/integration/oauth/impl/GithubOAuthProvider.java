@@ -1,7 +1,10 @@
 package com.record.integration.oauth.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.record.common.config.AppProperties;
+import com.record.common.exception.BusinessException;
+import com.record.common.exception.ErrorCode;
 import com.record.integration.oauth.OAuthProvider;
 import com.record.integration.oauth.OAuthUserInfo;
 import org.slf4j.Logger;
@@ -31,6 +34,7 @@ public class GithubOAuthProvider implements OAuthProvider {
 
     private final AppProperties.OAuth.Github config;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GithubOAuthProvider(AppProperties appProperties) {
         this.config = appProperties.getOauth().getGithub();
@@ -52,41 +56,42 @@ public class GithubOAuthProvider implements OAuthProvider {
 
     @Override
     public OAuthUserInfo handleCallback(String code) {
-        // 1. 用 code 换 access_token
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Accept", "application/json");
+        try {
+            // 1. 用 code 换 access_token
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Accept", "application/json");
 
-        String tokenBody = String.format(
-                "{\"client_id\":\"%s\",\"client_secret\":\"%s\",\"code\":\"%s\"}",
-                config.getClientId(), config.getClientSecret(), code);
+            String tokenBody = String.format(
+                    "{\"client_id\":\"%s\",\"client_secret\":\"%s\",\"code\":\"%s\"}",
+                    config.getClientId(), config.getClientSecret(), code);
 
-        HttpEntity<String> tokenRequest = new HttpEntity<>(tokenBody, headers);
-        ResponseEntity<String> tokenResponse = restTemplate.exchange(TOKEN_URL, HttpMethod.POST, tokenRequest, String.class);
+            HttpEntity<String> tokenRequest = new HttpEntity<>(tokenBody, headers);
+            ResponseEntity<String> tokenResponse = restTemplate.exchange(TOKEN_URL, HttpMethod.POST, tokenRequest, String.class);
 
-        JsonNode tokenNode = objectMapper().readTree(tokenResponse.getBody());
-        String accessToken = tokenNode.get("access_token").asText();
+            JsonNode tokenNode = objectMapper.readTree(tokenResponse.getBody());
+            String accessToken = tokenNode.get("access_token").asText();
 
-        log.info("[GitHub OAuth] 成功获取 access_token");
+            log.info("[GitHub OAuth] 成功获取 access_token");
 
-        // 2. 用 access_token 获取用户信息
-        HttpHeaders userHeaders = new HttpHeaders();
-        userHeaders.setBearerAuth(accessToken);
-        userHeaders.set("Accept", "application/json");
+            // 2. 用 access_token 获取用户信息
+            HttpHeaders userHeaders = new HttpHeaders();
+            userHeaders.setBearerAuth(accessToken);
+            userHeaders.set("Accept", "application/json");
 
-        HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
-        ResponseEntity<String> userResponse = restTemplate.exchange(USER_URL, HttpMethod.GET, userRequest, String.class);
+            HttpEntity<Void> userRequest = new HttpEntity<>(userHeaders);
+            ResponseEntity<String> userResponse = restTemplate.exchange(USER_URL, HttpMethod.GET, userRequest, String.class);
 
-        JsonNode userNode = objectMapper().readTree(userResponse.getBody());
+            JsonNode userNode = objectMapper.readTree(userResponse.getBody());
 
-        return OAuthUserInfo.builder()
-                .providerUserId(String.valueOf(userNode.get("id").asLong()))
-                .nickname(userNode.has("login") ? userNode.get("login").asText() : null)
-                .avatarUrl(userNode.has("avatar_url") ? userNode.get("avatar_url").asText() : null)
-                .build();
-    }
-
-    private static com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
-        return new com.fasterxml.jackson.databind.ObjectMapper();
+            return OAuthUserInfo.builder()
+                    .providerUserId(String.valueOf(userNode.get("id").asLong()))
+                    .nickname(userNode.has("login") ? userNode.get("login").asText() : null)
+                    .avatarUrl(userNode.has("avatar_url") ? userNode.get("avatar_url").asText() : null)
+                    .build();
+        } catch (Exception e) {
+            log.error("[GitHub OAuth] 回调处理失败", e);
+            throw new BusinessException(ErrorCode.AUTH_ERROR, "GitHub 登录失败: " + e.getMessage());
+        }
     }
 }

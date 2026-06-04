@@ -1,0 +1,16 @@
+$ NODE_OPTIONS=--max-old-space-size=4096 vite
+Port 8848 is in use, trying another one...
+╭─────────────────────────────────────────────╮
+│ 您好! 欢迎使用 pure-admin 开源项目          │
+│ 我们为您精心准备了下面两个贴心的保姆级文档  │
+│ https://pure-admin.cn                       │
+│ https://pure-admin-utils.netlify.app        │
+╰─────────────────────────────────────────────╯
+
+  [32m[1mVITE[22m v8.0.14[39m  [2mready in [0m[1m3067[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m8849[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.174.1:[1m8849[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.83.1:[1m8849[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.3.128:[1m8849[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://172.24.208.1:[1m8849[22m/[39m
