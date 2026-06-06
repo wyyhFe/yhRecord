@@ -5,13 +5,18 @@ import com.record.common.enums.CommonStatus;
 import com.record.common.enums.GenderType;
 import com.record.common.enums.LoginType;
 import com.record.modules.diary.service.DiaryService;
+import com.record.modules.user.mapper.UserIdentityMapper;
 import com.record.modules.user.mapper.UserMapper;
 import com.record.modules.user.model.dto.UserProfileUpdateRequest;
 import com.record.modules.user.model.entity.User;
+import com.record.modules.user.model.entity.UserIdentity;
 import com.record.modules.user.model.vo.UserProfileVO;
 import com.record.modules.user.service.UserService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 /**
  * 用户资料服务实现。
@@ -20,60 +25,50 @@ import org.springframework.stereotype.Service;
 public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
+    private final UserIdentityMapper userIdentityMapper;
     private final DiaryService diaryService;
 
-    public UserServiceImpl(UserMapper userMapper, @Lazy DiaryService diaryService) {
+    public UserServiceImpl(UserMapper userMapper,
+                           UserIdentityMapper userIdentityMapper,
+                           @Lazy DiaryService diaryService) {
         this.userMapper = userMapper;
+        this.userIdentityMapper = userIdentityMapper;
         this.diaryService = diaryService;
     }
 
     @Override
-    public User getOrCreateByOpenid(String openid) {
-        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getOpenid, openid));
-        if (user != null) {
-            return user;
+    @Transactional
+    public User getOrCreateByIdentity(LoginType provider, String providerUserId, String nickname, String avatarUrl) {
+        // 1. 已绑定 → 直接拿对应用户
+        UserIdentity existing = userIdentityMapper.selectOne(new LambdaQueryWrapper<UserIdentity>()
+                .eq(UserIdentity::getProvider, provider)
+                .eq(UserIdentity::getProviderUserId, providerUserId));
+        if (existing != null) {
+            return userMapper.selectById(existing.getUserId());
         }
 
-        user = new User();
-        user.setOpenid(openid);
-        user.setNickname("微信用户");
-        user.setGender(GenderType.UNKNOWN);
-        user.setStatus(CommonStatus.ENABLED);
-        userMapper.insert(user);
-        return user;
-    }
-
-    @Override
-    public User getOrCreateByGithubId(String githubId, String nickname, String avatarUrl) {
-        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getGithubId, githubId));
-        if (user != null) {
-            return user;
-        }
-        user = new User();
-        user.setGithubId(githubId);
-        user.setNickname(nickname != null ? nickname : "GitHub 用户");
+        // 2. 未绑定 → 新建用户 + 写一条绑定关系
+        User user = new User();
+        user.setNickname(nickname != null ? nickname : defaultNickname(provider));
         user.setAvatarPath(avatarUrl);
         user.setGender(GenderType.UNKNOWN);
-        user.setLoginType(LoginType.GITHUB);
+        user.setLoginType(provider);
         user.setStatus(CommonStatus.ENABLED);
-        userMapper.insert(user);
-        return user;
-    }
-
-    @Override
-    public User getOrCreateByGoogleId(String googleId, String nickname, String avatarUrl) {
-        User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getGoogleId, googleId));
-        if (user != null) {
-            return user;
+        // 微信场景：openid 同步写入 sys_user.openid，保留公众号/订阅消息推送的旧链路
+        if (provider == LoginType.WECHAT) {
+            user.setOpenid(providerUserId);
         }
-        user = new User();
-        user.setGoogleId(googleId);
-        user.setNickname(nickname != null ? nickname : "Google 用户");
-        user.setAvatarPath(avatarUrl);
-        user.setGender(GenderType.UNKNOWN);
-        user.setLoginType(LoginType.GOOGLE);
-        user.setStatus(CommonStatus.ENABLED);
         userMapper.insert(user);
+
+        UserIdentity identity = new UserIdentity();
+        identity.setUserId(user.getId());
+        identity.setProvider(provider);
+        identity.setProviderUserId(providerUserId);
+        identity.setNickname(nickname);
+        identity.setAvatarUrl(avatarUrl);
+        identity.setBoundAt(LocalDateTime.now());
+        userIdentityMapper.insert(identity);
+
         return user;
     }
 
@@ -93,6 +88,14 @@ public class UserServiceImpl implements UserService {
         user.setSignature(request.getSignature());
         userMapper.updateById(user);
         return toVO(userMapper.selectById(userId));
+    }
+
+    private String defaultNickname(LoginType provider) {
+        return switch (provider) {
+            case WECHAT -> "微信用户";
+            case GITHUB -> "GitHub 用户";
+            case GOOGLE -> "Google 用户";
+        };
     }
 
     private UserProfileVO toVO(User user) {

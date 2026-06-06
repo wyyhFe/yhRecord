@@ -1,0 +1,3 @@
+# 只往镜像里塞 recordJar/*.jar,其他全部排除,提高构建上下文打包速度
+*
+!recordJar/*.jar

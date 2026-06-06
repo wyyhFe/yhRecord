@@ -4,12 +4,10 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE TABLE IF NOT EXISTS `user` (
+CREATE TABLE IF NOT EXISTS `sys_user` (
   `id` BIGINT NOT NULL COMMENT '用户 ID',
-  `openid` VARCHAR(64) DEFAULT NULL COMMENT '小程序 openid（OAuth 用户可为空）',
-  `github_id` VARCHAR(64) DEFAULT NULL COMMENT 'GitHub 用户唯一 ID',
-  `google_id` VARCHAR(128) DEFAULT NULL COMMENT 'Google 用户唯一 ID（sub claim）',
-  `login_type` VARCHAR(20) NOT NULL DEFAULT 'WECHAT' COMMENT '注册来源：WECHAT / GITHUB / GOOGLE',
+  `openid` VARCHAR(64) DEFAULT NULL COMMENT '小程序 openid（用于公众号/订阅消息推送目标，不再作为登录入口）',
+  `login_type` VARCHAR(20) NOT NULL DEFAULT 'WECHAT' COMMENT '首次注册来源：WECHAT / GITHUB / GOOGLE',
   `nickname` VARCHAR(64) NOT NULL COMMENT '昵称',
   `avatar_path` VARCHAR(255) DEFAULT NULL COMMENT '头像路径',
   `gender` VARCHAR(16) NOT NULL DEFAULT 'UNKNOWN' COMMENT '性别：UNKNOWN / MALE / FEMALE',
@@ -17,33 +15,36 @@ CREATE TABLE IF NOT EXISTS `user` (
   `birthday` DATE DEFAULT NULL COMMENT '生日',
   `signature` VARCHAR(255) DEFAULT NULL COMMENT '个性签名',
   `status` VARCHAR(16) NOT NULL DEFAULT 'ENABLED' COMMENT '状态：ENABLED / DISABLED',
+  `merged_into_user_id` BIGINT DEFAULT NULL COMMENT '若用户被合并到其他账号，此字段保存目标用户 ID',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
   `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_openid` (`openid`),
-  KEY `idx_user_github_id` (`github_id`),
-  KEY `idx_user_google_id` (`google_id`),
   CONSTRAINT `chk_user_gender` CHECK (`gender` IN ('UNKNOWN', 'MALE', 'FEMALE')),
   CONSTRAINT `chk_user_status` CHECK (`status` IN ('ENABLED', 'DISABLED')),
   CONSTRAINT `chk_user_login_type` CHECK (`login_type` IN ('WECHAT', 'GITHUB', 'GOOGLE'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
-CREATE TABLE IF NOT EXISTS `user_session` (
+CREATE TABLE IF NOT EXISTS `sys_user_identity` (
   `id` BIGINT NOT NULL COMMENT '主键 ID',
-  `user_id` BIGINT NOT NULL COMMENT '用户 ID',
-  `session_id` VARCHAR(64) NOT NULL COMMENT '当前会话 ID',
-  `refresh_token` VARCHAR(512) NOT NULL COMMENT '刷新令牌',
-  `refresh_expire_at` DATETIME NOT NULL COMMENT '刷新令牌过期时间',
+  `user_id` BIGINT NOT NULL COMMENT '关联 sys_user.id',
+  `provider` VARCHAR(32) NOT NULL COMMENT '第三方平台：WECHAT / GITHUB / GOOGLE',
+  `provider_user_id` VARCHAR(128) NOT NULL COMMENT '第三方平台用户唯一 ID',
+  `nickname` VARCHAR(64) DEFAULT NULL COMMENT '绑定时第三方平台昵称快照',
+  `avatar_url` VARCHAR(512) DEFAULT NULL COMMENT '绑定时第三方平台头像快照',
+  `bound_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '绑定时间',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
   `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_session_user` (`user_id`),
-  UNIQUE KEY `uk_user_session_session` (`session_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户登录会话表';
+  UNIQUE KEY `uk_provider_user` (`provider`, `provider_user_id`),
+  KEY `idx_user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户第三方平台绑定关系';
+
+-- 会话信息存 Redis（key = record:user:session:{userId}，Hash 字段 sid + token，TTL = refreshTokenExpireDays），不再落库。
 
 CREATE TABLE IF NOT EXISTS `biz_tag_template` (
   `id` BIGINT NOT NULL COMMENT '模板 ID',
@@ -433,36 +434,3 @@ CREATE TABLE IF NOT EXISTS `biz_knowledge_chunk` (
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- 旧库升级参考 SQL
--- 日记模块已移除单篇提醒字段，仅保留全局日记提醒开关，固定每天 22:00 发送提醒。
--- 如果你的数据库还是旧表结构，请执行下面这条语句删除 biz_diary.remind_at。
---
--- ALTER TABLE biz_diary DROP COLUMN remind_at;
-
--- 旧库升级参考 SQL
--- 记账标签现已支持区分支出标签和收入标签。
--- 需要在标签模板表和用户标签表中补充 ledger_type 字段。
--- 唯一索引也要从"用户 + 模块 + 名称"调整为"用户 + 模块 + 记账标签类型 + 名称"。
---
--- ALTER TABLE biz_tag_template
---   ADD COLUMN ledger_type VARCHAR(16) NULL COMMENT '记账标签类型：EXPENSE / INCOME' AFTER module_type;
---
--- ALTER TABLE biz_user_tag
---   ADD COLUMN ledger_type VARCHAR(16) NULL COMMENT '记账标签类型：EXPENSE / INCOME' AFTER module_type;
---
--- ALTER TABLE biz_tag_template
---   ADD CONSTRAINT chk_tag_template_ledger_type CHECK (ledger_type IS NULL OR ledger_type IN ('EXPENSE', 'INCOME'));
---
--- ALTER TABLE biz_user_tag
---   ADD CONSTRAINT chk_user_tag_ledger_type CHECK (ledger_type IS NULL OR ledger_type IN ('EXPENSE', 'INCOME'));
---
--- DROP INDEX uk_user_tag_user_module_name ON biz_user_tag;
--- CREATE UNIQUE INDEX uk_user_tag_user_module_ledger_name ON biz_user_tag (user_id, module_type, ledger_type, name);
-
--- 记账流水回收站升级 SQL
--- 如果你的库里 biz_ledger_entry 还没有 deleted_at 字段，请执行：
---
--- ALTER TABLE biz_ledger_entry
---   ADD COLUMN deleted_at DATETIME NULL COMMENT '软删除时间' AFTER image_path;
---
--- CREATE INDEX idx_ledger_entry_user_deleted_at ON biz_ledger_entry (user_id, deleted_at);

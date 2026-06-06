@@ -32,11 +32,16 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // OAuth 登录链路无 token：跳转授权 + 回调
+                        // 注意 `*` 是单段匹配，不会命中 `/auth/{provider}/bind/authorize`，所以绑定授权会落到 authenticated 分支
                         .requestMatchers("/auth/wx-login", "/auth/refresh",
-                                "/auth/github/**", "/auth/google/**",
-                                "/api/auth/github/**", "/api/auth/google/**",
+                                "/auth/*/authorize", "/auth/*/callback",
                                 "/doc.html", "/swagger-ui/**",
                                 "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**").permitAll()
+                        // 动态路由是每个登录用户拿自己菜单的接口，普通用户也得能调
+                        .requestMatchers("/system/menu/get-async-routes").authenticated()
+                        // 其余 /system/** 是管理后台接口，必须 admin
+                        .requestMatchers("/system/**").hasRole("admin")
                         .anyRequest().authenticated())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint((request, response, authException) -> {

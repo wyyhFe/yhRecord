@@ -3,10 +3,13 @@ package com.record.modules.auth.controller;
 import com.record.common.config.AppProperties;
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
+import com.record.modules.auth.model.OAuthStateContext;
 import com.record.modules.auth.model.dto.RefreshTokenRequest;
 import com.record.modules.auth.model.dto.WxLoginRequest;
 import com.record.modules.auth.model.vo.AuthTokenVO;
+import com.record.modules.auth.model.vo.OAuthAuthorizeUrlVO;
 import com.record.modules.auth.service.AuthService;
+import com.record.modules.auth.service.OAuthStateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
 /**
  * 认证接口。
@@ -33,10 +35,14 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final OAuthStateService oAuthStateService;
     private final AppProperties appProperties;
 
-    public AuthController(AuthService authService, AppProperties appProperties) {
+    public AuthController(AuthService authService,
+                          OAuthStateService oAuthStateService,
+                          AppProperties appProperties) {
         this.authService = authService;
+        this.oAuthStateService = oAuthStateService;
         this.appProperties = appProperties;
     }
 
@@ -67,31 +73,55 @@ public class AuthController {
 
     // ==================== OAuth 第三方登录 ====================
 
-    @Operation(summary = "OAuth 授权跳转")
+    @Operation(summary = "OAuth 登录授权跳转")
     @GetMapping("/{provider}/authorize")
     public void oauthAuthorize(@PathVariable String provider, HttpServletResponse response) throws IOException {
-        String state = UUID.randomUUID().toString().replace("-", "");
+        String state = oAuthStateService.issueLoginState(provider);
         String authorizeUrl = authService.buildOAuthAuthorizeUrl(provider, state);
         response.sendRedirect(authorizeUrl);
     }
 
-    @Operation(summary = "OAuth 回调处理")
+    @Operation(summary = "OAuth 绑定授权 URL（已登录态发起绑定）")
+    @GetMapping("/{provider}/bind/authorize")
+    public ApiResponse<OAuthAuthorizeUrlVO> oauthBindAuthorize(@PathVariable String provider) {
+        String state = oAuthStateService.issueBindState(provider, UserContext.getUserId());
+        String authorizeUrl = authService.buildOAuthAuthorizeUrl(provider, state);
+        return ApiResponse.success(OAuthAuthorizeUrlVO.builder().authorizeUrl(authorizeUrl).build());
+    }
+
+    @Operation(summary = "OAuth 回调处理（登录/绑定统一入口，按 state 意图分流）")
     @GetMapping("/{provider}/callback")
     public void oauthCallback(@PathVariable String provider,
                               @RequestParam String code,
                               @RequestParam(required = false) String state,
                               HttpServletResponse response) throws IOException {
+        OAuthStateContext context = oAuthStateService.consume(state);
+        if (!provider.equalsIgnoreCase(context.getProvider())) {
+            throw new IllegalArgumentException("回调路径与 state 中记录的 provider 不一致");
+        }
+
+        if (context.getIntent() == OAuthStateContext.Intent.BIND) {
+            authService.bindIdentity(context.getUserId(), provider, code);
+            response.sendRedirect(buildBindResultUrl(provider, "success"));
+            return;
+        }
+
+        // 登录流程：换取 token 后跳转回前端登录回调页
         AuthTokenVO token = authService.oauthLogin(provider, code);
-        // 签发成功后重定向回前端，将 token 信息附加在 URL 参数里
         StringBuilder callbackUrl = new StringBuilder(appProperties.getOauth().getFrontendCallbackUrl())
                 .append("?accessToken=").append(URLEncoder.encode(token.getAccessToken(), StandardCharsets.UTF_8))
                 .append("&refreshToken=").append(URLEncoder.encode(token.getRefreshToken(), StandardCharsets.UTF_8))
                 .append("&userId=").append(token.getUserId())
                 .append("&provider=").append(provider);
-        // 附加角色信息
         if (token.getRoles() != null && !token.getRoles().isEmpty()) {
             callbackUrl.append("&roles=").append(URLEncoder.encode(String.join(",", token.getRoles()), StandardCharsets.UTF_8));
         }
         response.sendRedirect(callbackUrl.toString());
+    }
+
+    private String buildBindResultUrl(String provider, String status) {
+        return appProperties.getOauth().getFrontendBindResultUrl()
+                + "?bind=" + status
+                + "&provider=" + provider;
     }
 }

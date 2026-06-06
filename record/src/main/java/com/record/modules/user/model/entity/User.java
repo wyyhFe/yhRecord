@@ -17,7 +17,7 @@ import java.time.LocalDate;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("user")
+@TableName("sys_user")
 @Schema(description = "用户实体")
 public class User extends BaseEntity {
 
@@ -25,16 +25,10 @@ public class User extends BaseEntity {
     @Schema(description = "用户 ID", example = "10001")
     private Long id;
 
-    @Schema(description = "小程序 openid")
+    @Schema(description = "小程序 openid（用于公众号/订阅消息推送，不再作为登录入口）")
     private String openid;
 
-    @Schema(description = "GitHub 用户唯一 ID")
-    private String githubId;
-
-    @Schema(description = "Google 用户唯一 ID")
-    private String googleId;
-
-    @Schema(description = "注册来源", example = "WECHAT")
+    @Schema(description = "首次注册来源", example = "WECHAT")
     private LoginType loginType;
 
     @Schema(description = "昵称", example = "wyh")
@@ -57,4 +51,7 @@ public class User extends BaseEntity {
 
     @Schema(description = "状态", example = "ENABLED")
     private CommonStatus status;
+
+    @Schema(description = "若已被合并，指向目标用户 ID；否则为 null")
+    private Long mergedIntoUserId;
 }

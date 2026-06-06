@@ -143,7 +143,24 @@ class PureHttp {
       (error: PureHttpError) => {
         const $error = error;
         $error.isCancelRequest = Axios.isCancel($error);
-        // 所有的响应异常 区分来源为取消请求/非取消请求
+
+        // 401：后端 SecurityConfig.authenticationEntryPoint 或 GlobalExceptionHandler 返回
+        // 触发场景：token 过期、Redis session 失效、token 被服务端清掉、未带 Authorization 头
+        // 处理：清本地 token + 跳登录页，避免页面停在受保护路由空转
+        if (!$error.isCancelRequest) {
+          const status = $error.response?.status;
+          const bizCode = ($error.response?.data as { code?: number })?.code;
+          if (status === 401 || bizCode === 401) {
+            // 防抖：refresh-token 接口本身的 401 由请求拦截器的 refresh 链路处理，不重复跳
+            const url = $error.config?.url ?? "";
+            if (!url.endsWith("/refresh-token") && !url.endsWith("/login")) {
+              message(transformI18n($t("login.pureLoginExpired")), {
+                type: "warning"
+              });
+              useUserStoreHook().logOut();
+            }
+          }
+        }
         return Promise.reject($error);
       }
     );

@@ -1,6 +1,7 @@
 -- 在线重命名：为业务表添加 biz_ 前缀
 -- 原理：ALTER TABLE ... RENAME TO ... 在 MySQL 8 InnoDB 下是 metadata lock 操作，不阻塞读写
 -- 使用存储过程做存在性检查，避免重复执行报错
+USE life_record;
 
 DELIMITER //
 

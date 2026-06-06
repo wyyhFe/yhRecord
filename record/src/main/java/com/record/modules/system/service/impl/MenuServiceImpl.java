@@ -3,13 +3,10 @@ package com.record.modules.system.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.CommonStatus;
 import com.record.modules.system.mapper.MenuMapper;
-import com.record.modules.system.mapper.RoleMenuMapper;
-import com.record.modules.system.mapper.UserRoleMapper;
 import com.record.modules.system.model.entity.Menu;
-import com.record.modules.system.model.entity.RoleMenu;
-import com.record.modules.system.model.entity.UserRole;
 import com.record.modules.system.model.vo.AsyncRouteVO;
 import com.record.modules.system.service.MenuService;
+import com.record.modules.system.service.RoleService;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -21,51 +18,34 @@ import java.util.stream.Collectors;
 @Service
 public class MenuServiceImpl implements MenuService {
 
-    private final MenuMapper menuMapper;
-    private final UserRoleMapper userRoleMapper;
-    private final RoleMenuMapper roleMenuMapper;
+    private static final String ADMIN_ROLE = "admin";
 
-    public MenuServiceImpl(MenuMapper menuMapper, UserRoleMapper userRoleMapper, RoleMenuMapper roleMenuMapper) {
+    private final MenuMapper menuMapper;
+    private final RoleService roleService;
+
+    public MenuServiceImpl(MenuMapper menuMapper, RoleService roleService) {
         this.menuMapper = menuMapper;
-        this.userRoleMapper = userRoleMapper;
-        this.roleMenuMapper = roleMenuMapper;
+        this.roleService = roleService;
     }
 
     @Override
     public List<AsyncRouteVO> getAsyncRoutesByUserId(Long userId) {
-        // 1. 查用户角色
-        List<UserRole> userRoles = userRoleMapper.selectList(
-                new LambdaQueryWrapper<UserRole>().eq(UserRole::getUserId, userId));
-        if (userRoles.isEmpty()) {
-            return Collections.emptyList();
+        // 简化逻辑：只区分 admin / 非 admin
+        //   admin     → 所有启用菜单
+        //   非 admin  → 所有启用菜单中 admin_only != true 的部分
+        // 不再走 sys_role_menu，那张关联表保留给将来更细粒度的权限场景
+        boolean isAdmin = roleService.getRoleNamesByUserId(userId).contains(ADMIN_ROLE);
+
+        LambdaQueryWrapper<Menu> query = new LambdaQueryWrapper<Menu>()
+                .eq(Menu::getStatus, CommonStatus.ENABLED)
+                .ne(Menu::getMenuType, "BUTTON")
+                .orderByAsc(Menu::getRank);
+        if (!isAdmin) {
+            // adminOnly 默认 0；用 ne(true) 同时覆盖 false 和 NULL 两种历史数据
+            query.and(w -> w.ne(Menu::getAdminOnly, true).or().isNull(Menu::getAdminOnly));
         }
+        List<Menu> menus = menuMapper.selectList(query);
 
-        List<Long> roleIds = userRoles.stream().map(UserRole::getRoleId).collect(Collectors.toList());
-
-        // 2. admin 角色直接返回所有菜单
-        boolean isAdmin = roleIds.contains(1L);
-        List<Menu> menus;
-        if (isAdmin) {
-            menus = menuMapper.selectList(
-                    new LambdaQueryWrapper<Menu>()
-                            .eq(Menu::getStatus, CommonStatus.ENABLED)
-                            .ne(Menu::getMenuType, "BUTTON")
-                            .orderByAsc(Menu::getRank));
-        } else {
-            // 3. 非管理员：根据角色查菜单
-            List<Long> menuIds = roleMenuMapper.selectMenuIdsByRoleIds(roleIds);
-            if (menuIds.isEmpty()) {
-                return Collections.emptyList();
-            }
-            menus = menuMapper.selectList(
-                    new LambdaQueryWrapper<Menu>()
-                            .eq(Menu::getStatus, CommonStatus.ENABLED)
-                            .ne(Menu::getMenuType, "BUTTON")
-                            .in(Menu::getId, menuIds)
-                            .orderByAsc(Menu::getRank));
-        }
-
-        // 4. 构建路由树
         return buildRouteTree(menus, null);
     }
 

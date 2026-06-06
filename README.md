@@ -125,6 +125,92 @@ flowchart LR
     API --> MSG
 ```
 
+### 账号体系：用户与第三方绑定关系
+
+为了支持「一个用户绑多个登录方式」，登录身份与本系统用户被拆成两张表：
+
+- `sys_user`：本系统用户主档。`openid` 字段保留下来仅作为微信公众号/订阅消息推送目标，不再承担登录身份职责
+- `sys_user_identity`：第三方账号绑定关系表，一对多挂在 `sys_user` 上
+
+```mermaid
+erDiagram
+    sys_user ||--o{ sys_user_identity : "1 : N"
+    sys_user {
+        BIGINT id PK
+        VARCHAR openid "仅用于消息推送"
+        VARCHAR login_type "首次注册来源"
+        VARCHAR nickname
+        VARCHAR status
+    }
+    sys_user_identity {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR provider "WECHAT/GITHUB/GOOGLE"
+        VARCHAR provider_user_id "第三方唯一 ID"
+        DATETIME bound_at
+    }
+```
+
+约束：
+
+- `(provider, provider_user_id)` 全局唯一，防止同一个第三方账号被绑给多个本系统用户
+- 解绑接口强制要求剩余 ≥ 1 条绑定，避免账号变成无登录入口的孤儿
+- 同一用户在同一平台只允许绑定一个账号（应用层校验）
+
+### OAuth 登录 / 绑定共用回调，靠 Redis state 分流
+
+GitHub / Google 走浏览器 OAuth2 标准流程，登录和绑定**复用同一个回调 URL**（避免在第三方控制台配两份 redirect URI）。区分两种意图全靠回调里带回来的 `state`：
+
+```mermaid
+sequenceDiagram
+    participant FE as 前端
+    participant BE as 后端 /auth
+    participant Redis
+    participant OAuth as GitHub/Google
+
+    Note over FE,OAuth: 登录流程
+    FE->>BE: GET /auth/{provider}/authorize
+    BE->>Redis: SET oauth:state:{state} = {intent:LOGIN, provider} TTL 10m
+    BE->>FE: 302 → OAuth 授权页
+    FE->>OAuth: 用户授权
+    OAuth->>BE: GET /auth/{provider}/callback?code=&state=
+    BE->>Redis: GET + DEL oauth:state:{state}
+    BE->>BE: intent=LOGIN → 签发 JWT
+    BE->>FE: 302 → frontend-callback-url?accessToken=...
+
+    Note over FE,OAuth: 绑定流程（已登录态）
+    FE->>BE: GET /auth/{provider}/bind/authorize (带 JWT)
+    BE->>Redis: SET oauth:state:{state} = {intent:BIND, userId:X}
+    BE->>FE: 200 {authorizeUrl}
+    FE->>OAuth: window.location 跳到 authorizeUrl
+    OAuth->>BE: GET /auth/{provider}/callback?code=&state=
+    BE->>Redis: GET + DEL oauth:state:{state}
+    BE->>BE: intent=BIND → 写 sys_user_identity
+    BE->>FE: 302 → frontend-bind-result-url?bind=success
+```
+
+state 设计要点：
+
+- 一次性消费：回调里读出 state 上下文后立刻删除，防重放
+- 10 分钟 TTL：覆盖正常授权流程，超时自动失效
+- 包含 `provider` 字段：回调时校验路径 provider 必须等于 state 里的 provider，防 path 串改
+
+微信小程序绑定走单独的 `POST /user/identities/wechat/bind` 接口，直接传 `js_code`，因为微信没有浏览器跳转流程。
+
+### 后台：用户合并工具
+
+同一现实用户在不同时期通过不同登录方式注册，会产生多个独立的 `sys_user` 行。后台合并工具把 `source` 用户的所有数据迁移到 `target`，并把 `source` 标记为已合并：
+
+| 处理对象 | 策略 |
+|---|---|
+| 13 张 user_id 无 UK 的业务表（diary / ledger / checkin / memorial / recycle / reminder_log / ai_* / knowledge_*） | `UPDATE ... SET user_id = target WHERE user_id = source` |
+| 5 张 user_id 参与 UK 的表（user_tag / diary_like / reminder_setting / sys_user_role / sys_user_identity） | `UPDATE IGNORE` 把 source 行搬到 target，UK 冲突的留在 source，最后 `DELETE` 清掉残留（target 已有的 key 优先保留 target 的） |
+| `sys_user_session` | 直接 `DELETE` 掉 source 的会话，强制下线 |
+| `sys_user.openid` | source 有、target 没有时自动接管（先 NULL source 释放 UK，再写 target） |
+| source 用户本身 | `status = DISABLED`，`merged_into_user_id = target` 形成审计链路；保留行不删，便于回滚或排错 |
+
+整个合并在一个 `@Transactional` 事务里跑，任意一步失败整体回滚。接口：`POST /system/user/merge` body `{sourceUserId, targetUserId}`。
+
 ---
 
 ## Quick Start

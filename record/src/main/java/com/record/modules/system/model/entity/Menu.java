@@ -1,5 +1,6 @@
 package com.record.modules.system.model.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.record.common.enums.CommonStatus;
@@ -39,7 +40,8 @@ public class Menu extends BaseEntity {
     /** 菜单图标。 */
     private String icon;
 
-    /** 排序值。 */
+    /** 排序值。rank 是 MySQL 8 保留字，必须用反引号转义，否则生成的 SELECT/ORDER BY 都会语法错。 */
+    @TableField("`rank`")
     private Integer rank;
 
     /** 类型：DIRECTORY / PAGE / BUTTON。 */
@@ -59,4 +61,7 @@ public class Menu extends BaseEntity {
 
     /** 状态。 */
     private CommonStatus status;
+
+    /** 是否仅管理员可见：true 表示只对持有 admin 角色的用户返回。 */
+    private Boolean adminOnly;
 }

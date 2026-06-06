@@ -66,12 +66,16 @@ app:
       secret: ${APP_JWT_SECRET:change-me-change-me-change-me-change-me}
       access-token-expire-minutes: 120
       refresh-token-expire-days: 30
+    # 启动时自动挂 admin 角色的 userId 列表（解决首个 admin 鸡生蛋问题）
+    # 用法：把你自己的 userId 填进来，应用启动会自动 INSERT sys_user_role；已是 admin 的会跳过
+    bootstrap-admin-user-ids: 2062899819403370498
   wechat:
     app-id: ${WECHAT_APP_ID:wxc881594b9650474f}
     app-secret: ${WECHAT_APP_SECRET:dc5e4819af366f49a71214eda8b28015}
     code2session-url: https://api.weixin.qq.com/sns/jscode2session
   oauth:
     frontend-callback-url: ${OAUTH_FRONTEND_CALLBACK_URL:http://localhost:8848/#/auth/callback}
+    frontend-bind-result-url: ${OAUTH_FRONTEND_BIND_RESULT_URL:http://localhost:8848/#/account/identities}
     github:
       client-id: ${GITHUB_CLIENT_ID:Ov23lipiiNRBF3Tjpl5A}
       client-secret: ${GITHUB_CLIENT_SECRET:bc305877a6a9ddf01f724a00dcd8cfbc4bc20737}

@@ -25,6 +25,13 @@ public class AppProperties {
     public static class Security {
         private Jwt jwt = new Jwt();
 
+        /**
+         * 启动时自动赋予 admin 角色的用户 ID 列表。
+         * <p>用于解决"第一个 admin 怎么诞生"的鸡生蛋问题：
+         * 把自己的 userId 写进这里，应用启动时会确保 sys_user_role 里挂上 admin 关联（幂等）。</p>
+         */
+        private List<Long> bootstrapAdminUserIds = new ArrayList<>();
+
         @Data
         public static class Jwt {
             /** JWT 签发者。 */
@@ -82,7 +89,10 @@ public class AppProperties {
 
     @Data
     public static class OAuth {
+        /** 登录完成后跳回前端的地址。 */
         private String frontendCallbackUrl = "http://localhost:8848/#/auth/callback";
+        /** 绑定第三方账号完成后跳回前端的地址（区别于登录回调）。 */
+        private String frontendBindResultUrl = "http://localhost:8848/#/account/identities";
         private Github github = new Github();
         private Google google = new Google();
 

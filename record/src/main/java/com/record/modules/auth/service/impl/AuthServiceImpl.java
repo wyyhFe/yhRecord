@@ -1,6 +1,7 @@
 package com.record.modules.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.record.common.config.AppProperties;
 import com.record.common.constant.RedisKeyConstants;
 import com.record.common.exception.AuthException;
 import com.record.integration.oauth.OAuthProvider;
@@ -10,9 +11,12 @@ import com.record.integration.wechat.WechatAuthClient;
 import com.record.integration.wechat.WechatCode2SessionResponse;
 import com.record.modules.auth.model.vo.AuthTokenVO;
 import com.record.modules.auth.service.AuthService;
-import com.record.modules.user.mapper.UserSessionMapper;
+import com.record.common.exception.BusinessException;
+import com.record.common.exception.ErrorCode;
+import com.record.modules.user.mapper.UserIdentityMapper;
+import com.record.modules.user.mapper.UserMapper;
 import com.record.modules.user.model.entity.User;
-import com.record.modules.user.model.entity.UserSession;
+import com.record.modules.user.model.entity.UserIdentity;
 import com.record.common.enums.LoginType;
 import com.record.modules.user.service.UserService;
 import com.record.modules.system.service.RoleService;
@@ -20,7 +24,6 @@ import com.record.security.service.JwtTokenProvider;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -37,34 +40,45 @@ public class AuthServiceImpl implements AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
+    /** Redis Hash 字段：当前活跃 sessionId。 */
+    private static final String FIELD_SID = "sid";
+    /** Redis Hash 字段：当前活跃 refreshToken。 */
+    private static final String FIELD_REFRESH_TOKEN = "token";
+
     private final WechatAuthClient wechatAuthClient;
     private final OAuthProviderRegistry oAuthProviderRegistry;
     private final UserService userService;
-    private final UserSessionMapper userSessionMapper;
+    private final UserMapper userMapper;
+    private final UserIdentityMapper userIdentityMapper;
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisTemplate stringRedisTemplate;
     private final RoleService roleService;
+    private final AppProperties appProperties;
 
     public AuthServiceImpl(WechatAuthClient wechatAuthClient,
                            OAuthProviderRegistry oAuthProviderRegistry,
                            UserService userService,
-                           UserSessionMapper userSessionMapper,
+                           UserMapper userMapper,
+                           UserIdentityMapper userIdentityMapper,
                            JwtTokenProvider jwtTokenProvider,
                            StringRedisTemplate stringRedisTemplate,
-                           RoleService roleService) {
+                           RoleService roleService,
+                           AppProperties appProperties) {
         this.wechatAuthClient = wechatAuthClient;
         this.oAuthProviderRegistry = oAuthProviderRegistry;
         this.userService = userService;
-        this.userSessionMapper = userSessionMapper;
+        this.userMapper = userMapper;
+        this.userIdentityMapper = userIdentityMapper;
         this.jwtTokenProvider = jwtTokenProvider;
         this.stringRedisTemplate = stringRedisTemplate;
         this.roleService = roleService;
+        this.appProperties = appProperties;
     }
 
     @Override
     public AuthTokenVO wxLogin(String code) {
         WechatCode2SessionResponse response = wechatAuthClient.code2Session(code);
-        User user = userService.getOrCreateByOpenid(response.getOpenid());
+        User user = userService.getOrCreateByIdentity(LoginType.WECHAT, response.getOpenid(), null, null);
         return issueToken(user);
     }
 
@@ -75,7 +89,6 @@ public class AuthServiceImpl implements AuthService {
         try {
             claims = jwtTokenProvider.parseToken(refreshToken);
         } catch (Exception ex) {
-            // JWT 签名错或过期都走这里
             log.warn("[refresh] 解析 refreshToken 失败: {}", ex.getMessage());
             throw ex;
         }
@@ -89,36 +102,29 @@ public class AuthServiceImpl implements AuthService {
         String sessionId = claims.get("sid", String.class);
         log.info("[refresh] 开始刷新，userId={} tokenSid={}", userId, sessionId);
 
-        String cachedSessionId = stringRedisTemplate.opsForValue().get(RedisKeyConstants.USER_SESSION + userId);
-        log.info("[refresh] Redis 中的 sessionId={}", cachedSessionId);
-        if (cachedSessionId == null) {
-            log.warn("[refresh] Redis 中没有该用户的 session（key={}）", RedisKeyConstants.USER_SESSION + userId);
+        // 会话快照都存 Redis Hash，key 自带 TTL（refreshTokenExpireDays），过期即 entries 为空
+        String key = RedisKeyConstants.USER_SESSION + userId;
+        Object cachedSid = stringRedisTemplate.opsForHash().get(key, FIELD_SID);
+        Object cachedToken = stringRedisTemplate.opsForHash().get(key, FIELD_REFRESH_TOKEN);
+        if (cachedSid == null) {
+            log.warn("[refresh] Redis 中没有该用户会话（key={}），可能 TTL 已过", key);
             throw new AuthException("登录会话已失效，请重新登录");
         }
-        if (!cachedSessionId.equals(sessionId)) {
-            // 这是最常见的失败原因：用户在别处又登过一次，sid 被覆盖
-            log.warn("[refresh] sessionId 不匹配 token={} redis={}（多设备登录可能顶替了）", sessionId, cachedSessionId);
+        if (!sessionId.equals(cachedSid.toString())) {
+            // 最常见原因：在别处又登过一次，sid 被覆盖
+            log.warn("[refresh] sessionId 不匹配 token={} redis={}（多设备登录可能顶替了）", sessionId, cachedSid);
             throw new AuthException("登录会话已失效，请重新登录");
         }
-
-        UserSession session = userSessionMapper.selectOne(new LambdaQueryWrapper<UserSession>()
-                .eq(UserSession::getUserId, userId)
-                .eq(UserSession::getSessionId, sessionId));
-        if (session == null) {
-            log.warn("[refresh] DB 里查不到 user_session 记录 userId={} sessionId={}", userId, sessionId);
-            throw new AuthException("refreshToken 已失效");
-        }
-        if (!refreshToken.equals(session.getRefreshToken())) {
-            log.warn("[refresh] DB 中的 refreshToken 与传入的不一致，token 长度={} db 长度={}",
-                    refreshToken.length(), session.getRefreshToken() != null ? session.getRefreshToken().length() : 0);
-            throw new AuthException("refreshToken 已失效");
-        }
-        if (session.getRefreshExpireAt().isBefore(LocalDateTime.now())) {
-            log.warn("[refresh] refreshToken 已过期 expireAt={}", session.getRefreshExpireAt());
+        if (cachedToken == null || !refreshToken.equals(cachedToken.toString())) {
+            log.warn("[refresh] refreshToken 与 Redis 中记录的不一致");
             throw new AuthException("refreshToken 已失效");
         }
 
-        User user = userService.getOrCreateByOpenid(claims.get("openid", String.class));
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            log.warn("[refresh] 用户已不存在 userId={}", userId);
+            throw new AuthException("用户不存在");
+        }
         log.info("[refresh] 刷新成功，userId={}", userId);
         return issueToken(user);
     }
@@ -134,32 +140,67 @@ public class AuthServiceImpl implements AuthService {
         OAuthProvider p = oAuthProviderRegistry.getProvider(provider);
         OAuthUserInfo userInfo = p.handleCallback(code);
 
-        User user;
-        switch (provider) {
-            case "github":
-                user = userService.getOrCreateByGithubId(userInfo.getProviderUserId(), userInfo.getNickname(), userInfo.getAvatarUrl());
-                break;
-            case "google":
-                user = userService.getOrCreateByGoogleId(userInfo.getProviderUserId(), userInfo.getNickname(), userInfo.getAvatarUrl());
-                break;
-            default:
-                throw new AuthException("不支持的登录方式: " + provider);
-        }
-
-        // 如果是首次通过 OAuth 注册，更新头像
-        if (userInfo.getAvatarUrl() != null && (user.getAvatarPath() == null || user.getAvatarPath().isEmpty())) {
-            user.setAvatarPath(userInfo.getAvatarUrl());
-            user.setNickname(userInfo.getNickname() != null ? userInfo.getNickname() : user.getNickname());
-        }
+        LoginType loginType = parseProvider(provider);
+        User user = userService.getOrCreateByIdentity(
+                loginType,
+                userInfo.getProviderUserId(),
+                userInfo.getNickname(),
+                userInfo.getAvatarUrl());
 
         log.info("[OAuth] {} 登录成功, userId={}, nickname={}", provider, user.getId(), user.getNickname());
         return issueToken(user);
     }
 
     @Override
+    public void bindIdentity(Long userId, String provider, String code) {
+        OAuthProvider p = oAuthProviderRegistry.getProvider(provider);
+        OAuthUserInfo userInfo = p.handleCallback(code);
+        LoginType loginType = parseProvider(provider);
+
+        // 校验 1：该第三方账号是否已被本系统绑定
+        UserIdentity duplicated = userIdentityMapper.selectOne(new LambdaQueryWrapper<UserIdentity>()
+                .eq(UserIdentity::getProvider, loginType)
+                .eq(UserIdentity::getProviderUserId, userInfo.getProviderUserId()));
+        if (duplicated != null) {
+            if (duplicated.getUserId().equals(userId)) {
+                log.info("[OAuth-bind] 重复绑定，幂等忽略 userId={} provider={}", userId, provider);
+                return;
+            }
+            throw new BusinessException(ErrorCode.USER_ERROR, "该 " + provider + " 账号已被其他用户绑定");
+        }
+
+        // 校验 2：当前用户是否已绑定同一类型平台
+        UserIdentity sameProvider = userIdentityMapper.selectOne(new LambdaQueryWrapper<UserIdentity>()
+                .eq(UserIdentity::getUserId, userId)
+                .eq(UserIdentity::getProvider, loginType));
+        if (sameProvider != null) {
+            throw new BusinessException(ErrorCode.USER_ERROR, "当前账号已绑定 " + provider + "，请先解绑");
+        }
+
+        UserIdentity identity = new UserIdentity();
+        identity.setUserId(userId);
+        identity.setProvider(loginType);
+        identity.setProviderUserId(userInfo.getProviderUserId());
+        identity.setNickname(userInfo.getNickname());
+        identity.setAvatarUrl(userInfo.getAvatarUrl());
+        identity.setBoundAt(LocalDateTime.now());
+        userIdentityMapper.insert(identity);
+
+        log.info("[OAuth-bind] 绑定成功 userId={} provider={} providerUserId={}",
+                userId, provider, userInfo.getProviderUserId());
+    }
+
+    private LoginType parseProvider(String provider) {
+        try {
+            return LoginType.valueOf(provider.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new AuthException("不支持的登录方式: " + provider);
+        }
+    }
+
+    @Override
     public void logout(Long userId) {
         stringRedisTemplate.delete(RedisKeyConstants.USER_SESSION + userId);
-        userSessionMapper.delete(new LambdaQueryWrapper<UserSession>().eq(UserSession::getUserId, userId));
     }
 
     private AuthTokenVO issueToken(User user) {
@@ -169,11 +210,8 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), openId, sessionId);
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), openId, sessionId);
 
-        upsertUserSession(user.getId(), sessionId, refreshToken);
+        storeSession(user.getId(), sessionId, refreshToken);
 
-        stringRedisTemplate.opsForValue().set(RedisKeyConstants.USER_SESSION + user.getId(), sessionId, 30, TimeUnit.DAYS);
-
-        // 查询用户角色
         List<String> roles = roleService.getRoleNamesByUserId(user.getId());
 
         return AuthTokenVO.builder()
@@ -187,42 +225,14 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 单设备登录场景下，每个用户只保留一条会话记录。
-     * 如果用户重复点击登录或短时间并发登录，优先更新旧记录，避免唯一索引冲突。
+     * 会话信息写 Redis Hash；key 的 TTL = refreshTokenExpireDays，过期即整体清除。
+     * 重新登录时同一 key 直接覆盖，天然实现"单设备登录"语义，不再需要 DB 唯一索引兜底。
      */
-    private void upsertUserSession(Long userId, String sessionId, String refreshToken) {
-        LocalDateTime refreshExpireAt = LocalDateTime.now().plusDays(30);
-        UserSession existing = userSessionMapper.selectOne(new LambdaQueryWrapper<UserSession>()
-                .eq(UserSession::getUserId, userId)
-                .last("LIMIT 1"));
-
-        if (existing != null) {
-            existing.setSessionId(sessionId);
-            existing.setRefreshToken(refreshToken);
-            existing.setRefreshExpireAt(refreshExpireAt);
-            userSessionMapper.updateById(existing);
-            return;
-        }
-
-        UserSession userSession = new UserSession();
-        userSession.setUserId(userId);
-        userSession.setSessionId(sessionId);
-        userSession.setRefreshToken(refreshToken);
-        userSession.setRefreshExpireAt(refreshExpireAt);
-
-        try {
-            userSessionMapper.insert(userSession);
-        } catch (DuplicateKeyException exception) {
-            UserSession duplicated = userSessionMapper.selectOne(new LambdaQueryWrapper<UserSession>()
-                    .eq(UserSession::getUserId, userId)
-                    .last("LIMIT 1"));
-            if (duplicated == null) {
-                throw exception;
-            }
-            duplicated.setSessionId(sessionId);
-            duplicated.setRefreshToken(refreshToken);
-            duplicated.setRefreshExpireAt(refreshExpireAt);
-            userSessionMapper.updateById(duplicated);
-        }
+    private void storeSession(Long userId, String sessionId, String refreshToken) {
+        String key = RedisKeyConstants.USER_SESSION + userId;
+        stringRedisTemplate.opsForHash().put(key, FIELD_SID, sessionId);
+        stringRedisTemplate.opsForHash().put(key, FIELD_REFRESH_TOKEN, refreshToken);
+        long ttlDays = appProperties.getSecurity().getJwt().getRefreshTokenExpireDays();
+        stringRedisTemplate.expire(key, ttlDays, TimeUnit.DAYS);
     }
 }
