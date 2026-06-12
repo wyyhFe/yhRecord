@@ -40,7 +40,7 @@ spring:
       milvus:
         client:
           host: ${MILVUS_HOST:127.0.0.1}
-          port: ${MILVUS_PORT:19530}
+          port: 19530
           username: ${MILVUS_USERNAME:root}
           password: ${MILVUS_PASSWORD:milvus}
         databaseName: default
@@ -168,7 +168,7 @@ app:
         name-field: thing5
   ai:
     # 当前激活的 AI 供应商。可选：openai / zhipu / deepseek / dashscope
-    active: ${APP_AI_ACTIVE:zhipu}
+    active: ${APP_AI_ACTIVE:deepseek}
     # 各供应商端点配置。base-url / chat-model / embedding-model 没填的会用 AiProvider 枚举内置默认值。
     providers:
       openai:
