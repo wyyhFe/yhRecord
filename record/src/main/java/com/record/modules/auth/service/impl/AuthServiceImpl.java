@@ -20,11 +20,18 @@ import com.record.modules.user.model.entity.UserIdentity;
 import com.record.common.enums.LoginType;
 import com.record.modules.user.service.UserService;
 import com.record.modules.system.service.RoleService;
+import com.record.modules.system.model.entity.Role;
+import com.record.modules.system.mapper.RoleMapper;
+import com.record.modules.system.mapper.UserRoleMapper;
+import com.record.modules.system.model.entity.UserRole;
 import com.record.security.service.JwtTokenProvider;
+import com.record.common.enums.CommonStatus;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -53,6 +60,8 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final StringRedisTemplate stringRedisTemplate;
     private final RoleService roleService;
+    private final RoleMapper roleMapper;
+    private final UserRoleMapper userRoleMapper;
     private final AppProperties appProperties;
 
     public AuthServiceImpl(WechatAuthClient wechatAuthClient,
@@ -63,6 +72,8 @@ public class AuthServiceImpl implements AuthService {
                            JwtTokenProvider jwtTokenProvider,
                            StringRedisTemplate stringRedisTemplate,
                            RoleService roleService,
+                           RoleMapper roleMapper,
+                           UserRoleMapper userRoleMapper,
                            AppProperties appProperties) {
         this.wechatAuthClient = wechatAuthClient;
         this.oAuthProviderRegistry = oAuthProviderRegistry;
@@ -72,6 +83,8 @@ public class AuthServiceImpl implements AuthService {
         this.jwtTokenProvider = jwtTokenProvider;
         this.stringRedisTemplate = stringRedisTemplate;
         this.roleService = roleService;
+        this.roleMapper = roleMapper;
+        this.userRoleMapper = userRoleMapper;
         this.appProperties = appProperties;
     }
 
@@ -199,6 +212,60 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public AuthTokenVO adminLogin(String username, String password) {
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, username));
+        if (user == null) {
+            throw new AuthException("用户名或密码错误");
+        }
+        // 检查是否设置了密码
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new AuthException("该账号未设置密码，请先注册");
+        }
+        // 验证密码
+        if (!passwordEncoder().matches(password, user.getPassword())) {
+            throw new AuthException("用户名或密码错误");
+        }
+        // 检查用户状态
+        if (user.getStatus() == CommonStatus.DISABLED) {
+            throw new AuthException("账号已被禁用");
+        }
+        return issueToken(user);
+    }
+
+    @Override
+    public AuthTokenVO adminRegister(String username, String password) {
+        // 查重
+        User existing = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, username));
+        if (existing != null) {
+            throw new BusinessException(ErrorCode.USER_ERROR, "用户名已被占用");
+        }
+
+        // 创建用户
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder().encode(password));
+        user.setLoginType(LoginType.ADMIN);
+        user.setNickname(username);
+        user.setStatus(CommonStatus.ENABLED);
+        userMapper.insert(user);
+
+        // 赋予 admin 角色
+        Role adminRole = roleMapper.selectOne(new LambdaQueryWrapper<Role>()
+                .eq(Role::getName, "admin")
+                .last("LIMIT 1"));
+        if (adminRole != null) {
+            UserRole ur = new UserRole();
+            ur.setUserId(user.getId());
+            ur.setRoleId(adminRole.getId());
+            userRoleMapper.insert(ur);
+        }
+
+        return issueToken(user);
+    }
+
+    @Override
     public void logout(Long userId) {
         stringRedisTemplate.delete(RedisKeyConstants.USER_SESSION + userId);
     }
@@ -234,5 +301,9 @@ public class AuthServiceImpl implements AuthService {
         stringRedisTemplate.opsForHash().put(key, FIELD_REFRESH_TOKEN, refreshToken);
         long ttlDays = appProperties.getSecurity().getJwt().getRefreshTokenExpireDays();
         stringRedisTemplate.expire(key, ttlDays, TimeUnit.DAYS);
+    }
+
+    private PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

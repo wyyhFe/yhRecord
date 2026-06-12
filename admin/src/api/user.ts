@@ -40,6 +40,11 @@ export const getLogin = (data?: object) => {
   return http.request<UserResult>("post", "/auth/login", { data });
 };
 
+/** 管理后台注册 */
+export const registerAccount = (data?: object) => {
+  return http.request<UserResult>("post", "/auth/register", { data });
+};
+
 /** 微信登录（小程序端使用，后台管理暂不使用） */
 export const getWxLogin = (data?: object) => {
   return http.request<UserResult>("post", "/auth/wx-login", { data });

@@ -11,35 +11,46 @@ export const REGEXP_SIX = /^\d{6}$/;
 export const REGEXP_PWD =
   /^(?![0-9]+$)(?![a-z]+$)(?![A-Z]+$)(?!([^(0-9a-zA-Z)]|[()])+$)(?!^.*[\u4E00-\u9FA5].*$)([^(0-9a-zA-Z)]|[()]|[a-z]|[A-Z]|[0-9]){8,18}$/;
 
-/** 登录校验 */
+/** 登录校验（原规则——密码必须8-18位数字/字母/符号组合，暂时不用） */
+// const loginRules = reactive<FormRules>({
+//   password: [
+//     {
+//       validator: (rule, value, callback) => {
+//         if (value === "") {
+//           callback(new Error(transformI18n($t("login.purePassWordReg"))));
+//         } else if (!REGEXP_PWD.test(value)) {
+//           callback(new Error(transformI18n($t("login.purePassWordRuleReg"))));
+//         } else {
+//           callback();
+//         }
+//       },
+//       trigger: "blur"
+//     }
+//   ],
+//   verifyCode: [
+//     {
+//       validator: (rule, value, callback) => {
+//         if (value === "") {
+//           callback(new Error(transformI18n($t("login.pureVerifyCodeReg"))));
+//         } else if (useUserStoreHook().verifyCode !== value) {
+//           callback(
+//             new Error(transformI18n($t("login.pureVerifyCodeCorrectReg")))
+//           );
+//         } else {
+//           callback();
+//         }
+//       },
+//       trigger: "blur"
+//     }
+//   ]
+// });
+
+/** 登录校验（简单密码——仅校验必填） */
 const loginRules = reactive<FormRules>({
   password: [
     {
-      validator: (rule, value, callback) => {
-        if (value === "") {
-          callback(new Error(transformI18n($t("login.purePassWordReg"))));
-        } else if (!REGEXP_PWD.test(value)) {
-          callback(new Error(transformI18n($t("login.purePassWordRuleReg"))));
-        } else {
-          callback();
-        }
-      },
-      trigger: "blur"
-    }
-  ],
-  verifyCode: [
-    {
-      validator: (rule, value, callback) => {
-        if (value === "") {
-          callback(new Error(transformI18n($t("login.pureVerifyCodeReg"))));
-        } else if (useUserStoreHook().verifyCode !== value) {
-          callback(
-            new Error(transformI18n($t("login.pureVerifyCodeCorrectReg")))
-          );
-        } else {
-          callback();
-        }
-      },
+      required: true,
+      message: transformI18n($t("login.purePassWordReg")),
       trigger: "blur"
     }
   ]
@@ -123,4 +134,15 @@ const updateRules = reactive<FormRules>({
   ]
 });
 
-export { loginRules, phoneRules, updateRules };
+/** 管理后台注册校验（用户名 + 密码） */
+const registerRules = reactive<FormRules>({
+  password: [
+    {
+      required: true,
+      message: transformI18n($t("login.purePassWordReg")),
+      trigger: "blur"
+    }
+  ]
+});
+
+export { loginRules, phoneRules, updateRules, registerRules };

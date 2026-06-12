@@ -7,7 +7,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE IF NOT EXISTS `sys_user` (
   `id` BIGINT NOT NULL COMMENT '用户 ID',
   `openid` VARCHAR(64) DEFAULT NULL COMMENT '小程序 openid（用于公众号/订阅消息推送目标，不再作为登录入口）',
-  `login_type` VARCHAR(20) NOT NULL DEFAULT 'WECHAT' COMMENT '首次注册来源：WECHAT / GITHUB / GOOGLE',
+  `login_type` VARCHAR(20) NOT NULL DEFAULT 'WECHAT' COMMENT '首次注册来源：WECHAT / GITHUB / GOOGLE / ADMIN',
   `nickname` VARCHAR(64) NOT NULL COMMENT '昵称',
   `avatar_path` VARCHAR(255) DEFAULT NULL COMMENT '头像路径',
   `gender` VARCHAR(16) NOT NULL DEFAULT 'UNKNOWN' COMMENT '性别：UNKNOWN / MALE / FEMALE',
@@ -16,15 +16,18 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
   `signature` VARCHAR(255) DEFAULT NULL COMMENT '个性签名',
   `status` VARCHAR(16) NOT NULL DEFAULT 'ENABLED' COMMENT '状态：ENABLED / DISABLED',
   `merged_into_user_id` BIGINT DEFAULT NULL COMMENT '若用户被合并到其他账号，此字段保存目标用户 ID',
+  `username` VARCHAR(50) DEFAULT NULL COMMENT '管理后台登录用户名',
+  `password` VARCHAR(255) DEFAULT NULL COMMENT '密码（BCrypt 哈希），仅管理员使用',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
   `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_openid` (`openid`),
+  UNIQUE KEY `uk_username` (`username`),
   CONSTRAINT `chk_user_gender` CHECK (`gender` IN ('UNKNOWN', 'MALE', 'FEMALE')),
   CONSTRAINT `chk_user_status` CHECK (`status` IN ('ENABLED', 'DISABLED')),
-  CONSTRAINT `chk_user_login_type` CHECK (`login_type` IN ('WECHAT', 'GITHUB', 'GOOGLE'))
+  CONSTRAINT `chk_user_login_type` CHECK (`login_type` IN ('WECHAT', 'GITHUB', 'GOOGLE', 'ADMIN'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 CREATE TABLE IF NOT EXISTS `sys_user_identity` (

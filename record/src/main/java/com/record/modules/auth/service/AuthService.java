@@ -18,13 +18,23 @@ public interface AuthService {
     AuthTokenVO oauthLogin(String provider, String code);
 
     /**
-     * 已登录态下，把当前 OAuth 回调里的第三方账号绑定到指定用户。
+     * 已登录态下，把当前 OAuth 回调来的第三方账号绑定到指定用户。
      * 不签发新 token，只写 sys_user_identity。
      *
-     * @param userId   当前登录用户 ID（从 state 上下文取出）
+     * @param userId   当前登录用户 ID（从 state 里反查而来）
      * @param provider 第三方平台名（github / google 等）
-     * @param code     回调返回的授权码
+     * @param code     回调带回的授权码
      */
     void bindIdentity(Long userId, String provider, String code);
+
+    /**
+     * 管理后台登录（用户名 + 密码）。
+     */
+    AuthTokenVO adminLogin(String username, String password);
+
+    /**
+     * 管理后台注册（创建本地账号，自动赋予 admin 角色）。
+     */
+    AuthTokenVO adminRegister(String username, String password);
 }
 

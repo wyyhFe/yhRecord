@@ -54,4 +54,10 @@ public class User extends BaseEntity {
 
     @Schema(description = "若已被合并，指向目标用户 ID；否则为 null")
     private Long mergedIntoUserId;
+
+    @Schema(description = "管理后台登录用户名，仅管理员使用", example = "admin")
+    private String username;
+
+    @Schema(description = "密码（BCrypt 哈希），仅管理员使用")
+    private String password;
 }

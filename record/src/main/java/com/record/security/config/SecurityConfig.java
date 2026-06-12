@@ -34,7 +34,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // OAuth 登录链路无 token：跳转授权 + 回调
                         // 注意 `*` 是单段匹配，不会命中 `/auth/{provider}/bind/authorize`，所以绑定授权会落到 authenticated 分支
-                        .requestMatchers("/auth/wx-login", "/auth/refresh",
+                        .requestMatchers("/auth/login", "/auth/register",
+                                "/auth/wx-login", "/auth/refresh",
                                 "/auth/*/authorize", "/auth/*/callback",
                                 "/doc.html", "/swagger-ui/**",
                                 "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**").permitAll()

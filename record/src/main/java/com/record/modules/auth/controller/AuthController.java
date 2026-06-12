@@ -4,6 +4,8 @@ import com.record.common.config.AppProperties;
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
 import com.record.modules.auth.model.OAuthStateContext;
+import com.record.modules.auth.model.dto.AdminLoginRequest;
+import com.record.modules.auth.model.dto.AdminRegisterRequest;
 import com.record.modules.auth.model.dto.RefreshTokenRequest;
 import com.record.modules.auth.model.dto.WxLoginRequest;
 import com.record.modules.auth.model.vo.AuthTokenVO;
@@ -44,6 +46,19 @@ public class AuthController {
         this.authService = authService;
         this.oAuthStateService = oAuthStateService;
         this.appProperties = appProperties;
+    }
+
+    @Operation(summary = "管理后台登录（用户名 + 密码）")
+    @PostMapping("/login")
+    public ApiResponse<AuthTokenVO> login(@Valid @RequestBody AdminLoginRequest request) {
+        return ApiResponse.success(authService.adminLogin(request.getUsername(), request.getPassword()));
+    }
+
+    @Operation(summary = "管理后台注册（创建本地账号，自动赋予 admin 角色）")
+    @PostMapping("/register")
+    public ApiResponse<AuthTokenVO> register(@Valid @RequestBody AdminRegisterRequest request) {
+        return ApiResponse.success(
+                authService.adminRegister(request.getUsername(), request.getPassword()));
     }
 
     @Operation(summary = "微信登录")

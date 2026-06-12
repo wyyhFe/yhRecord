@@ -95,6 +95,7 @@ public class UserServiceImpl implements UserService {
             case WECHAT -> "微信用户";
             case GITHUB -> "GitHub 用户";
             case GOOGLE -> "Google 用户";
+            case ADMIN -> "管理员";
         };
     }
 

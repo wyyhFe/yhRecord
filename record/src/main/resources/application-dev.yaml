@@ -9,10 +9,10 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
-      host: ${REDIS_HOST:127.0.0.1}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:wyh20040118}
-      database: ${REDIS_DATABASE:0}
+      host: 123.207.210.150
+      port: 6379
+      password: wyh20040118
+      database: 0
       timeout: 10s
   ai:
     chat:

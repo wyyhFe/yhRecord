@@ -6,5 +6,7 @@ package com.record.common.enums;
 public enum LoginType {
     WECHAT,
     GITHUB,
-    GOOGLE
+    GOOGLE,
+    /** 管理后台本地账号。 */
+    ADMIN
 }
