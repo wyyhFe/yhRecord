@@ -13,28 +13,28 @@
       </view>
     </view>
 
-    <!-- 日期导航 -->
-    <view class="stats__nav">
-      <view class="stats__nav-btn" @tap="prevPeriod">‹</view>
-      <text class="stats__nav-label">{{ periodLabel }}</text>
-      <view class="stats__nav-btn" @tap="nextPeriod">›</view>
-    </view>
-
-    <!-- 收支切换 -->
-    <view class="stats__type-toggle">
-      <view
-        class="stats__type-btn"
-        :class="{ 'stats__type-btn--active': entryType === 'EXPENSE', 'stats__type-btn--expense': entryType === 'EXPENSE' }"
-        @tap="entryType = 'EXPENSE'"
-      >
-        <text class="stats__type-text">支出</text>
+    <!-- 日期导航 + 收支切换（同一行） -->
+    <view class="stats__toolbar">
+      <view class="stats__nav">
+        <view class="stats__nav-btn" @tap="prevPeriod">‹</view>
+        <text class="stats__nav-label">{{ periodLabel }}</text>
+        <view class="stats__nav-btn" @tap="nextPeriod">›</view>
       </view>
-      <view
-        class="stats__type-btn"
-        :class="{ 'stats__type-btn--active': entryType === 'INCOME', 'stats__type-btn--income': entryType === 'INCOME' }"
-        @tap="entryType = 'INCOME'"
-      >
-        <text class="stats__type-text">收入</text>
+      <view class="stats__type-toggle">
+        <view
+          class="stats__type-btn"
+          :class="{ 'stats__type-btn--active': entryType === 'EXPENSE', 'stats__type-btn--expense': entryType === 'EXPENSE' }"
+          @tap="entryType = 'EXPENSE'"
+        >
+          <text class="stats__type-text">支出</text>
+        </view>
+        <view
+          class="stats__type-btn"
+          :class="{ 'stats__type-btn--active': entryType === 'INCOME', 'stats__type-btn--income': entryType === 'INCOME' }"
+          @tap="entryType = 'INCOME'"
+        >
+          <text class="stats__type-text">收入</text>
+        </view>
       </view>
     </view>
 
@@ -320,7 +320,7 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
   gap: var(--space-4);
 }
 
-/* ========== 切换 ========== */
+/* ========== 周/月/年切换 ========== */
 .stats__tabs {
   display: flex;
   background: var(--color-surface);
@@ -352,51 +352,56 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
   font-weight: var(--weight-semibold);
 }
 
-/* ========== 日期导航 ========== */
+/* ========== 工具栏（日期+类型同一行） ========== */
+.stats__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 .stats__nav {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-5);
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
 }
 
 .stats__nav-btn {
-  width: 56rpx;
-  height: 56rpx;
+  width: 48rpx;
+  height: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-full);
   background: var(--color-surface-soft);
   color: var(--color-text-secondary);
-  font-size: 32rpx;
+  font-size: 28rpx;
+  flex-shrink: 0;
 }
 
 .stats__nav-label {
   color: var(--color-text-primary);
-  font-size: var(--font-body);
+  font-size: var(--font-meta);
   font-weight: var(--weight-semibold);
-  min-width: 280rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: center;
 }
 
-/* ========== 类型切换 ========== */
 .stats__type-toggle {
   display: flex;
-  gap: var(--space-2);
+  gap: 4rpx;
+  flex-shrink: 0;
 }
 
 .stats__type-btn {
-  flex: 1;
-  text-align: center;
-  padding: var(--space-3) 0;
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
   background: var(--color-surface-soft);
   transition: all var(--motion-fast) var(--ease-standard);
-}
-
-.stats__type-btn--active {
-  box-shadow: var(--shadow-card);
 }
 
 .stats__type-btn--expense {
@@ -409,7 +414,7 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
 
 .stats__type-text {
   color: var(--color-text-secondary);
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   font-weight: var(--weight-medium);
 }
 
