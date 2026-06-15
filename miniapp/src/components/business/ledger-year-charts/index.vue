@@ -13,27 +13,31 @@
       </view>
     </view>
 
-    <!-- 日期导航 + 收支切换（同一行） -->
+    <!-- 日期导航 + 收支切换 -->
     <view class="stats__toolbar">
       <view class="stats__nav">
-        <view class="stats__nav-btn" @tap="prevPeriod">‹</view>
+        <view class="stats__nav-btn" @tap="prevPeriod">
+          <text class="stats__nav-arrow">‹</text>
+        </view>
         <text class="stats__nav-label">{{ periodLabel }}</text>
-        <view class="stats__nav-btn" @tap="nextPeriod">›</view>
+        <view class="stats__nav-btn" @tap="nextPeriod">
+          <text class="stats__nav-arrow">›</text>
+        </view>
       </view>
-      <view class="stats__type-toggle">
+      <view class="stats__type-pills">
         <view
-          class="stats__type-btn"
-          :class="{ 'stats__type-btn--active': entryType === 'EXPENSE', 'stats__type-btn--expense': entryType === 'EXPENSE' }"
+          class="stats__pill"
+          :class="entryType === 'EXPENSE' ? 'stats__pill--expense' : ''"
           @tap="entryType = 'EXPENSE'"
         >
-          <text class="stats__type-text">支出</text>
+          <text class="stats__pill-text">支出</text>
         </view>
         <view
-          class="stats__type-btn"
-          :class="{ 'stats__type-btn--active': entryType === 'INCOME', 'stats__type-btn--income': entryType === 'INCOME' }"
+          class="stats__pill"
+          :class="entryType === 'INCOME' ? 'stats__pill--income' : ''"
           @tap="entryType = 'INCOME'"
         >
-          <text class="stats__type-text">收入</text>
+          <text class="stats__pill-text">收入</text>
         </view>
       </view>
     </view>
@@ -303,7 +307,8 @@ async function loadStats() {
       type: entryType.value,
       bookId: props.bookId
     })
-  } catch {
+  } catch (error) {
+    console.error('[stats] loadStats failed', error)
     data.value = null
   } finally {
     loading.value = false
@@ -352,79 +357,89 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
   font-weight: var(--weight-semibold);
 }
 
-/* ========== 工具栏（日期+类型同一行） ========== */
+/* ========== 工具栏 ========== */
 .stats__toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-3) var(--space-4);
 }
 
 .stats__nav {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
   flex: 1;
   min-width: 0;
 }
 
 .stats__nav-btn {
-  width: 48rpx;
-  height: 48rpx;
+  width: 44rpx;
+  height: 44rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-full);
-  background: var(--color-surface-soft);
-  color: var(--color-text-secondary);
-  font-size: 28rpx;
+  border-radius: var(--radius-tiny);
   flex-shrink: 0;
+}
+
+.stats__nav-btn:active {
+  background: var(--color-surface-soft);
+}
+
+.stats__nav-arrow {
+  color: var(--color-text-secondary);
+  font-size: 32rpx;
+  font-weight: var(--weight-bold);
 }
 
 .stats__nav-label {
   color: var(--color-text-primary);
   font-size: var(--font-meta);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-bold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: center;
+  padding: 0 var(--space-2);
 }
 
-.stats__type-toggle {
+.stats__type-pills {
   display: flex;
-  gap: 4rpx;
+  gap: 0;
+  background: var(--color-surface-soft);
+  border-radius: var(--radius-full);
+  padding: 4rpx;
   flex-shrink: 0;
 }
 
-.stats__type-btn {
+.stats__pill {
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  background: var(--color-surface-soft);
   transition: all var(--motion-fast) var(--ease-standard);
 }
 
-.stats__type-btn--expense {
-  background: rgba(232, 99, 95, 0.12);
+.stats__pill--expense {
+  background: #E8635F;
 }
 
-.stats__type-btn--income {
-  background: rgba(91, 174, 124, 0.12);
+.stats__pill--income {
+  background: #5BAE7C;
 }
 
-.stats__type-text {
-  color: var(--color-text-secondary);
+.stats__pill-text {
+  color: var(--color-text-muted);
   font-size: var(--font-tiny);
   font-weight: var(--weight-medium);
 }
 
-.stats__type-btn--expense .stats__type-text {
-  color: #E8635F;
-  font-weight: var(--weight-semibold);
-}
-
-.stats__type-btn--income .stats__type-text {
-  color: #5BAE7C;
+.stats__pill--expense .stats__pill-text,
+.stats__pill--income .stats__pill-text {
+  color: #fff;
   font-weight: var(--weight-semibold);
 }
 
