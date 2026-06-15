@@ -140,29 +140,23 @@
     </view>
 
     <view v-else class="page-section">
-      <view class="section-shell">
-        <view class="section-head">
-          <view class="section-copy">
-            <view class="section-copy__title">{{ currentYear }} 年统计</view>
-            <view class="section-copy__desc">按月份查看收支情况，并用图表展示全年走势和分类分布。</view>
-          </view>
+      <!-- 年度概览卡片 -->
+      <view class="year-overview">
+        <view class="year-overview__header">
+          <text class="year-overview__title">📈 {{ currentYear }} 年统计</text>
         </view>
-
-        <view class="metric-grid">
-          <view class="metric-card">
-            <view class="metric-card__label">月份数</view>
-            <view class="metric-card__value">{{ yearOverview.length }}</view>
-            <view class="metric-card__hint">有记录的月份</view>
+        <view class="year-overview__stats">
+          <view class="year-overview__stat">
+            <text class="year-overview__stat-value">{{ yearOverview.length }}</text>
+            <text class="year-overview__stat-label">有记录月份</text>
           </view>
-          <view class="metric-card">
-            <view class="metric-card__label">总额</view>
-            <view class="metric-card__value">{{ yearTotalAmount }}</view>
-            <view class="metric-card__hint">全年累计</view>
+          <view class="year-overview__stat">
+            <text class="year-overview__stat-value">¥{{ yearTotalAmount }}</text>
+            <text class="year-overview__stat-label">全年累计</text>
           </view>
-          <view class="metric-card">
-            <view class="metric-card__label">账本</view>
-            <view class="metric-card__value">{{ selectedBookName || '--' }}</view>
-            <view class="metric-card__hint">当前视图</view>
+          <view class="year-overview__stat">
+            <text class="year-overview__stat-value">{{ selectedBookName || '--' }}</text>
+            <text class="year-overview__stat-label">当前账本</text>
           </view>
         </view>
       </view>
@@ -976,6 +970,51 @@ onShow(() => {
 .ledger-hero__metric-label {
   font-size: var(--font-tiny);
   opacity: 0.8;
+}
+
+/* ========== 年度概览 ========== */
+.year-overview {
+  margin: var(--space-4) var(--space-4) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.year-overview__header {
+  margin-bottom: var(--space-4);
+}
+
+.year-overview__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.year-overview__stats {
+  display: flex;
+  background: var(--color-surface-soft);
+  border-radius: var(--radius-medium);
+  padding: var(--space-4) 0;
+}
+
+.year-overview__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.year-overview__stat-value {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-bold);
+}
+
+.year-overview__stat-label {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
 }
 
 /* ========== 工具栏卡片 ========== */

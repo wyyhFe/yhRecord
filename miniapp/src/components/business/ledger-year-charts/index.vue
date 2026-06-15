@@ -1,31 +1,63 @@
 <template>
   <view class="year-charts">
-    <view class="year-charts__card">
-      <view class="year-charts__title">月度收支趋势</view>
-      <view class="year-charts__desc">按月份查看收入和支出的变化趋势。</view>
-      <EChartPanel :option="monthlyTrendOption" height="420rpx" />
+    <!-- 月度趋势 -->
+    <view class="chart-card">
+      <view class="chart-card__header">
+        <text class="chart-card__title">📊 月度收支趋势</text>
+      </view>
+      <view class="chart-card__legend">
+        <view class="chart-legend__item">
+          <view class="chart-legend__dot chart-legend__dot--expense" />
+          <text class="chart-legend__text">支出</text>
+        </view>
+        <view class="chart-legend__item">
+          <view class="chart-legend__dot chart-legend__dot--income" />
+          <text class="chart-legend__text">收入</text>
+        </view>
+      </view>
+      <EChartPanel :option="monthlyTrendOption" height="400rpx" />
     </view>
 
-    <view class="year-charts__card">
-      <view class="year-charts__title">支出分类分布</view>
-      <view class="year-charts__desc">{{ activeMonthLabel }}</view>
+    <!-- 支出分类 -->
+    <view class="chart-card">
+      <view class="chart-card__header">
+        <text class="chart-card__title">🏷️ 支出分类</text>
+        <text class="chart-card__subtitle">{{ activeMonthLabel }}</text>
+      </view>
 
-      <scroll-view scroll-x class="year-charts__tabs">
-        <view class="year-charts__tab-row">
+      <!-- 月份选择 -->
+      <scroll-view scroll-x class="month-scroll" :show-scrollbar="false">
+        <view class="month-scroll__inner">
           <view
             v-for="item in items"
             :key="item.month"
-            class="year-charts__tab"
-            :class="item.month === activeMonth ? 'year-charts__tab--active' : ''"
+            class="month-chip"
+            :class="{ 'month-chip--active': item.month === activeMonth }"
             @tap="activeMonth = item.month"
           >
-            {{ item.month }}月
+            <text class="month-chip__text">{{ item.month }}月</text>
           </view>
         </view>
       </scroll-view>
 
-      <EChartPanel v-if="activeDistributions.length" :option="distributionOption" height="420rpx" />
-      <view v-else class="note-card">当前月份没有可展示的支出分类。</view>
+      <!-- 分类概要 -->
+      <view v-if="activeDistributions.length" class="dist-summary">
+        <view v-for="(item, idx) in activeDistributions.slice(0, 5)" :key="idx" class="dist-item">
+          <view class="dist-item__bar-bg">
+            <view class="dist-item__bar-fill" :style="{ width: (item.ratio * 100) + '%', background: distColors[idx % distColors.length] }" />
+          </view>
+          <view class="dist-item__info">
+            <text class="dist-item__label">{{ item.label }}</text>
+            <text class="dist-item__amount">¥{{ item.amount.toFixed(2) }}</text>
+          </view>
+          <text class="dist-item__ratio">{{ (item.ratio * 100).toFixed(1) }}%</text>
+        </view>
+      </view>
+
+      <EChartPanel v-if="activeDistributions.length" :option="distributionOption" height="360rpx" />
+      <view v-else class="chart-empty">
+        <text class="chart-empty__text">当前月份没有支出分类数据</text>
+      </view>
     </view>
   </view>
 </template>
@@ -36,9 +68,9 @@ import type { ChartOption } from 'uni-echarts/shared'
 import EChartPanel from '@/components/business/echart-panel/index.vue'
 import { useThemeColors } from '@/composables/useThemeColors'
 
-// canvas 不解析 CSS 变量，必须用具体颜色字符串。主题切换时 colors.value 自动更新，
-// 下面所有 computed 的 chart options 会跟着重新计算 → ECharts 重新渲染。
 const colors = useThemeColors()
+
+const distColors = ['#9B7EC8', '#CFA052', '#5BAE7C', '#5B8DBE', '#D4956B']
 
 interface DistributionItem {
   label: string
@@ -63,10 +95,7 @@ const activeMonth = ref<number>()
 watch(
   () => props.items,
   (items) => {
-    if (!items.length) {
-      activeMonth.value = undefined
-      return
-    }
+    if (!items.length) { activeMonth.value = undefined; return }
     if (items.some((item) => item.month === activeMonth.value)) return
     activeMonth.value = items[0].month
   },
@@ -77,75 +106,44 @@ const activeItem = computed(() => props.items.find((item) => item.month === acti
 const activeDistributions = computed(() => activeItem.value?.distributions || [])
 const activeMonthLabel = computed(() => {
   if (!activeItem.value) return `${props.year} 年`
-  return `${props.year} 年 ${activeItem.value.month} 月支出分类`
+  return `${activeItem.value.month} 月`
 })
 
 const monthlyTrendOption = computed<ChartOption>(() => ({
-  // 支出红 + 收入绿，跟着主题切换。深色主题下用更柔和的版本（colors 自动给）
-  color: [colors.value.danger, colors.value.success],
-  animation: false,
-  grid: {
-    left: 20,
-    right: 20,
-    top: 36,
-    bottom: 20,
-    containLabel: true
-  },
-  tooltip: {
-    trigger: 'axis',
-    confine: true
-  },
-  legend: {
-    top: 0,
-    itemWidth: 18,
-    itemHeight: 10,
-    textStyle: {
-      color: colors.value.textSecondary,
-      fontSize: 11
-    }
-  },
+  color: ['#E8635F', '#5BAE7C'],
+  animation: true,
+  animationDuration: 600,
+  grid: { left: 16, right: 16, top: 24, bottom: 16, containLabel: true },
+  tooltip: { trigger: 'axis', confine: true },
   xAxis: {
     type: 'category',
     data: props.items.map((item) => `${item.month}月`),
-    axisLine: {
-      lineStyle: {
-        color: colors.value.border
-      }
-    },
-    axisLabel: {
-      color: colors.value.textMuted,
-      fontSize: 11
-    },
-    axisTick: {
-      show: false
-    }
+    axisLine: { show: false },
+    axisTick: { show: false },
+    axisLabel: { color: colors.value.textMuted, fontSize: 10 }
   },
   yAxis: {
     type: 'value',
-    axisLine: {
-      show: false
-    },
-    axisTick: {
-      show: false
-    },
-    splitLine: {
-      lineStyle: {
-        color: colors.value.surfaceSoft
-      }
-    },
-    axisLabel: {
-      color: colors.value.textMuted,
-      fontSize: 11
-    }
+    axisLine: { show: false },
+    axisTick: { show: false },
+    splitLine: { lineStyle: { color: colors.value.surfaceSoft, type: 'dashed' } },
+    axisLabel: { color: colors.value.textMuted, fontSize: 10 }
   },
   series: [
     {
       name: '支出',
       type: 'bar',
-      barMaxWidth: 18,
+      barMaxWidth: 20,
       data: props.items.map((item) => Number(item.expense.toFixed(2))),
       itemStyle: {
-        borderRadius: [8, 8, 0, 0]
+        borderRadius: [6, 6, 0, 0],
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: '#E8635F' },
+            { offset: 1, color: '#F2A09E' }
+          ]
+        }
       }
     },
     {
@@ -153,156 +151,239 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
       type: 'line',
       smooth: true,
       symbol: 'circle',
-      symbolSize: 7,
+      symbolSize: 8,
       data: props.items.map((item) => Number(item.income.toFixed(2))),
-      lineStyle: {
-        width: 3
-      },
-      itemStyle: {
-        // 折线点的描边色：用 bg 是为了和卡片背景重合，描边像是把圆点"挖"出来
-        borderWidth: 2,
-        borderColor: colors.value.bg
+      lineStyle: { width: 3, color: '#5BAE7C' },
+      itemStyle: { borderWidth: 3, borderColor: colors.value.bg, color: '#5BAE7C' },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(91,174,124,0.20)' },
+            { offset: 1, color: 'rgba(91,174,124,0)' }
+          ]
+        }
       }
     }
   ]
 }))
 
 const distributionOption = computed<ChartOption>(() => ({
-  color: [colors.value.primary],
-  animation: false,
-  grid: {
-    left: 24,
-    right: 20,
-    top: 16,
-    bottom: 20,
-    containLabel: true
-  },
-  tooltip: {
-    trigger: 'axis',
-    axisPointer: {
-      type: 'shadow'
-    },
-    confine: true,
-    formatter(params: unknown) {
-      const first = Array.isArray(params) ? params[0] : params
-      const item = first as { name?: string; value?: number }
-      return `${item.name || ''}: ${(item.value || 0).toFixed(2)}`
-    }
-  },
+  color: distColors,
+  animation: true,
+  animationDuration: 600,
+  grid: { left: 16, right: 40, top: 12, bottom: 12, containLabel: true },
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, confine: true },
   xAxis: {
     type: 'value',
-    axisLine: {
-      show: false
-    },
-    axisTick: {
-      show: false
-    },
-    splitLine: {
-      lineStyle: {
-        color: colors.value.surfaceSoft
-      }
-    },
-    axisLabel: {
-      color: colors.value.textMuted,
-      fontSize: 11
-    }
+    axisLine: { show: false },
+    axisTick: { show: false },
+    splitLine: { lineStyle: { color: colors.value.surfaceSoft, type: 'dashed' } },
+    axisLabel: { show: false }
   },
   yAxis: {
     type: 'category',
     data: activeDistributions.value.map((item) => item.label),
-    axisLine: {
-      show: false
-    },
-    axisTick: {
-      show: false
-    },
-    axisLabel: {
-      color: colors.value.textPrimary,
-      fontSize: 11
-    }
+    axisLine: { show: false },
+    axisTick: { show: false },
+    axisLabel: { color: colors.value.textPrimary, fontSize: 11 }
   },
-  series: [
-    {
-      type: 'bar',
-      barMaxWidth: 18,
-      data: activeDistributions.value.map((item) => Number(item.amount.toFixed(2))),
-      label: {
-        show: true,
-        position: 'right',
-        color: colors.value.textMuted,
-        formatter(params: { dataIndex: number }) {
-          const ratio = activeDistributions.value[params.dataIndex]?.ratio || 0
-          return `${(ratio * 100).toFixed(1)}%`
-        }
-      },
+  series: [{
+    type: 'bar',
+    barMaxWidth: 16,
+    data: activeDistributions.value.map((item, idx) => ({
+      value: Number(item.amount.toFixed(2)),
       itemStyle: {
-        // 渐变条：从 accent → primary，两个色都跟主题切换
+        borderRadius: [0, 8, 8, 0],
         color: {
-          type: 'linear',
-          x: 0,
-          y: 0,
-          x2: 1,
-          y2: 0,
+          type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
           colorStops: [
-            { offset: 0, color: colors.value.accent },
-            { offset: 1, color: colors.value.primary }
+            { offset: 0, color: distColors[idx % distColors.length] },
+            { offset: 1, color: distColors[idx % distColors.length] + '80' }
           ]
-        },
-        borderRadius: [0, 10, 10, 0]
+        }
+      }
+    })),
+    label: {
+      show: true,
+      position: 'right',
+      color: colors.value.textMuted,
+      fontSize: 10,
+      formatter(params: { dataIndex: number }) {
+        const ratio = activeDistributions.value[params.dataIndex]?.ratio || 0
+        return `${(ratio * 100).toFixed(1)}%`
       }
     }
-  ]
+  }]
 }))
 </script>
 
 <style scoped lang="scss">
 .year-charts {
+  margin-top: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: var(--space-4);
 }
 
-.year-charts__card {
-  padding: 24rpx 28rpx 28rpx;
-  border-radius: 28rpx;
-  background: var(--color-bg);
+/* ========== 图表卡片 ========== */
+.chart-card {
+  margin: 0 var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
 }
 
-.year-charts__title {
+.chart-card__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.chart-card__title {
   color: var(--color-text-primary);
-  font-size: 30rpx;
-  font-weight: 700;
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
 }
 
-.year-charts__desc {
-  margin-top: 8rpx;
+.chart-card__subtitle {
   color: var(--color-text-muted);
-  font-size: 24rpx;
+  font-size: var(--font-meta);
 }
 
-.year-charts__tabs {
-  margin: 20rpx 0 8rpx;
+/* 图例 */
+.chart-legend {
+  display: flex;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.chart-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chart-legend__dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: var(--radius-tiny);
+}
+
+.chart-legend__dot--expense {
+  background: #E8635F;
+}
+
+.chart-legend__dot--income {
+  background: #5BAE7C;
+}
+
+.chart-legend__text {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+/* 月份滚动 */
+.month-scroll {
+  margin-bottom: var(--space-4);
   white-space: nowrap;
 }
 
-.year-charts__tab-row {
+.month-scroll__inner {
   display: inline-flex;
-  gap: 12rpx;
+  gap: var(--space-2);
 }
 
-.year-charts__tab {
-  min-width: 92rpx;
-  padding: 14rpx 20rpx;
-  border-radius: 999rpx;
+.month-chip {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
   background: var(--color-surface-soft);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.month-chip--active {
+  background: var(--color-ledger);
+}
+
+.month-chip__text {
   color: var(--color-text-secondary);
-  font-size: 24rpx;
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-medium);
+}
+
+.month-chip--active .month-chip__text {
+  color: #fff;
+  font-weight: var(--weight-semibold);
+}
+
+/* 分类概要 */
+.dist-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.dist-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dist-item__bar-bg {
+  flex: 1;
+  height: 12rpx;
+  border-radius: 6rpx;
+  background: var(--color-surface-soft);
+  overflow: hidden;
+}
+
+.dist-item__bar-fill {
+  height: 100%;
+  border-radius: 6rpx;
+  transition: width 0.4s ease;
+}
+
+.dist-item__info {
+  width: 160rpx;
+  flex-shrink: 0;
+}
+
+.dist-item__label {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dist-item__amount {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 18rpx;
+}
+
+.dist-item__ratio {
+  width: 80rpx;
+  text-align: right;
+  color: var(--color-text-secondary);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-semibold);
+  flex-shrink: 0;
+}
+
+/* 空状态 */
+.chart-empty {
+  padding: var(--space-6) 0;
   text-align: center;
 }
 
-.year-charts__tab--active {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%);
-  color: var(--color-bg);
-  font-weight: 600;
+.chart-empty__text {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
 }
 </style>
