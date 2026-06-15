@@ -25,13 +25,14 @@ export function fetchPeriodStatistics(params: {
   type?: 'EXPENSE' | 'INCOME'
   bookId?: Id
 }) {
-  const qs = new URLSearchParams()
-  qs.set('startDate', params.startDate)
-  qs.set('endDate', params.endDate)
-  if (params.type) qs.set('type', params.type)
-  if (params.bookId) qs.set('bookId', String(params.bookId))
+  const parts = [
+    `startDate=${params.startDate}`,
+    `endDate=${params.endDate}`
+  ]
+  if (params.type) parts.push(`type=${params.type}`)
+  if (params.bookId) parts.push(`bookId=${params.bookId}`)
   return request<PeriodStatistics>({
-    url: `/ledger/statistics/period?${qs.toString()}`,
+    url: `/ledger/statistics/period?${parts.join('&')}`,
     method: 'GET'
   })
 }
