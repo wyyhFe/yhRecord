@@ -218,10 +218,12 @@ const trendOption = computed<ChartOption>(() => {
       confine: true,
       backgroundColor: 'rgba(0,0,0,0.75)',
       borderColor: 'transparent',
+      borderRadius: 8,
+      padding: [8, 12],
       textStyle: { color: '#fff', fontSize: 12 },
       formatter(params: unknown) {
         const item = Array.isArray(params) ? params[0] : params as { name?: string; value?: number }
-        return `${item.name || ''}\n¥${(item.value || 0).toFixed(2)}`
+        return `${item.name || ''}  ¥${(item.value || 0).toFixed(2)}`
       }
     },
     xAxis: {
@@ -356,7 +358,7 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
 .stats__panel {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 1;
   background: #E8EFF6;
   border-radius: var(--radius-large) var(--radius-large) 0 0;
   overflow: hidden;
