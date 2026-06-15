@@ -81,7 +81,10 @@ INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `path`, `component`, `redirec
 (11, 10, 'Diary', '/business/diary', '/business/diary/index', NULL, '日记管理', 'ep/notebook', 1, 'PAGE', 1),
 (12, 10, 'Checkin', '/business/checkin', '/business/checkin/index', NULL, '打卡管理', 'ep/circle-check', 2, 'PAGE', 1),
 (13, 10, 'Memorial', '/business/memorial', '/business/memorial/index', NULL, '纪念日管理', 'ep/calendar', 3, 'PAGE', 1),
-(14, 10, 'Ledger', '/business/ledger', '/business/ledger/index', NULL, '记账管理', 'ep/money', 4, 'PAGE', 1);
+(14, 10, 'Ledger', '/business/ledger', '/business/ledger/index', NULL, '记账管理', 'ep/money', 4, 'PAGE', 1),
+(15, 10, 'KnowledgeManage', '/business/knowledge', '/business/knowledge/index', NULL, '知识库管理', 'ep/collection', 5, 'PAGE', 1),
+(16, 10, 'KnowledgeDetail', '/business/knowledge/detail', '/business/knowledge/detail/index', NULL, '文档管理', NULL, 99, 'PAGE', 0),
+(17, 10, 'KnowledgeRag', '/business/knowledge/rag', '/business/knowledge/rag/index', NULL, 'RAG 分析', 'ep/chat-dot-square', 6, 'PAGE', 1);
 
 -- 系统管理
 INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `path`, `component`, `redirect`, `title`, `icon`, `rank`, `menu_type`, `show_link`) VALUES
@@ -93,10 +96,12 @@ INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `path`, `component`, `redirec
 -- 管理员拥有所有菜单
 INSERT INTO `sys_role_menu` (`id`, `role_id`, `menu_id`) SELECT 100 + n, 1, n FROM (
   SELECT 1 AS n UNION SELECT 2 UNION SELECT 10 UNION SELECT 11 UNION SELECT 12 UNION SELECT 13 UNION SELECT 14
+  UNION SELECT 15 UNION SELECT 16 UNION SELECT 17
   UNION SELECT 20 UNION SELECT 21 UNION SELECT 22 UNION SELECT 23
 ) t;
 
 -- 编辑者只有业务管理菜单
 INSERT INTO `sys_role_menu` (`id`, `role_id`, `menu_id`) VALUES
 (200, 2, 1), (201, 2, 2),
-(210, 2, 10), (211, 2, 11), (212, 2, 12), (213, 2, 13), (214, 2, 14);
+(210, 2, 10), (211, 2, 11), (212, 2, 12), (213, 2, 13), (214, 2, 14),
+(215, 2, 15), (216, 2, 16), (217, 2, 17);

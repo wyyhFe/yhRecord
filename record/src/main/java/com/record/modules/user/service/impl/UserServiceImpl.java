@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.record.common.enums.CommonStatus;
 import com.record.common.enums.GenderType;
 import com.record.common.enums.LoginType;
+import com.record.common.exception.BusinessException;
+import com.record.common.exception.ErrorCode;
 import com.record.modules.diary.service.DiaryService;
 import com.record.modules.user.mapper.UserIdentityMapper;
 import com.record.modules.user.mapper.UserMapper;
@@ -12,7 +14,10 @@ import com.record.modules.user.model.entity.User;
 import com.record.modules.user.model.entity.UserIdentity;
 import com.record.modules.user.model.vo.UserProfileVO;
 import com.record.modules.user.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +52,23 @@ public class UserServiceImpl implements UserService {
             return userMapper.selectById(existing.getUserId());
         }
 
+        // 1a. 有 sys_user 记录但 identity 未绑定 → 补绑后返回
+        if (provider == LoginType.WECHAT) {
+            User existingUser = userMapper.selectOne(
+                    new LambdaQueryWrapper<User>().eq(User::getOpenid, providerUserId));
+            if (existingUser != null) {
+                UserIdentity identity = new UserIdentity();
+                identity.setUserId(existingUser.getId());
+                identity.setProvider(provider);
+                identity.setProviderUserId(providerUserId);
+                identity.setNickname(nickname);
+                identity.setAvatarUrl(avatarUrl);
+                identity.setBoundAt(LocalDateTime.now());
+                userIdentityMapper.insert(identity);
+                return existingUser;
+            }
+        }
+
         // 2. 未绑定 → 新建用户 + 写一条绑定关系
         User user = new User();
         user.setNickname(nickname != null ? nickname : defaultNickname(provider));
@@ -58,7 +80,25 @@ public class UserServiceImpl implements UserService {
         if (provider == LoginType.WECHAT) {
             user.setOpenid(providerUserId);
         }
-        userMapper.insert(user);
+        try {
+            userMapper.insert(user);
+        } catch (DuplicateKeyException e) {
+            // 并发场景：两个请求同时走到此处，后一个 INSERT 触发了 openid UK 冲突
+            // 直接查已存在的用户，补绑 identity 后返回
+            User existingUser = userMapper.selectOne(
+                    new LambdaQueryWrapper<User>().eq(User::getOpenid, providerUserId));
+            // 极端情况：如果依旧查不到说明是其他 UK 冲突，抛原始异常
+            if (existingUser == null) throw e;
+            UserIdentity identity = new UserIdentity();
+            identity.setUserId(existingUser.getId());
+            identity.setProvider(provider);
+            identity.setProviderUserId(providerUserId);
+            identity.setNickname(nickname);
+            identity.setAvatarUrl(avatarUrl);
+            identity.setBoundAt(LocalDateTime.now());
+            userIdentityMapper.insert(identity);
+            return existingUser;
+        }
 
         UserIdentity identity = new UserIdentity();
         identity.setUserId(user.getId());
