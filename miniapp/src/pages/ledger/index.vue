@@ -180,20 +180,21 @@
       />
     </view>
 
-    <view class="ledger-page-tabbar">
-      <view class="ledger-page-tabbar__item" @tap="goBooks">
-        <u-icon name="list" size="38" color="var(--color-text-secondary)" />
-        <view class="ledger-page-tabbar__text">管理账本</view>
+    <!-- 底部操作栏 -->
+    <view class="ledger-tabbar">
+      <view class="ledger-tabbar__item" hover-class="ledger-tabbar__item--pressed" @tap="goBooks">
+        <text class="ledger-tabbar__icon">📚</text>
+        <text class="ledger-tabbar__label">账本</text>
       </view>
-
-      <view class="ledger-page-tabbar__center" @tap="openCreateEntryPopup">
-        <view class="ledger-page-tabbar__plus">+</view>
-        <view class="ledger-page-tabbar__text ledger-page-tabbar__text--active">记一笔</view>
+      <view class="ledger-tabbar__center" hover-class="ledger-tabbar__center--pressed" @tap="openCreateEntryPopup">
+        <view class="ledger-tabbar__btn">
+          <text class="ledger-tabbar__btn-icon">＋</text>
+        </view>
+        <text class="ledger-tabbar__label ledger-tabbar__label--active">记一笔</text>
       </view>
-
-      <view class="ledger-page-tabbar__item" @tap="shareBook">
-        <u-icon name="share" size="38" color="var(--color-text-secondary)" />
-        <view class="ledger-page-tabbar__text">邀请</view>
+      <view class="ledger-tabbar__item" hover-class="ledger-tabbar__item--pressed" @tap="shareBook">
+        <text class="ledger-tabbar__icon">🔗</text>
+        <text class="ledger-tabbar__label">邀请</text>
       </view>
     </view>
     <u-popup v-model="showFilterPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="true">
@@ -233,59 +234,36 @@
     <u-popup v-model="showEntryPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="true">
       <view class="entry-popup">
         <scroll-view scroll-y class="entry-popup__body">
+          <!-- 头部 -->
           <view class="entry-popup__head">
-            <view class="entry-popup__title">{{ editingEntryId ? '修改账单' : '记一笔' }}</view>
-            <view class="entry-popup__subtitle">金额、日期、标签和备注都在这里完成。</view>
+            <text class="entry-popup__title">{{ editingEntryId ? '修改账单' : '记一笔' }}</text>
           </view>
 
-          <view class="entry-popup__section">
-            <view class="entry-popup__row entry-popup__row--top">
+          <!-- 类型 + 日期 + 账本 -->
+          <view class="entry-popup__card">
+            <view class="entry-popup__row">
               <ChoiceChips v-model="entryForm.type" :items="typeOptions" />
               <picker mode="date" :value="entryForm.entryDate" @change="onEntryDateChange">
                 <view class="entry-popup__date">{{ entryForm.entryDate }}</view>
               </picker>
             </view>
-
             <view class="entry-popup__book" @tap="openBookSelector">
               <text class="entry-popup__book-label">所属账本</text>
-              <text class="entry-popup__book-value">{{ selectedBookLabel }}</text>
-            </view>
-          </view>
-
-          <view class="entry-popup__section">
-            <view class="entry-popup__amount">
-              <text class="entry-popup__amount-symbol">¥</text>
-              <text class="entry-popup__amount-value">{{ displayAmount }}</text>
-            </view>
-          </view>
-
-          <view class="entry-popup__section block-stack">
-            <view class="field-label">记账标签</view>
-            <ChoiceChips v-model="selectedTagIds" :items="popupTagOptions" :multiple="true" />
-          </view>
-
-          <view class="entry-popup__section block-stack">
-            <view class="entry-popup__row entry-popup__row--between entry-popup__row--plain">
-              <view class="field-label">备注</view>
-              <view class="entry-popup__link" @tap="chooseLedgerImage">
-                {{ entryImagePath ? '重新选择图片' : '添加图片' }}
+              <view class="entry-popup__book-right">
+                <text class="entry-popup__book-value">{{ selectedBookLabel }}</text>
+                <text class="entry-popup__book-arrow">›</text>
               </view>
             </view>
-
-            <view v-if="entryImagePath" class="ledger-entry-image">
-              <image :src="resolveMediaUrl(entryImagePath)" mode="aspectFill" class="ledger-entry-image__img" />
-            </view>
-
-            <u-input
-              v-model="entryForm.remark"
-              placeholder="补充这一笔的备注"
-              :border="true"
-              border-color="var(--color-border-strong)"
-              :custom-style="remarkStyle"
-            />
           </view>
 
-          <view class="entry-popup__section">
+          <!-- 金额 -->
+          <view class="entry-popup__card entry-popup__amount-card">
+            <text class="entry-popup__amount-symbol">¥</text>
+            <text class="entry-popup__amount-value">{{ displayAmount }}</text>
+          </view>
+
+          <!-- 键盘 -->
+          <view class="entry-popup__card">
             <view class="entry-keyboard">
               <view v-for="key in keyboardKeys" :key="key" class="entry-keyboard__key" @tap="tapKeyboard(key)">
                 {{ key }}
@@ -293,22 +271,48 @@
             </view>
           </view>
 
-          <view class="entry-popup__actions" :class="editingEntryId ? 'entry-popup__actions--editing' : ''">
-            <u-button plain shape="circle" :hair-line="false" @click="closeEntryPopup">取消</u-button>
+          <!-- 标签 -->
+          <view class="entry-popup__card">
+            <text class="entry-popup__card-label">记账标签</text>
+            <ChoiceChips v-model="selectedTagIds" :items="popupTagOptions" :multiple="true" />
+          </view>
+
+          <!-- 备注 + 图片 -->
+          <view class="entry-popup__card">
+            <view class="entry-popup__card-header">
+              <text class="entry-popup__card-label">备注</text>
+              <view class="entry-popup__add-image" @tap="chooseLedgerImage">
+                <text class="entry-popup__add-image-text">📷 {{ entryImagePath ? '重选图片' : '添加图片' }}</text>
+              </view>
+            </view>
+            <view v-if="entryImagePath" class="entry-popup__image-preview">
+              <image :src="resolveMediaUrl(entryImagePath)" mode="aspectFill" class="entry-popup__image-img" />
+            </view>
+            <input
+              v-model="entryForm.remark"
+              class="entry-popup__remark-input"
+              placeholder="补充这一笔的备注"
+            />
+          </view>
+
+          <!-- 操作按钮 -->
+          <view class="entry-popup__actions">
+            <u-button shape="circle" plain :hair-line="false" @click="closeEntryPopup">取消</u-button>
             <u-button
               v-if="editingEntryId"
               type="error"
               shape="circle"
               plain
+              :hair-line="false"
               :loading="submitting"
               @click="removeEntry"
             >
               删除
             </u-button>
             <u-button
-              type="primary"
               shape="circle"
-              color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
+              type="primary"
+              color="var(--color-ledger-gradient)"
               :loading="submitting"
               @click="submitEntry"
             >
@@ -1140,137 +1144,153 @@ onShow(() => {
   color: var(--color-success);
 }
 
-.ledger-page-tabbar {
+/* ========== 底部操作栏 ========== */
+.ledger-tabbar {
   position: fixed;
   left: var(--space-4);
   right: var(--space-4);
   bottom: var(--space-5);
   z-index: 20;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-6) var(--space-3);
+  align-items: center;
+  justify-content: space-around;
+  padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-xlarge);
   background: var(--color-surface);
-  box-shadow: 0 18rpx 42rpx rgba(67, 41, 26, 0.12);
+  box-shadow: var(--shadow-float);
 }
 
-.ledger-page-tabbar__item,
-.ledger-page-tabbar__center {
+.ledger-tabbar__item,
+.ledger-tabbar__center {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
+  gap: 6rpx;
+  transition: all var(--motion-fast) var(--ease-standard);
 }
 
-.ledger-page-tabbar__center {
-  transform: translateY(-18rpx);
+.ledger-tabbar__item--pressed,
+.ledger-tabbar__center--pressed {
+  transform: scale(0.92);
 }
 
-.ledger-page-tabbar__plus {
-  width: 92rpx;
-  height: 92rpx;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-primary-gradient);
-  color: var(--color-bg);
-  font-size: 52rpx;
+.ledger-tabbar__icon {
+  font-size: 40rpx;
   line-height: 1;
-  box-shadow: 0 16rpx 30rpx rgba(144, 88, 49, 0.2);
 }
 
-.ledger-page-tabbar__text {
-  color: var(--color-text-secondary);
+.ledger-tabbar__label {
+  color: var(--color-text-muted);
   font-size: var(--font-tiny);
 }
 
-.ledger-page-tabbar__text--active {
-  color: var(--color-primary);
+.ledger-tabbar__label--active {
+  color: var(--color-ledger);
   font-weight: var(--weight-bold);
 }
 
-.filter-popup,
-.entry-popup {
-  background: var(--color-bg);
+.ledger-tabbar__btn {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-ledger-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12rpx 28rpx rgba(91, 174, 124, 0.3);
+  transform: translateY(-16rpx);
 }
 
+.ledger-tabbar__btn-icon {
+  color: #fff;
+  font-size: 48rpx;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+}
+
+/* ========== 筛选弹窗 ========== */
 .filter-popup {
+  background: var(--color-bg);
   padding: var(--space-6) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
 }
 
-.filter-popup__head,
-.entry-popup__head {
+.filter-popup__head {
   text-align: center;
+  margin-bottom: var(--space-4);
 }
 
-.filter-popup__title,
+.filter-popup__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.filter-popup__empty {
+  font-size: var(--font-meta);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+  padding: var(--space-3);
+}
+
+/* ========== 记一笔弹窗 ========== */
+.entry-popup {
+  background: var(--color-bg);
+  max-height: 80vh;
+  padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.entry-popup__body {
+  max-height: calc(80vh - 40rpx);
+}
+
+.entry-popup__head {
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
 .entry-popup__title {
   color: var(--color-text-primary);
   font-size: var(--font-section);
   font-weight: var(--weight-bold);
 }
 
-.entry-popup {
-  max-height: 70vh;
-  padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+.entry-popup__card {
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
-.entry-popup__subtitle {
-  margin-top: var(--space-2);
-  color: var(--color-text-muted);
+.entry-popup__card-label {
+  display: block;
+  color: var(--color-text-secondary);
   font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-3);
 }
 
-.entry-popup__body {
-  max-height: calc(70vh - 48rpx);
-}
-
-.entry-popup__section {
-  margin-bottom: var(--space-4);
-  padding: var(--space-5) 0;
-  border-bottom: 1rpx solid var(--color-surface-soft);
-}
-
-.entry-popup__section:last-child {
-  margin-bottom: 0;
+.entry-popup__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
 }
 
 .entry-popup__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20rpx;
-}
-
-.entry-popup__row--top {
-  align-items: flex-start;
-}
-
-.entry-popup__row--between {
-  justify-content: space-between;
-}
-
-.entry-popup__row--plain {
-  margin-bottom: 12rpx;
-}
-
-.entry-popup__date,
-.entry-popup__book {
-  min-height: 76rpx;
-  border-radius: 20rpx;
-  background: var(--color-surface-soft);
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .entry-popup__date {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 220rpx;
-  padding: 0 var(--space-5);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
   color: var(--color-text-primary);
-  font-size: var(--font-body);
+  font-size: var(--font-meta);
   font-weight: var(--weight-semibold);
 }
 
@@ -1278,8 +1298,8 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: var(--space-4);
-  padding: 0 var(--space-5);
+  padding: var(--space-3) 0;
+  border-top: 1rpx solid var(--color-divider);
 }
 
 .entry-popup__book-label {
@@ -1287,81 +1307,112 @@ onShow(() => {
   font-size: var(--font-meta);
 }
 
-.entry-popup__book-value {
-  color: var(--color-text-primary);
-  font-size: 28rpx;
-  font-weight: 600;
+.entry-popup__book-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.entry-popup__amount {
+.entry-popup__book-value {
+  color: var(--color-text-primary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
+}
+
+.entry-popup__book-arrow {
+  color: var(--color-text-muted);
+  font-size: 28rpx;
+}
+
+/* 金额卡片 */
+.entry-popup__amount-card {
   display: flex;
   align-items: baseline;
-  gap: 12rpx;
+  gap: 8rpx;
+  padding: var(--space-5) var(--space-4);
 }
 
 .entry-popup__amount-symbol {
   color: var(--color-text-secondary);
-  font-size: 40rpx;
-  font-weight: 700;
+  font-size: 36rpx;
+  font-weight: var(--weight-bold);
 }
 
 .entry-popup__amount-value {
-  color: var(--color-text-primary);
+  color: var(--color-ledger);
   font-size: 72rpx;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   line-height: 1;
 }
 
-.entry-popup__link {
-  color: var(--color-primary);
-  font-size: 26rpx;
-  font-weight: 600;
-}
-
-.ledger-entry-image {
-  margin-bottom: 12rpx;
-}
-
-.ledger-entry-image__img {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 20rpx;
-  background: var(--color-surface-soft);
-}
-
+/* 键盘 */
 .entry-keyboard {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14rpx;
+  gap: 12rpx;
 }
 
 .entry-keyboard__key {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 92rpx;
-  border-radius: 20rpx;
+  height: 88rpx;
+  border-radius: var(--radius-medium);
   background: var(--color-surface-soft);
   color: var(--color-text-primary);
-  font-size: 40rpx;
-  font-weight: 600;
+  font-size: 36rpx;
+  font-weight: var(--weight-semibold);
+  transition: all var(--motion-fast) var(--ease-standard);
 }
 
+.entry-keyboard__key:active {
+  background: var(--color-surface-hover);
+}
+
+/* 图片 */
+.entry-popup__add-image {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-ledger-soft);
+}
+
+.entry-popup__add-image-text {
+  color: var(--color-ledger);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-semibold);
+}
+
+.entry-popup__image-preview {
+  margin-bottom: var(--space-3);
+}
+
+.entry-popup__image-img {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+}
+
+.entry-popup__remark-input {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+  color: var(--color-text-primary);
+  font-size: var(--font-meta);
+  box-sizing: border-box;
+}
+
+/* 操作按钮 */
 .entry-popup__actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16rpx;
-  margin-top: 20rpx;
-  padding-top: 12rpx;
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 
-.entry-popup__actions--editing {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.filter-popup__empty {
-  font-size: 24rpx;
-  line-height: 1.7;
+.entry-popup__actions .u-button {
+  flex: 1;
 }
 
 </style>
