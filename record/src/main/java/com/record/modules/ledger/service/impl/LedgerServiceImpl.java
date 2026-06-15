@@ -1,6 +1,7 @@
 package com.record.modules.ledger.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.record.common.enums.LedgerType;
 import com.record.common.enums.ResourceType;
 import com.record.common.exception.LedgerException;
 import com.record.modules.ledger.mapper.LedgerBookMapper;
@@ -12,8 +13,11 @@ import com.record.modules.ledger.model.dto.UpdateLedgerEntryRequest;
 import com.record.modules.ledger.model.entity.LedgerBook;
 import com.record.modules.ledger.model.entity.LedgerEntry;
 import com.record.modules.ledger.model.entity.LedgerEntryTagRel;
+import com.record.modules.ledger.model.vo.CategoryAmountVO;
+import com.record.modules.ledger.model.vo.DailyAmountVO;
 import com.record.modules.ledger.model.vo.LedgerBookVO;
 import com.record.modules.ledger.model.vo.LedgerEntryVO;
+import com.record.modules.ledger.model.vo.PeriodStatisticsVO;
 import com.record.modules.ledger.model.vo.YearStatisticsVO;
 import com.record.modules.ledger.service.LedgerService;
 import com.record.modules.recycle.service.RecycleBinService;
@@ -26,8 +30,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -220,6 +228,121 @@ public class LedgerServiceImpl implements LedgerService {
         return ledgerEntryMapper.selectList(wrapper).stream()
                 .map(this::toVO)
                 .toList();
+    }
+
+    @Override
+    public PeriodStatisticsVO periodStatistics(Long userId, LocalDate startDate, LocalDate endDate, String type, Long bookId) {
+        if (startDate == null || endDate == null) {
+            throw new LedgerException("统计时间范围不能为空");
+        }
+        if (startDate.isAfter(endDate)) {
+            throw new LedgerException("开始日期不能晚于结束日期");
+        }
+
+        // 1. 查区间内所有记录
+        List<LedgerEntry> entries = ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
+                .eq(LedgerEntry::getUserId, userId)
+                .eq(bookId != null, LedgerEntry::getBookId, bookId)
+                .isNull(LedgerEntry::getDeletedAt)
+                .ge(LedgerEntry::getEntryDate, startDate)
+                .le(LedgerEntry::getEntryDate, endDate));
+
+        // 2. 按类型过滤
+        LedgerType filterType = "INCOME".equalsIgnoreCase(type) ? LedgerType.INCOME : LedgerType.EXPENSE;
+        List<LedgerEntry> filtered = entries.stream()
+                .filter(e -> e.getType() == filterType)
+                .toList();
+
+        // 3. 总额
+        BigDecimal totalAmount = filtered.stream()
+                .map(LedgerEntry::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 4. 日均
+        long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        BigDecimal dailyAverage = days > 0
+                ? totalAmount.divide(BigDecimal.valueOf(days), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        // 5. 结余（收入 - 支出，不受 type 过滤影响）
+        BigDecimal incomeTotal = entries.stream()
+                .filter(e -> e.getType() == LedgerType.INCOME)
+                .map(LedgerEntry::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal expenseTotal = entries.stream()
+                .filter(e -> e.getType() == LedgerType.EXPENSE)
+                .map(LedgerEntry::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal balance = incomeTotal.subtract(expenseTotal);
+
+        // 6. 每日趋势
+        Map<LocalDate, BigDecimal> dailyMap = filtered.stream()
+                .collect(Collectors.groupingBy(
+                        LedgerEntry::getEntryDate,
+                        Collectors.reducing(BigDecimal.ZERO, LedgerEntry::getAmount, BigDecimal::add)));
+        List<DailyAmountVO> dailyTrend = new ArrayList<>();
+        for (LocalDate d = startDate; !d.isAfter(endDate); d = d.plusDays(1)) {
+            dailyTrend.add(DailyAmountVO.builder()
+                    .date(d)
+                    .amount(dailyMap.getOrDefault(d, BigDecimal.ZERO))
+                    .build());
+        }
+
+        // 7. 分类构成（按标签聚合）
+        Map<Long, BigDecimal> categoryMap = new HashMap<>();
+        for (LedgerEntry entry : filtered) {
+            List<Long> tagIds = ledgerEntryTagRelMapper.selectList(
+                    new LambdaQueryWrapper<LedgerEntryTagRel>().eq(LedgerEntryTagRel::getEntryId, entry.getId()))
+                    .stream().map(LedgerEntryTagRel::getTagId).toList();
+            if (tagIds.isEmpty()) {
+                categoryMap.merge(0L, entry.getAmount(), BigDecimal::add); // 0 = 未分类
+            } else {
+                for (Long tagId : tagIds) {
+                    categoryMap.merge(tagId, entry.getAmount(), BigDecimal::add);
+                }
+            }
+        }
+        BigDecimal safeTotal = totalAmount.compareTo(BigDecimal.ZERO) == 0 ? BigDecimal.ONE : totalAmount;
+        Map<Long, UserTag> tagMap = loadTagMap(categoryMap.keySet().stream().filter(id -> id != 0).collect(Collectors.toSet()));
+        List<CategoryAmountVO> categories = categoryMap.entrySet().stream()
+                .map(e -> {
+                    UserTag tag = e.getKey() == 0 ? null : tagMap.get(e.getKey());
+                    return CategoryAmountVO.builder()
+                            .tagId(e.getKey() == 0 ? null : e.getKey())
+                            .tagName(tag != null ? tag.getName() : "未分类")
+                            .amount(e.getValue())
+                            .ratio(e.getValue().divide(safeTotal, 4, RoundingMode.HALF_UP))
+                            .build();
+                })
+                .sorted((a, b) -> b.getAmount().compareTo(a.getAmount()))
+                .toList();
+
+        // 8. 上期总额（环比）
+        long periodDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        LocalDate prevEnd = startDate.minusDays(1);
+        LocalDate prevStart = prevEnd.minusDays(periodDays - 1);
+        List<LedgerEntry> prevEntries = ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
+                .eq(LedgerEntry::getUserId, userId)
+                .eq(bookId != null, LedgerEntry::getBookId, bookId)
+                .isNull(LedgerEntry::getDeletedAt)
+                .ge(LedgerEntry::getEntryDate, prevStart)
+                .le(LedgerEntry::getEntryDate, prevEnd)
+                .eq(LedgerEntry::getType, filterType));
+        BigDecimal previousTotal = prevEntries.stream()
+                .map(LedgerEntry::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return PeriodStatisticsVO.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .type(type != null ? type.toUpperCase() : "EXPENSE")
+                .totalAmount(totalAmount)
+                .dailyAverage(dailyAverage)
+                .previousTotal(previousTotal)
+                .balance(balance)
+                .dailyTrend(dailyTrend)
+                .categories(categories)
+                .build();
     }
 
     @Override

@@ -140,38 +140,7 @@
     </view>
 
     <view v-else class="page-section">
-      <!-- 年度概览卡片 -->
-      <view class="year-overview">
-        <view class="year-overview__header">
-          <text class="year-overview__title">📈 {{ currentYear }} 年统计</text>
-        </view>
-        <view class="year-overview__stats">
-          <view class="year-overview__stat">
-            <text class="year-overview__stat-value">{{ yearOverview.length }}</text>
-            <text class="year-overview__stat-label">有记录月份</text>
-          </view>
-          <view class="year-overview__stat">
-            <text class="year-overview__stat-value">¥{{ yearTotalAmount }}</text>
-            <text class="year-overview__stat-label">全年累计</text>
-          </view>
-          <view class="year-overview__stat">
-            <text class="year-overview__stat-value">{{ selectedBookName || '--' }}</text>
-            <text class="year-overview__stat-label">当前账本</text>
-          </view>
-        </view>
-      </view>
-
-      <LedgerYearCharts
-        v-if="yearOverview.length"
-        :key="`${currentYear}-${selectedBookId || 'no-book'}-${yearOverview.length}`"
-        :year="currentYear"
-        :items="yearOverview"
-      />
-      <EmptyStateCard
-        v-else
-        title="这一年还没有统计数据"
-        description="先切回月视图记几笔，年视图会自动生成汇总。"
-      />
+      <LedgerYearCharts :book-id="selectedBookId" />
     </view>
 
     <!-- 底部操作栏 -->

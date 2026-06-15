@@ -5,6 +5,7 @@ import com.record.common.model.ApiResponse;
 import com.record.modules.ledger.model.dto.CreateLedgerEntryRequest;
 import com.record.modules.ledger.model.dto.UpdateLedgerEntryRequest;
 import com.record.modules.ledger.model.vo.LedgerEntryVO;
+import com.record.modules.ledger.model.vo.PeriodStatisticsVO;
 import com.record.modules.ledger.model.vo.YearStatisticsVO;
 import com.record.modules.ledger.service.LedgerService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -70,5 +72,14 @@ public class LedgerEntryController {
     public ApiResponse<YearStatisticsVO> year(@RequestParam Integer year,
                                               @RequestParam(required = false) Long bookId) {
         return ApiResponse.success(ledgerService.yearStatistics(UserContext.getUserId(), year, bookId));
+    }
+
+    @Operation(summary = "区间统计（周报/月报/年报）")
+    @GetMapping("/statistics/period")
+    public ApiResponse<PeriodStatisticsVO> period(@RequestParam LocalDate startDate,
+                                                  @RequestParam LocalDate endDate,
+                                                  @RequestParam(defaultValue = "EXPENSE") String type,
+                                                  @RequestParam(required = false) Long bookId) {
+        return ApiResponse.success(ledgerService.periodStatistics(UserContext.getUserId(), startDate, endDate, type, bookId));
     }
 }

@@ -2,6 +2,41 @@
 import type { Id, LedgerEntry, LedgerYearStatistics } from '@/types/domain'
 
 /**
+ * 区间统计（周报/月报/年报共用）。
+ */
+export interface PeriodStatistics {
+  startDate: string
+  endDate: string
+  type: string
+  totalAmount: number
+  dailyAverage: number
+  previousTotal: number
+  balance: number
+  dailyTrend: Array<{ date: string; amount: number }>
+  categories: Array<{ tagId?: Id; tagName: string; amount: number; ratio: number }>
+}
+
+/**
+ * 获取区间统计。
+ */
+export function fetchPeriodStatistics(params: {
+  startDate: string
+  endDate: string
+  type?: 'EXPENSE' | 'INCOME'
+  bookId?: Id
+}) {
+  const qs = new URLSearchParams()
+  qs.set('startDate', params.startDate)
+  qs.set('endDate', params.endDate)
+  if (params.type) qs.set('type', params.type)
+  if (params.bookId) qs.set('bookId', String(params.bookId))
+  return request<PeriodStatistics>({
+    url: `/ledger/statistics/period?${qs.toString()}`,
+    method: 'GET'
+  })
+}
+
+/**
  * 获取某年某月的账单明细。
  * 月视图仍然走这个接口，精确按“年 + 月”拉取当前列表。
  */

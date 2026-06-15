@@ -5,6 +5,7 @@ import com.record.modules.ledger.model.dto.CreateLedgerEntryRequest;
 import com.record.modules.ledger.model.dto.UpdateLedgerEntryRequest;
 import com.record.modules.ledger.model.vo.LedgerBookVO;
 import com.record.modules.ledger.model.vo.LedgerEntryVO;
+import com.record.modules.ledger.model.vo.PeriodStatisticsVO;
 import com.record.modules.ledger.model.vo.YearStatisticsVO;
 
 import java.time.LocalDate;
@@ -28,6 +29,12 @@ public interface LedgerService {
     List<LedgerEntryVO> monthEntries(Long userId, Integer year, Integer month, Long bookId);
 
     YearStatisticsVO yearStatistics(Long userId, Integer year, Long bookId);
+
+    /**
+     * 区间统计（周报/月报/年报共用）。
+     * 按日期范围聚合，返回总额、日均、环比、结余、趋势、分类构成。
+     */
+    PeriodStatisticsVO periodStatistics(Long userId, LocalDate startDate, LocalDate endDate, String type, Long bookId);
 
     /**
      * 按日期范围拉取账单。
