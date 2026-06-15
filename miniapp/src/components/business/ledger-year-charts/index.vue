@@ -1,43 +1,43 @@
 <template>
   <view class="stats">
-    <!-- 周/月/年切换 -->
-    <view class="stats__tabs">
-      <view
-        v-for="tab in periodTabs"
-        :key="tab.value"
-        class="stats__tab"
-        :class="{ 'stats__tab--active': period === tab.value }"
-        @tap="period = tab.value"
-      >
-        <text class="stats__tab-text">{{ tab.label }}</text>
-      </view>
-    </view>
-
-    <!-- 日期导航 + 收支切换 -->
-    <view class="stats__toolbar">
-      <view class="stats__nav">
-        <view class="stats__nav-btn" @tap="prevPeriod">
-          <text class="stats__nav-arrow">‹</text>
-        </view>
-        <text class="stats__nav-label">{{ periodLabel }}</text>
-        <view class="stats__nav-btn" @tap="nextPeriod">
-          <text class="stats__nav-arrow">›</text>
+    <!-- 吸顶面板：tabs + 日期 + 类型 -->
+    <view class="stats__panel">
+      <view class="stats__tabs">
+        <view
+          v-for="tab in periodTabs"
+          :key="tab.value"
+          class="stats__tab"
+          :class="{ 'stats__tab--active': period === tab.value }"
+          @tap="period = tab.value"
+        >
+          <text class="stats__tab-text">{{ tab.label }}</text>
         </view>
       </view>
-      <view class="stats__type-pills">
-        <view
-          class="stats__pill"
-          :class="entryType === 'EXPENSE' ? 'stats__pill--expense' : ''"
-          @tap="entryType = 'EXPENSE'"
-        >
-          <text class="stats__pill-text">支出</text>
+      <view class="stats__toolbar">
+        <view class="stats__nav">
+          <view class="stats__nav-btn" @tap="prevPeriod">
+            <text class="stats__nav-arrow">‹</text>
+          </view>
+          <text class="stats__nav-label">{{ periodLabel }}</text>
+          <view class="stats__nav-btn" @tap="nextPeriod">
+            <text class="stats__nav-arrow">›</text>
+          </view>
         </view>
-        <view
-          class="stats__pill"
-          :class="entryType === 'INCOME' ? 'stats__pill--income' : ''"
-          @tap="entryType = 'INCOME'"
-        >
-          <text class="stats__pill-text">收入</text>
+        <view class="stats__type-pills">
+          <view
+            class="stats__pill"
+            :class="entryType === 'EXPENSE' ? 'stats__pill--expense' : ''"
+            @tap="entryType = 'EXPENSE'"
+          >
+            <text class="stats__pill-text">支出</text>
+          </view>
+          <view
+            class="stats__pill"
+            :class="entryType === 'INCOME' ? 'stats__pill--income' : ''"
+            @tap="entryType = 'INCOME'"
+          >
+            <text class="stats__pill-text">收入</text>
+          </view>
         </view>
       </view>
     </view>
@@ -332,48 +332,56 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
   gap: var(--space-4);
 }
 
-/* ========== 周/月/年切换 ========== */
+/* ========== 吸顶面板 ========== */
+.stats__panel {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #E8EFF6;
+  border-radius: var(--radius-large) var(--radius-large) 0 0;
+  overflow: hidden;
+}
+
+/* ========== tabs ========== */
 .stats__tabs {
   display: flex;
-  background: var(--color-surface);
-  border-radius: var(--radius-full);
-  padding: 6rpx;
-  box-shadow: var(--shadow-card);
+  gap: 0;
+  padding: var(--space-3) var(--space-3) 0;
 }
 
 .stats__tab {
   flex: 1;
   text-align: center;
   padding: var(--space-3) 0;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-medium) var(--radius-medium) 0 0;
+  background: rgba(255, 255, 255, 0.4);
   transition: all var(--motion-fast) var(--ease-standard);
 }
 
 .stats__tab--active {
-  background: var(--color-ledger);
+  background: #fff;
 }
 
 .stats__tab-text {
-  color: var(--color-text-secondary);
+  color: #666;
   font-size: var(--font-meta);
   font-weight: var(--weight-medium);
 }
 
 .stats__tab--active .stats__tab-text {
-  color: #fff;
-  font-weight: var(--weight-semibold);
+  color: #1C1C1E;
+  font-weight: var(--weight-bold);
 }
 
-/* ========== 工具栏 ========== */
+/* ========== 工具栏（白底区域） ========== */
 .stats__toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  background: var(--color-surface);
-  border-radius: var(--radius-large);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-3) var(--space-4);
+  background: #fff;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-radius: 0 0 var(--radius-large) var(--radius-large);
 }
 
 .stats__nav {
@@ -399,13 +407,13 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
 }
 
 .stats__nav-arrow {
-  color: var(--color-text-secondary);
+  color: #999;
   font-size: 32rpx;
   font-weight: var(--weight-bold);
 }
 
 .stats__nav-label {
-  color: var(--color-text-primary);
+  color: #1C1C1E;
   font-size: var(--font-meta);
   font-weight: var(--weight-bold);
   white-space: nowrap;
@@ -439,7 +447,7 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
 }
 
 .stats__pill-text {
-  color: var(--color-text-muted);
+  color: #999;
   font-size: var(--font-tiny);
   font-weight: var(--weight-medium);
 }
