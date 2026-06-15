@@ -15,7 +15,7 @@
           <text class="chart-legend__text">收入</text>
         </view>
       </view>
-      <EChartPanel :option="monthlyTrendOption" height="400rpx" />
+      <EChartPanel :option="monthlyTrendOption" height="360rpx" />
     </view>
 
     <!-- 支出分类 -->
@@ -40,21 +40,23 @@
         </view>
       </scroll-view>
 
-      <!-- 分类概要 -->
-      <view v-if="activeDistributions.length" class="dist-summary">
-        <view v-for="(item, idx) in activeDistributions.slice(0, 5)" :key="idx" class="dist-item">
-          <view class="dist-item__bar-bg">
-            <view class="dist-item__bar-fill" :style="{ width: (item.ratio * 100) + '%', background: distColors[idx % distColors.length] }" />
+      <view v-if="activeDistributions.length" class="dist-layout">
+        <!-- 环形图 -->
+        <view class="dist-ring-wrap">
+          <EChartPanel :option="donutOption" height="320rpx" />
+        </view>
+
+        <!-- 图例列表 -->
+        <view class="dist-legend">
+          <view v-for="(item, idx) in activeDistributions" :key="idx" class="dist-legend__item">
+            <view class="dist-legend__dot" :style="{ background: distColors[idx % distColors.length] }" />
+            <text class="dist-legend__label">{{ item.label }}</text>
+            <text class="dist-legend__amount">¥{{ item.amount.toFixed(0) }}</text>
+            <text class="dist-legend__ratio">{{ (item.ratio * 100).toFixed(1) }}%</text>
           </view>
-          <view class="dist-item__info">
-            <text class="dist-item__label">{{ item.label }}</text>
-            <text class="dist-item__amount">¥{{ item.amount.toFixed(2) }}</text>
-          </view>
-          <text class="dist-item__ratio">{{ (item.ratio * 100).toFixed(1) }}%</text>
         </view>
       </view>
 
-      <EChartPanel v-if="activeDistributions.length" :option="distributionOption" height="360rpx" />
       <view v-else class="chart-empty">
         <text class="chart-empty__text">当前月份没有支出分类数据</text>
       </view>
@@ -70,7 +72,7 @@ import { useThemeColors } from '@/composables/useThemeColors'
 
 const colors = useThemeColors()
 
-const distColors = ['#9B7EC8', '#CFA052', '#5BAE7C', '#5B8DBE', '#D4956B']
+const distColors = ['#9B7EC8', '#CFA052', '#5BAE7C', '#5B8DBE', '#D4956B', '#E8635F', '#7EC8A0', '#C87E7E']
 
 interface DistributionItem {
   label: string
@@ -107,6 +109,10 @@ const activeDistributions = computed(() => activeItem.value?.distributions || []
 const activeMonthLabel = computed(() => {
   if (!activeItem.value) return `${props.year} 年`
   return `${activeItem.value.month} 月`
+})
+
+const totalExpense = computed(() => {
+  return activeDistributions.value.reduce((sum, item) => sum + item.amount, 0)
 })
 
 const monthlyTrendOption = computed<ChartOption>(() => ({
@@ -168,51 +174,45 @@ const monthlyTrendOption = computed<ChartOption>(() => ({
   ]
 }))
 
-const distributionOption = computed<ChartOption>(() => ({
+const donutOption = computed<ChartOption>(() => ({
   color: distColors,
   animation: true,
-  animationDuration: 600,
-  grid: { left: 16, right: 40, top: 12, bottom: 12, containLabel: true },
-  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, confine: true },
-  xAxis: {
-    type: 'value',
-    axisLine: { show: false },
-    axisTick: { show: false },
-    splitLine: { lineStyle: { color: colors.value.surfaceSoft, type: 'dashed' } },
-    axisLabel: { show: false }
-  },
-  yAxis: {
-    type: 'category',
-    data: activeDistributions.value.map((item) => item.label),
-    axisLine: { show: false },
-    axisTick: { show: false },
-    axisLabel: { color: colors.value.textPrimary, fontSize: 11 }
-  },
+  animationDuration: 800,
   series: [{
-    type: 'bar',
-    barMaxWidth: 16,
-    data: activeDistributions.value.map((item, idx) => ({
-      value: Number(item.amount.toFixed(2)),
-      itemStyle: {
-        borderRadius: [0, 8, 8, 0],
-        color: {
-          type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
-          colorStops: [
-            { offset: 0, color: distColors[idx % distColors.length] },
-            { offset: 1, color: distColors[idx % distColors.length] + '80' }
-          ]
-        }
-      }
-    })),
+    type: 'pie',
+    radius: ['50%', '75%'],
+    center: ['50%', '50%'],
+    avoidLabelOverlap: false,
     label: {
       show: true,
-      position: 'right',
-      color: colors.value.textMuted,
-      fontSize: 10,
-      formatter(params: { dataIndex: number }) {
-        const ratio = activeDistributions.value[params.dataIndex]?.ratio || 0
-        return `${(ratio * 100).toFixed(1)}%`
+      position: 'center',
+      formatter: `¥{total|${totalExpense.value.toFixed(0)}}\n{label|总支出}`,
+      rich: {
+        total: {
+          fontSize: 22,
+          fontWeight: 'bold',
+          color: colors.value.textPrimary,
+          lineHeight: 30
+        },
+        label: {
+          fontSize: 11,
+          color: colors.value.textMuted,
+          lineHeight: 18
+        }
       }
+    },
+    labelLine: { show: false },
+    emphasis: {
+      scaleSize: 6
+    },
+    data: activeDistributions.value.map((item) => ({
+      name: item.label,
+      value: Number(item.amount.toFixed(2))
+    })),
+    itemStyle: {
+      borderRadius: 4,
+      borderColor: colors.value.bg,
+      borderWidth: 2
     }
   }]
 }))
@@ -318,60 +318,60 @@ const distributionOption = computed<ChartOption>(() => ({
   font-weight: var(--weight-semibold);
 }
 
-/* 分类概要 */
-.dist-summary {
+/* ========== 环形图 + 图例布局 ========== */
+.dist-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dist-ring-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+/* 图例列表 */
+.dist-legend {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-bottom: var(--space-4);
 }
 
-.dist-item {
+.dist-legend__item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
-.dist-item__bar-bg {
-  flex: 1;
-  height: 12rpx;
+.dist-legend__dot {
+  width: 20rpx;
+  height: 20rpx;
   border-radius: 6rpx;
-  background: var(--color-surface-soft);
-  overflow: hidden;
-}
-
-.dist-item__bar-fill {
-  height: 100%;
-  border-radius: 6rpx;
-  transition: width 0.4s ease;
-}
-
-.dist-item__info {
-  width: 160rpx;
   flex-shrink: 0;
 }
 
-.dist-item__label {
-  display: block;
+.dist-legend__label {
+  flex: 1;
+  min-width: 0;
   color: var(--color-text-primary);
-  font-size: var(--font-tiny);
+  font-size: var(--font-meta);
   font-weight: var(--weight-medium);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.dist-item__amount {
-  display: block;
-  color: var(--color-text-muted);
-  font-size: 18rpx;
+.dist-legend__amount {
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  flex-shrink: 0;
 }
 
-.dist-item__ratio {
+.dist-legend__ratio {
   width: 80rpx;
   text-align: right;
-  color: var(--color-text-secondary);
-  font-size: var(--font-tiny);
+  color: var(--color-text-primary);
+  font-size: var(--font-meta);
   font-weight: var(--weight-semibold);
   flex-shrink: 0;
 }
