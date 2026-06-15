@@ -1,113 +1,78 @@
-﻿<template>
-  <view class="page-shell-safe">
-    <view class="section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">去年今日</view>
-          <view class="section-copy__desc">
-            用真实接口回看去年同一天，把日记、打卡和纪念日放到同一页展示。
-          </view>
-        </view>
-        <view class="memory-date-chip">{{ targetDate }}</view>
+<template>
+  <view class="page-shell-safe memory-page">
+    <!-- Hero -->
+    <view class="memory-hero">
+      <view class="memory-hero__top">
+        <text class="memory-hero__date">{{ targetDate }}</text>
       </view>
-
-      <view class="metric-grid">
-        <view v-for="item in metrics" :key="item.label" class="metric-card">
-          <view class="metric-card__label">{{ item.label }}</view>
-          <view class="metric-card__value">{{ item.value }}</view>
-          <view class="metric-card__hint">{{ item.hint }}</view>
+      <view class="memory-hero__title">去年今日</view>
+      <view class="memory-hero__sub">回看去年同一天的日记、打卡和纪念日</view>
+      <view class="memory-hero__stats">
+        <view class="memory-hero__stat">
+          <text class="memory-hero__stat-value">{{ detail.diaries.length }}</text>
+          <text class="memory-hero__stat-label">日记</text>
+        </view>
+        <view class="memory-hero__stat">
+          <text class="memory-hero__stat-value">{{ detail.checkins.length }}</text>
+          <text class="memory-hero__stat-label">打卡</text>
+        </view>
+        <view class="memory-hero__stat">
+          <text class="memory-hero__stat-value">{{ detail.memorialDays.length }}</text>
+          <text class="memory-hero__stat-label">纪念日</text>
         </view>
       </view>
     </view>
 
-    <view class="page-section section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">日记</view>
-          <view class="section-copy__desc">去年这一天写下过什么。</view>
+    <!-- 日记 -->
+    <view class="memory-card">
+      <view class="memory-card__header">
+        <text class="memory-card__title">📝 日记</text>
+        <text class="memory-card__badge">{{ detail.diaries.length }}</text>
+      </view>
+      <view v-if="detail.diaries.length" class="memory-list">
+        <view v-for="item in detail.diaries" :key="item.id" class="memory-diary" @tap="goDiaryDetail(item.id)">
+          <text class="memory-diary__title">{{ item.title }}</text>
+          <text class="memory-diary__meta">{{ resolveDiaryMoodLabel(item.mood, '平静') }} · {{ item.recordDate }}</text>
+          <text class="memory-diary__content">{{ item.content }}</text>
         </view>
       </view>
-
-      <view v-if="detail.diaries.length" class="list-stack">
-        <view
-          v-for="item in detail.diaries"
-          :key="item.id"
-          class="list-card memory-diary-card"
-          @tap="goDiaryDetail(item.id)"
-        >
-          <view class="list-card__head">
-            <view>
-              <view class="list-card__title">{{ item.title }}</view>
-              <view class="list-card__meta">{{ item.recordDate }} {{ resolveDiaryMoodLabel(item.mood, '平静') }}</view>
-            </view>
-            <view class="list-card__aside">{{ resolveDiaryWeatherLabel(item.weather, '未记录天气') }}</view>
-          </view>
-          <view class="memory-diary-card__content">{{ item.content }}</view>
-        </view>
-      </view>
-      <EmptyStateCard
-        v-else
-        title="去年今天没有日记"
-        description="这一部分已经接通真实接口，等你后续留下更多内容后会自动展示。"
-        mode="history"
-      />
+      <EmptyStateCard v-else title="去年今天没有日记" description="等你留下更多内容后会自动展示" mode="history" />
     </view>
 
-    <view class="page-section section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">打卡</view>
-          <view class="section-copy__desc">那一天完成过哪些任务。</view>
-        </view>
+    <!-- 打卡 -->
+    <view class="memory-card">
+      <view class="memory-card__header">
+        <text class="memory-card__title">✅ 打卡</text>
+        <text class="memory-card__badge">{{ detail.checkins.length }}</text>
       </view>
-
-      <view v-if="detail.checkins.length" class="list-stack">
-        <view v-for="item in detail.checkins" :key="item.id" class="list-card">
-          <view class="list-card__head">
-            <view>
-              <view class="list-card__title">{{ item.name }}</view>
-              <view class="list-card__meta">{{ item.description || '未填写任务描述' }}</view>
-            </view>
-            <view class="memory-checkin-count">{{ item.totalCount }} 次</view>
+      <view v-if="detail.checkins.length" class="memory-list">
+        <view v-for="item in detail.checkins" :key="item.id" class="memory-checkin">
+          <view class="memory-checkin__left">
+            <text class="memory-checkin__name">{{ item.name }}</text>
+            <text class="memory-checkin__meta">{{ item.description || '暂无描述' }}</text>
           </view>
-          <view class="list-card__meta">最近一次完成：{{ item.latestCheckedAt || '无记录' }}</view>
+          <view class="memory-checkin__count">
+            <text class="memory-checkin__count-text">{{ item.totalCount }} 次</text>
+          </view>
         </view>
       </view>
-      <EmptyStateCard
-        v-else
-        title="去年今天没有打卡"
-        description="如果那一天完成过任务，这里会直接聚合展示。"
-        mode="history"
-      />
+      <EmptyStateCard v-else title="去年今天没有打卡" description="如果那一天完成过任务，这里会展示" mode="history" />
     </view>
 
-    <view class="page-section section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">纪念日</view>
-          <view class="section-copy__desc">那一天命中了哪些纪念提醒。</view>
-        </view>
-        <u-button plain shape="circle" size="mini" :hair-line="false" @click="goMemorialPage">管理纪念日</u-button>
+    <!-- 纪念日 -->
+    <view class="memory-card">
+      <view class="memory-card__header">
+        <text class="memory-card__title">📅 纪念日</text>
+        <text class="memory-card__badge">{{ detail.memorialDays.length }}</text>
       </view>
-
-      <view v-if="detail.memorialDays.length" class="list-stack">
-        <view v-for="item in detail.memorialDays" :key="item.id" class="list-card">
-          <view class="list-card__head">
-            <view>
-              <view class="list-card__title">{{ item.title }}</view>
-              <view class="list-card__meta">{{ item.type || '纪念日' }} / {{ item.memorialDate }}</view>
-            </view>
-            <view class="memory-tag">{{ item.annualRepeat ? '每年重复' : '单次' }}</view>
-          </view>
-          <view v-if="item.remark" class="list-card__meta">{{ item.remark }}</view>
+      <view v-if="detail.memorialDays.length" class="memory-list">
+        <view v-for="item in detail.memorialDays" :key="item.id" class="memory-memorial">
+          <text class="memory-memorial__title">{{ item.title }}</text>
+          <text class="memory-memorial__meta">{{ item.type || '纪念日' }} · {{ item.memorialDate }}</text>
+          <text v-if="item.remark" class="memory-memorial__remark">{{ item.remark }}</text>
         </view>
       </view>
-      <EmptyStateCard
-        v-else
-        title="去年今天没有纪念日"
-        description="如果命中了纪念日规则，这里会和日记、打卡一起展示。"
-        mode="history"
-      />
+      <EmptyStateCard v-else title="去年今天没有纪念日" description="命中纪念日规则后会自动展示" mode="history" />
     </view>
   </view>
 </template>
@@ -118,37 +83,13 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import { fetchOnThisDay } from '@/api/calendar'
 import type { CalendarDayDetail, Id } from '@/types/domain'
-import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
+import { resolveDiaryMoodLabel } from '@/utils/diary-display'
 
 const defaultDate = new Date()
-const queryDate = reactive({
-  value: defaultDate.toISOString().slice(0, 10)
-})
-const detail = reactive<CalendarDayDetail>({
-  date: '',
-  diaries: [],
-  checkins: [],
-  memorialDays: []
-})
+const queryDate = reactive({ value: defaultDate.toISOString().slice(0, 10) })
+const detail = reactive<CalendarDayDetail>({ date: '', diaries: [], checkins: [], memorialDays: [] })
 
 const targetDate = computed(() => detail.date || fallbackDateLabel())
-const metrics = computed(() => [
-  {
-    label: '日记',
-    value: String(detail.diaries.length),
-    hint: '去年同日记录数'
-  },
-  {
-    label: '打卡',
-    value: String(detail.checkins.length),
-    hint: '去年同日任务数'
-  },
-  {
-    label: '纪念日',
-    value: String(detail.memorialDays.length),
-    hint: '去年同日命中数'
-  }
-])
 
 function fallbackDateLabel() {
   const date = new Date(`${queryDate.value}T00:00:00`)
@@ -156,13 +97,7 @@ function fallbackDateLabel() {
   return date.toISOString().slice(0, 10)
 }
 
-function goDiaryDetail(id: Id) {
-  uni.navigateTo({ url: `/pages/diary/detail?id=${id}` })
-}
-
-function goMemorialPage() {
-  uni.navigateTo({ url: '/pages/memorialPage/index' })
-}
+function goDiaryDetail(id: Id) { uni.navigateTo({ url: `/pages/diary/detail?id=${id}` }) }
 
 async function loadOnThisDay() {
   try {
@@ -180,50 +115,207 @@ async function loadOnThisDay() {
   }
 }
 
-onLoad((query) => {
-  if (query?.date) {
-    queryDate.value = String(query.date)
-  }
-})
-
-onShow(() => {
-  loadOnThisDay()
-})
+onLoad((query) => { if (query?.date) queryDate.value = String(query.date) })
+onShow(() => { loadOnThisDay() })
 </script>
 
 <style scoped lang="scss">
-.memory-date-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 60rpx;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-full);
-  background: var(--color-surface-soft);
-  color: var(--color-text-secondary);
+.memory-page {
+  padding-bottom: var(--space-10);
+}
+
+/* ========== Hero ========== */
+.memory-hero {
+  background: var(--color-memory-gradient);
+  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
+  padding: var(--space-7) var(--space-6) var(--space-8);
+  color: #fff;
+}
+
+.memory-hero__top {
+  margin-bottom: var(--space-2);
+}
+
+.memory-hero__date {
   font-size: var(--font-meta);
+  opacity: 0.8;
+}
+
+.memory-hero__title {
+  font-size: var(--font-hero);
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+}
+
+.memory-hero__sub {
+  margin-top: var(--space-3);
+  font-size: var(--font-body);
+  opacity: 0.85;
+}
+
+.memory-hero__stats {
+  margin-top: var(--space-5);
+  display: flex;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-medium);
+  padding: var(--space-3) 0;
+}
+
+.memory-hero__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.memory-hero__stat-value {
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+}
+
+.memory-hero__stat-label {
+  font-size: var(--font-tiny);
+  opacity: 0.8;
+}
+
+/* ========== 卡片 ========== */
+.memory-card {
+  margin: var(--space-4) var(--space-4) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.memory-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.memory-card__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.memory-card__badge {
+  padding: 2rpx 14rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-memory-soft);
+  color: var(--color-memory);
+  font-size: var(--font-tiny);
   font-weight: var(--weight-semibold);
 }
 
-.memory-diary-card__content {
-  margin-top: var(--space-3);
+/* ========== 列表 ========== */
+.memory-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.memory-diary {
+  padding: var(--space-4);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+}
+
+.memory-diary__title {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+}
+
+.memory-diary__meta {
+  display: block;
+  margin-top: 4rpx;
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+.memory-diary__content {
+  display: block;
+  margin-top: var(--space-2);
   color: var(--color-text-secondary);
   font-size: var(--font-caption);
-  line-height: var(--leading-loose);
+  line-height: var(--leading-relaxed);
   display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;
-  word-break: break-all;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
-.memory-checkin-count,
-.memory-tag {
+.memory-checkin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+}
+
+.memory-checkin__left {
+  flex: 1;
+  min-width: 0;
+}
+
+.memory-checkin__name {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+}
+
+.memory-checkin__meta {
+  display: block;
+  margin-top: 4rpx;
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+.memory-checkin__count {
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  background: var(--color-surface-soft);
-  color: var(--color-text-secondary);
+  background: var(--color-checkin-soft);
+  flex-shrink: 0;
+  margin-left: var(--space-3);
+}
+
+.memory-checkin__count-text {
+  color: var(--color-checkin);
   font-size: var(--font-tiny);
+  font-weight: var(--weight-semibold);
+}
+
+.memory-memorial {
+  padding: var(--space-4);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+}
+
+.memory-memorial__title {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+}
+
+.memory-memorial__meta {
+  display: block;
+  margin-top: 4rpx;
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+.memory-memorial__remark {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-caption);
 }
 </style>

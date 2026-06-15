@@ -1,48 +1,58 @@
 <template>
-  <view class="page-shell-safe">
-    <view class="section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">固定提醒时间</view>
-          <view class="section-copy__desc">当前统一为每天 22:00，不再支持单独修改全局提醒时间。</view>
-        </view>
-        <u-tag text="22:00" plain shape="circle" type="warning" />
-      </view>
+  <view class="page-shell-safe reminder-page">
+    <!-- Hero -->
+    <view class="reminder-hero">
+      <text class="reminder-hero__icon">🔔</text>
+      <text class="reminder-hero__title">提醒设置</text>
+      <text class="reminder-hero__sub">管理订阅消息和公众号提醒通道</text>
     </view>
 
-    <view class="page-section section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">小程序订阅消息</view>
-          <view class="section-copy__desc">开启时会请求微信订阅授权，消息会进入微信服务通知。</view>
-          <view class="list-card__meta">
-            会一次性申请日记提醒、纪念日提醒、每日记账提醒和记账月报提醒四个模板。
-          </view>
+    <!-- 固定提醒时间 -->
+    <view class="reminder-card">
+      <view class="reminder-card__header">
+        <text class="reminder-card__title">⏰ 提醒时间</text>
+        <view class="reminder-card__badge">22:00</view>
+      </view>
+      <text class="reminder-card__desc">当前统一为每天 22:00 提醒</text>
+    </view>
+
+    <!-- 小程序订阅消息 -->
+    <view class="reminder-card">
+      <view class="reminder-card__header">
+        <view class="reminder-card__left">
+          <text class="reminder-card__title">📱 小程序订阅消息</text>
+          <text class="reminder-card__desc">开启后通过微信服务通知提醒</text>
         </view>
         <switch :checked="form.miniProgramReminderEnabled" color="var(--color-primary)" @change="onMiniProgramSwitch" />
       </view>
+      <view class="reminder-card__detail">
+        <text class="reminder-card__detail-text">包含日记、纪念日、每日记账、记账月报四个模板</text>
+      </view>
     </view>
 
-    <view class="page-section section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">公众号模板消息</view>
-          <view class="section-copy__desc">作为扩展提醒通道保留，依赖公众号 openid 绑定能力。</view>
+    <!-- 公众号模板消息 -->
+    <view class="reminder-card">
+      <view class="reminder-card__header">
+        <view class="reminder-card__left">
+          <text class="reminder-card__title">💬 公众号模板消息</text>
+          <text class="reminder-card__desc">扩展提醒通道，依赖公众号绑定</text>
         </view>
         <switch :checked="form.officialAccountReminderEnabled" color="var(--color-primary)" @change="onOfficialSwitch" />
       </view>
     </view>
 
-    <u-button
-      class="primary-action"
-      type="primary"
-      shape="circle"
-      color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
-      :loading="submitting"
-      @click="submit"
-    >
-      {{ submitting ? '保存中...' : '保存提醒设置' }}
-    </u-button>
+    <!-- 保存 -->
+    <view class="reminder-submit">
+      <u-button
+        shape="circle"
+        type="primary"
+        color="var(--color-primary-gradient)"
+        :loading="submitting"
+        @click="submit"
+      >
+        {{ submitting ? '保存中...' : '保存设置' }}
+      </u-button>
+    </view>
   </view>
 </template>
 
@@ -75,12 +85,9 @@ async function onMiniProgramSwitch(event: Event) {
     form.miniProgramReminderEnabled = false
     return
   }
-
   const granted = await requestMiniProgramSubscription()
   form.miniProgramReminderEnabled = granted
-  if (!granted) {
-    uni.$feedback.info('未授权订阅消息')
-  }
+  if (!granted) uni.$feedback.info('未授权订阅消息')
 }
 
 async function submit() {
@@ -88,11 +95,8 @@ async function submit() {
   try {
     if (form.miniProgramReminderEnabled) {
       const granted = await requestMiniProgramSubscription()
-      if (!granted) {
-        throw new Error('请先允许小程序订阅消息')
-      }
+      if (!granted) throw new Error('请先允许小程序订阅消息')
     }
-
     await saveReminderSettings({
       diaryReminderEnabled: form.diaryReminderEnabled,
       miniProgramReminderEnabled: form.miniProgramReminderEnabled,
@@ -112,9 +116,7 @@ async function init() {
     form.diaryReminderEnabled = result.diaryReminderEnabled
     form.miniProgramReminderEnabled = result.miniProgramReminderEnabled
     form.officialAccountReminderEnabled = result.officialAccountReminderEnabled
-  } catch {
-    // 初始化失败时保留默认值即可。
-  }
+  } catch { /* 默认值 */ }
 }
 
 async function requestMiniProgramSubscription() {
@@ -124,33 +126,119 @@ async function requestMiniProgramSubscription() {
     MP_LEDGER_MONTHLY_TEMPLATE_ID,
     MP_MEMORIAL_TEMPLATE_ID
   ].filter(Boolean)
-
-  if (!templateIds.length) {
-    throw new Error('请先在前端环境变量中配置订阅消息模板 ID')
-  }
-
+  if (!templateIds.length) throw new Error('请先配置订阅消息模板 ID')
   return new Promise<boolean>((resolve, reject) => {
     // #ifdef MP-WEIXIN
     uni.requestSubscribeMessage({
       tmplIds: templateIds,
       success: (result) => {
         const subscribeResult = result as unknown as Record<string, string>
-        const accepted = templateIds.some((templateId) => subscribeResult?.[templateId] === 'accept')
-        resolve(accepted)
+        resolve(templateIds.some((id) => subscribeResult?.[id] === 'accept'))
       },
-      fail: (error) => {
-        reject(error)
-      }
+      fail: reject
     })
     // #endif
-
     // #ifndef MP-WEIXIN
-    reject(new Error('订阅消息只能在微信小程序环境中请求授权'))
+    reject(new Error('订阅消息只能在微信小程序中请求'))
     // #endif
   })
 }
 
-onMounted(() => {
-  init()
-})
+onMounted(() => { init() })
 </script>
+
+<style scoped lang="scss">
+.reminder-page {
+  padding-bottom: var(--space-10);
+}
+
+/* ========== Hero ========== */
+.reminder-hero {
+  background: var(--color-primary-gradient);
+  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
+  padding: var(--space-8) var(--space-6) var(--space-7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+}
+
+.reminder-hero__icon {
+  font-size: 56rpx;
+  margin-bottom: var(--space-3);
+}
+
+.reminder-hero__title {
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+}
+
+.reminder-hero__sub {
+  margin-top: var(--space-2);
+  font-size: var(--font-meta);
+  opacity: 0.85;
+}
+
+/* ========== 卡片 ========== */
+.reminder-card {
+  margin: var(--space-4) var(--space-4) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.reminder-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.reminder-card__left {
+  flex: 1;
+  min-width: 0;
+}
+
+.reminder-card__title {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.reminder-card__desc {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
+}
+
+.reminder-card__badge {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  color: var(--color-text-primary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
+}
+
+.reminder-card__detail {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+}
+
+.reminder-card__detail-text {
+  color: var(--color-text-secondary);
+  font-size: var(--font-tiny);
+  line-height: var(--leading-relaxed);
+}
+
+/* ========== 提交 ========== */
+.reminder-submit {
+  margin: var(--space-6) var(--space-4) 0;
+}
+</style>

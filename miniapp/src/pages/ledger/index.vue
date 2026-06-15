@@ -1,31 +1,32 @@
 ﻿
 <template>
   <view class="page-shell-safe ledger-page">
-    <view class="section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">{{ pageTitle }}</view>
-          <view class="section-copy__desc">
-            按账本查看收支流水，支持年月切换、分类筛选和按天查看列表。
+    <!-- Hero -->
+    <view class="ledger-hero">
+      <view class="ledger-hero__top">
+        <text class="ledger-hero__title">{{ pageTitle }}</text>
+        <view class="ledger-hero__actions">
+          <view class="ledger-hero__action" @tap="goAiAnalysis">
+            <text class="ledger-hero__action-text">AI</text>
+          </view>
+          <view class="ledger-hero__action" @tap="goLedgerTags">
+            <text class="ledger-hero__action-text">标签</text>
+          </view>
+          <view class="ledger-hero__action" @tap="goBooks">
+            <text class="ledger-hero__action-text">账本</text>
           </view>
         </view>
-        <view class="ledger-header-actions">
-          <u-button plain shape="circle" size="mini" :hair-line="false" @click="goAiAnalysis">AI 分析</u-button>
-          <u-button plain shape="circle" size="mini" :hair-line="false" @click="goLedgerTags">管理标签</u-button>
-          <u-button plain shape="circle" size="mini" :hair-line="false" @click="goBooks">管理账本</u-button>
-        </view>
       </view>
-
-      <view class="metric-grid">
-        <view v-for="item in headerMetrics" :key="item.label" class="metric-card">
-          <view class="metric-card__label">{{ item.label }}</view>
-          <view class="metric-card__value">{{ item.value }}</view>
-          <view class="metric-card__hint">{{ item.hint }}</view>
+      <view class="ledger-hero__metrics">
+        <view v-for="item in headerMetrics" :key="item.label" class="ledger-hero__metric">
+          <text class="ledger-hero__metric-value">¥{{ item.value }}</text>
+          <text class="ledger-hero__metric-label">{{ item.label }}</text>
         </view>
       </view>
     </view>
 
-    <view class="page-section section-shell">
+    <!-- 工具栏 -->
+    <view class="ledger-toolbar-card">
       <view class="ledger-toolbar">
         <view class="ledger-toolbar__left">
           <picker
@@ -912,6 +913,76 @@ onShow(() => {
   padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
 }
 
+/* ========== Hero ========== */
+.ledger-hero {
+  background: var(--color-ledger-gradient);
+  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
+  padding: var(--space-7) var(--space-6) var(--space-6);
+  color: #fff;
+}
+
+.ledger-hero__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
+}
+
+.ledger-hero__title {
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+}
+
+.ledger-hero__actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.ledger-hero__action {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.ledger-hero__action-text {
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-semibold);
+}
+
+.ledger-hero__metrics {
+  display: flex;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-medium);
+  padding: var(--space-4) 0;
+}
+
+.ledger-hero__metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.ledger-hero__metric-value {
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.ledger-hero__metric-label {
+  font-size: var(--font-tiny);
+  opacity: 0.8;
+}
+
+/* ========== 工具栏卡片 ========== */
+.ledger-toolbar-card {
+  margin: var(--space-4) var(--space-4) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4) var(--space-5);
+}
+
 .ledger-toolbar {
   display: flex;
   align-items: center;
@@ -937,13 +1008,6 @@ onShow(() => {
   color: var(--color-text-primary);
   font-size: var(--font-caption);
   font-weight: var(--weight-semibold);
-}
-
-.ledger-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--space-3);
 }
 
 .ledger-group-stack {
