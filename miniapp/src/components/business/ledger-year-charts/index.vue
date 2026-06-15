@@ -43,11 +43,11 @@
     </view>
 
     <!-- 指标卡片 -->
+    <view v-if="data" class="stats__summary">
+      <text class="stats__summary-title">{{ periodPrefix }}{{ entryType === 'EXPENSE' ? '支出' : '收入' }}：<text class="stats__summary-amount">¥{{ data.totalAmount.toFixed(2) }}</text></text>
+    </view>
+
     <view v-if="data" class="stats__metrics">
-      <view class="stats__metric">
-        <text class="stats__metric-label">{{ periodPrefix }}{{ entryType === 'EXPENSE' ? '支出' : '收入' }}</text>
-        <text class="stats__metric-value">¥{{ data.totalAmount.toFixed(2) }}</text>
-      </view>
       <view class="stats__metric">
         <text class="stats__metric-label">日均{{ entryType === 'EXPENSE' ? '支出' : '收入' }}</text>
         <text class="stats__metric-value">¥{{ data.dailyAverage.toFixed(2) }}</text>
@@ -213,7 +213,17 @@ const trendOption = computed<ChartOption>(() => {
     animation: true,
     animationDuration: 500,
     grid: { left: 16, right: 16, top: 16, bottom: 16, containLabel: true },
-    tooltip: { trigger: 'axis', confine: true },
+    tooltip: {
+      trigger: 'axis',
+      confine: true,
+      backgroundColor: 'rgba(0,0,0,0.75)',
+      borderColor: 'transparent',
+      textStyle: { color: '#fff', fontSize: 12 },
+      formatter(params: unknown) {
+        const item = Array.isArray(params) ? params[0] : params as { name?: string; value?: number }
+        return `${item.name || ''}\n¥${(item.value || 0).toFixed(2)}`
+      }
+    },
     xAxis: {
       type: 'category',
       data: xLabels,
@@ -253,6 +263,16 @@ const pieOption = computed<ChartOption>(() => {
     color: pieColors,
     animation: true,
     animationDuration: 600,
+    tooltip: {
+      trigger: 'item',
+      confine: true,
+      backgroundColor: 'rgba(0,0,0,0.75)',
+      borderColor: 'transparent',
+      textStyle: { color: '#fff', fontSize: 12 },
+      formatter(params: { name: string; value: number; percent: number }) {
+        return `${params.name}\n¥${params.value.toFixed(2)} (${params.percent.toFixed(1)}%)`
+      }
+    },
     series: [{
       type: 'pie',
       radius: ['0%', '70%'],
@@ -458,10 +478,29 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
   font-weight: var(--weight-semibold);
 }
 
+/* ========== 总额摘要 ========== */
+.stats__summary {
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4) var(--space-5);
+}
+
+.stats__summary-title {
+  color: #1C1C1E;
+  font-size: var(--font-body);
+  font-weight: var(--weight-medium);
+}
+
+.stats__summary-amount {
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+}
+
 /* ========== 指标卡片 ========== */
 .stats__metrics {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-3);
 }
 
