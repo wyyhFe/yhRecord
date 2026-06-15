@@ -8,6 +8,7 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 打卡任务返回对象。
@@ -36,4 +37,16 @@ public class CheckinTaskVO {
 
     @Schema(description = "最近一次打卡时间", example = "2026-03-21T08:00:00")
     private LocalDateTime latestCheckedAt;
+
+    @Schema(description = "打卡备注", example = "今天完成 20 个俯卧撑")
+    private String remark;
+
+    @Schema(description = "附件路径列表")
+    private List<String> mediaPaths;
+
+    @Schema(description = "打卡心情 Emoji", example = "😊")
+    private String mood;
+
+    @Schema(description = "标签名称列表")
+    private List<String> tagNames;
 }

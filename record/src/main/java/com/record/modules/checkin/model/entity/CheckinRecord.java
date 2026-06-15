@@ -38,4 +38,10 @@ public class CheckinRecord extends BaseEntity {
 
     @Schema(description = "打卡备注", example = "今天完成 20 个俯卧撑")
     private String remark;
+
+    @Schema(description = "打卡心情 Emoji", example = "😊")
+    private String mood;
+
+    @Schema(description = "是否补卡", example = "0")
+    private Boolean isMend;
 }

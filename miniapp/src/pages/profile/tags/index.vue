@@ -1,92 +1,78 @@
 <template>
-  <view class="page-shell-safe">
-    <view class="section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">{{ pageTitle }}</view>
-          <view class="section-copy__desc">{{ pageDesc }}</view>
-        </view>
-        <u-tag :text="moduleType === 'LEDGER' ? '记账标签' : '日记标签'" type="warning" plain shape="circle" />
+  <view class="page-shell-safe tags-page">
+    <!-- Hero -->
+    <view class="tags-hero" :class="isLedger ? 'tags-hero--ledger' : 'tags-hero--diary'">
+      <text class="tags-hero__icon">{{ isLedger ? '¥' : '🏷️' }}</text>
+      <text class="tags-hero__title">{{ pageTitle }}</text>
+      <text class="tags-hero__sub">{{ pageDesc }}</text>
+    </view>
+
+    <!-- 记账标签类型切换 -->
+    <view v-if="isLedger" class="tags-switch">
+      <view
+        v-for="opt in ledgerTypeOptions"
+        :key="opt.value"
+        class="tags-switch__item"
+        :class="{ 'tags-switch__item--active': ledgerType === opt.value }"
+        @click="ledgerType = opt.value"
+      >
+        <text class="tags-switch__text">{{ opt.label }}</text>
       </view>
     </view>
 
-    <view v-if="moduleType === 'LEDGER'" class="page-section section-shell">
-      <view class="block-stack">
-        <view class="field-label">标签类型</view>
-        <ChoiceChips v-model="ledgerType" :items="ledgerTypeOptions" />
+    <!-- 我的标签 -->
+    <view class="tags-card">
+      <view class="tags-card__header">
+        <text class="tags-card__title">我的标签</text>
+        <text class="tags-card__badge">{{ tags.length }}</text>
+      </view>
+
+      <view v-if="tags.length" class="tags-grid">
+        <view v-for="item in tags" :key="item.id" class="tag-chip tag-chip--user">
+          <text class="tag-chip__color" :style="{ background: item.color || 'var(--color-checkin)' }" />
+          <text class="tag-chip__name">{{ item.name }}</text>
+          <text class="tag-chip__delete" @click.stop="removeTag(item.id)">×</text>
+        </view>
+      </view>
+      <view v-else class="tags-empty">
+        <text class="tags-empty__text">还没有标签，从下方模板添加吧</text>
       </view>
     </view>
 
-    <view class="page-section section-shell">
-      <view class="section-copy">
-        <view class="section-copy__title">新建自定义标签</view>
-        <view class="section-copy__desc">如果模板里没有合适的，可以直接新增自己的标签。</view>
+    <!-- 系统模板 -->
+    <view class="tags-card">
+      <view class="tags-card__header">
+        <text class="tags-card__title">系统模板</text>
+        <text class="tags-card__badge">{{ templates.length }}</text>
       </view>
-      <view class="action-grid-2">
-        <u-button type="primary" shape="circle" color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)" @click="createCustomTag">
-          新增标签
-        </u-button>
-        <u-button shape="circle" plain @click="loadData">刷新列表</u-button>
+
+      <view v-if="templates.length" class="tags-grid">
+        <view
+          v-for="item in templates"
+          :key="item.id"
+          class="tag-chip tag-chip--template"
+          @click="useTemplate(item.id)"
+        >
+          <text class="tag-chip__color" :style="{ background: item.color || 'var(--color-text-muted)' }" />
+          <text class="tag-chip__name">{{ item.name }}</text>
+          <text class="tag-chip__add">+</text>
+        </view>
+      </view>
+      <view v-else class="tags-empty">
+        <text class="tags-empty__text">暂无可用模板</text>
       </view>
     </view>
 
-    <view class="page-section">
-      <view class="section-shell">
-        <view class="section-copy">
-          <view class="section-copy__title">系统模板</view>
-          <view class="section-copy__desc">点击即可基于模板创建自己的标签。</view>
-        </view>
-      </view>
-
-      <view v-if="templates.length" class="list-stack">
-        <view v-for="item in templates" :key="item.id" class="list-card">
-          <view class="list-card__head">
-            <view>
-              <view class="list-card__title">{{ item.name }}</view>
-              <view class="list-card__meta">
-                {{ item.moduleType === 'LEDGER' ? ledgerTypeText(item.ledgerType) : '日记标签模板' }}
-              </view>
-            </view>
-            <u-button size="small" shape="circle" plain @click="useTemplate(item.id)">使用模板</u-button>
-          </view>
-        </view>
-      </view>
-      <EmptyStateCard
-        v-else
-        class="page-section"
-        title="暂无模板"
-        description="后台还没有配置可用标签模板。"
-      />
-    </view>
-
-    <view class="page-section">
-      <view class="section-shell">
-        <view class="section-copy">
-          <view class="section-copy__title">我的标签</view>
-          <view class="section-copy__desc">这里展示当前用户已经扩展或新建的标签。</view>
-        </view>
-      </view>
-
-      <view v-if="tags.length" class="list-stack">
-        <view v-for="item in tags" :key="item.id" class="list-card">
-          <view class="list-card__head">
-            <view>
-              <view class="list-card__title">{{ item.name }}</view>
-              <view class="list-card__meta">
-                {{ item.templateId ? '来源：模板扩展' : '来源：自定义创建' }}
-                <text v-if="moduleType === 'LEDGER'"> · {{ ledgerTypeText(item.ledgerType) }}</text>
-              </view>
-            </view>
-            <u-button size="small" shape="circle" plain type="error" @click="removeTag(item.id)">删除</u-button>
-          </view>
-        </view>
-      </view>
-      <EmptyStateCard
-        v-else
-        class="page-section"
-        title="还没有标签"
-        description="先从模板创建，或者直接新增自己的标签。"
-      />
+    <!-- 新增标签 -->
+    <view class="tags-action">
+      <u-button
+        shape="circle"
+        type="primary"
+        :color="isLedger ? 'var(--color-ledger-gradient)' : 'var(--color-diary-gradient)'"
+        @click="createCustomTag"
+      >
+        ＋ 新增自定义标签
+      </u-button>
     </view>
   </view>
 </template>
@@ -94,8 +80,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import ChoiceChips from '@/components/business/choice-chips'
-import EmptyStateCard from '@/components/business/empty-state-card'
 import {
   createTag,
   createTagFromTemplate,
@@ -113,25 +97,22 @@ const tags = ref<TagItem[]>([])
 const moduleType = ref<TagModuleType>('DIARY')
 const ledgerType = ref<LedgerTagType>('EXPENSE')
 
+const isLedger = computed(() => moduleType.value === 'LEDGER')
+
 const ledgerTypeOptions = [
-  { label: '支出标签', value: 'EXPENSE' },
-  { label: '收入标签', value: 'INCOME' }
+  { label: '支出', value: 'EXPENSE' as LedgerTagType },
+  { label: '收入', value: 'INCOME' as LedgerTagType }
 ]
 
-const pageTitle = computed(() => (moduleType.value === 'LEDGER' ? '记账标签管理' : '日记标签管理'))
+const pageTitle = computed(() => (isLedger.value ? '记账标签' : '日记标签'))
 const pageDesc = computed(() =>
-  moduleType.value === 'LEDGER'
-    ? '按支出和收入分别维护记账标签，方便筛选和记一笔时快速选择。'
-    : '先使用后台提供的基础模板，再扩展成自己的个性标签。'
+  isLedger.value
+    ? '按支出和收入分别管理，记账时快速选择'
+    : '管理日记标签，记录生活分类'
 )
 
 function currentLedgerType() {
-  return moduleType.value === 'LEDGER' ? ledgerType.value : undefined
-}
-
-function ledgerTypeText(type?: LedgerTagType) {
-  if (type === 'INCOME') return '收入标签'
-  return '支出标签'
+  return isLedger.value ? ledgerType.value : undefined
 }
 
 async function loadData() {
@@ -145,7 +126,7 @@ async function loadData() {
 
 async function useTemplate(templateId: Id) {
   await createTagFromTemplate(templateId, moduleType.value)
-  uni.$feedback.success('已从模板创建')
+  uni.$feedback.success('已添加')
   await loadData()
 }
 
@@ -154,7 +135,7 @@ async function createCustomTag() {
     title: '新增标签',
     content: '请输入标签名称',
     editable: true,
-    placeholderText: moduleType.value === 'LEDGER' ? '例如：餐饮、工资、报销' : '例如：旅行、生活'
+    placeholderText: isLedger.value ? '例如：餐饮、工资' : '例如：旅行、生活'
   })
 
   const name = result.content?.trim()
@@ -172,7 +153,7 @@ async function createCustomTag() {
 async function removeTag(id: Id) {
   const result = await uni.showModal({
     title: '确认删除',
-    content: '删除后该标签不会再出现在你的标签列表中。'
+    content: '删除后该标签不会再出现在标签列表中。'
   })
   if (!result.confirm) return
 
@@ -182,7 +163,7 @@ async function removeTag(id: Id) {
 }
 
 watch(ledgerType, () => {
-  if (moduleType.value === 'LEDGER') {
+  if (isLedger.value) {
     loadData().catch(() => undefined)
   }
 })
@@ -197,3 +178,197 @@ onLoad((query) => {
   loadData().catch(() => undefined)
 })
 </script>
+
+<style scoped lang="scss">
+.tags-page {
+  padding-bottom: var(--space-10);
+}
+
+/* ========== Hero ========== */
+.tags-hero {
+  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
+  padding: var(--space-8) var(--space-6) var(--space-7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+}
+
+.tags-hero--diary {
+  background: var(--color-diary-gradient);
+}
+
+.tags-hero--ledger {
+  background: var(--color-ledger-gradient);
+}
+
+.tags-hero__icon {
+  width: 96rpx;
+  height: 96rpx;
+  line-height: 96rpx;
+  text-align: center;
+  font-size: 48rpx;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.2);
+  margin-bottom: var(--space-4);
+}
+
+.tags-hero__title {
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+}
+
+.tags-hero__sub {
+  margin-top: var(--space-2);
+  font-size: var(--font-meta);
+  opacity: 0.85;
+}
+
+/* ========== 类型切换 ========== */
+.tags-switch {
+  margin: var(--space-4) var(--space-4) 0;
+  display: flex;
+  gap: var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+  padding: 6rpx;
+  box-shadow: var(--shadow-card);
+}
+
+.tags-switch__item {
+  flex: 1;
+  text-align: center;
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-full);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.tags-switch__item--active {
+  background: var(--color-ledger);
+  box-shadow: var(--shadow-btn);
+}
+
+.tags-switch__text {
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+.tags-switch__item--active .tags-switch__text {
+  color: #fff;
+}
+
+/* ========== 标签卡片 ========== */
+.tags-card {
+  margin: var(--space-4) var(--space-4) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.tags-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.tags-card__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.tags-card__badge {
+  padding: 2rpx 14rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+/* ========== 标签网格 ========== */
+.tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.tag-chip--user {
+  padding-right: var(--space-2);
+}
+
+.tag-chip--template {
+  cursor: pointer;
+}
+
+.tag-chip--template:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+.tag-chip__color {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.tag-chip__name {
+  color: var(--color-text-primary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
+}
+
+.tag-chip__delete {
+  width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  text-align: center;
+  border-radius: var(--radius-full);
+  background: rgba(255, 59, 48, 0.12);
+  color: var(--color-danger);
+  font-size: 24rpx;
+  margin-left: 4rpx;
+}
+
+.tag-chip__add {
+  width: 36rpx;
+  height: 36rpx;
+  line-height: 36rpx;
+  text-align: center;
+  border-radius: var(--radius-full);
+  background: var(--color-checkin-soft);
+  color: var(--color-checkin);
+  font-size: 24rpx;
+  margin-left: 4rpx;
+}
+
+/* ========== 空状态 ========== */
+.tags-empty {
+  padding: var(--space-5) 0;
+  text-align: center;
+}
+
+.tags-empty__text {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
+}
+
+/* ========== 底部操作 ========== */
+.tags-action {
+  margin: var(--space-6) var(--space-4) 0;
+}
+</style>

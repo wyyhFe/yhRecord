@@ -85,6 +85,18 @@
       }
     },
     {
+      "path": "pages/checkin/medals",
+      "style": {
+        "navigationBarTitleText": "我的成就"
+      }
+    },
+    {
+      "path": "pages/checkin/history",
+      "style": {
+        "navigationBarTitleText": "打卡历史"
+      }
+    },
+    {
       "path": "pages/memory/index",
       "style": {
         "navigationBarTitleText": "回忆"

@@ -233,6 +233,8 @@ CREATE TABLE IF NOT EXISTS `biz_checkin_record` (
   `checkin_date` DATE NOT NULL COMMENT '打卡业务日期',
   `checked_at` DATETIME NOT NULL COMMENT '实际打卡时间',
   `remark` VARCHAR(255) DEFAULT NULL COMMENT '打卡备注',
+  `mood` VARCHAR(8) DEFAULT NULL COMMENT '打卡心情 Emoji',
+  `is_mend` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否补卡：0-正常打卡 1-补卡',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
@@ -434,6 +436,72 @@ CREATE TABLE IF NOT EXISTS `biz_knowledge_chunk` (
   KEY `idx_knowledge_chunk_doc` (`document_id`, `chunk_index`),
   KEY `idx_knowledge_chunk_kb_status` (`knowledge_base_id`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库文档切片表';
+
+CREATE TABLE IF NOT EXISTS `biz_achievement_medal` (
+  `id` BIGINT NOT NULL COMMENT '勋章 ID',
+  `code` VARCHAR(64) NOT NULL COMMENT '勋章唯一编码',
+  `name` VARCHAR(64) NOT NULL COMMENT '勋章名称',
+  `description` VARCHAR(255) NOT NULL COMMENT '解锁条件描述',
+  `icon` VARCHAR(8) NOT NULL COMMENT '勋章图标 Emoji',
+  `category` VARCHAR(32) NOT NULL COMMENT '分类：STREAK / TOTAL / TIME / SPECIAL',
+  `difficulty` INT NOT NULL DEFAULT 1 COMMENT '难度等级 1-6',
+  `condition_value` INT NOT NULL DEFAULT 0 COMMENT '解锁阈值',
+  `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序值',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_medal_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='勋章定义表';
+
+CREATE TABLE IF NOT EXISTS `biz_user_medal` (
+  `id` BIGINT NOT NULL COMMENT '记录 ID',
+  `user_id` BIGINT NOT NULL COMMENT '用户 ID',
+  `medal_id` BIGINT NOT NULL COMMENT '勋章 ID',
+  `unlocked_at` DATETIME NOT NULL COMMENT '解锁时间',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_medal` (`user_id`, `medal_id`),
+  KEY `idx_user_medal_user` (`user_id`, `unlocked_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户勋章解锁记录';
+
+CREATE TABLE IF NOT EXISTS `biz_checkin_tag` (
+  `id` BIGINT NOT NULL COMMENT '标签 ID',
+  `user_id` BIGINT DEFAULT NULL COMMENT '用户 ID（系统预设为 NULL）',
+  `name` VARCHAR(32) NOT NULL COMMENT '标签名称',
+  `icon` VARCHAR(8) DEFAULT NULL COMMENT '标签图标 Emoji',
+  `is_system` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否系统预设',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_tag_user` (`user_id`),
+  KEY `idx_tag_system` (`is_system`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='打卡标签定义表';
+
+CREATE TABLE IF NOT EXISTS `biz_checkin_record_tag` (
+  `id` BIGINT NOT NULL COMMENT '记录 ID',
+  `record_id` BIGINT NOT NULL COMMENT '打卡记录 ID',
+  `tag_id` BIGINT NOT NULL COMMENT '标签 ID',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_record_tag` (`record_id`, `tag_id`),
+  KEY `idx_record_tag_tag` (`tag_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='打卡记录与标签关联表';
+
+CREATE TABLE IF NOT EXISTS `biz_checkin_media` (
+  `id` BIGINT NOT NULL COMMENT '主键 ID',
+  `record_id` BIGINT NOT NULL COMMENT '打卡记录 ID',
+  `media_type` VARCHAR(16) NOT NULL COMMENT '附件类型：IMAGE',
+  `file_path` VARCHAR(255) NOT NULL COMMENT '文件相对路径',
+  `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序值',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `created_by` BIGINT NOT NULL DEFAULT 0 COMMENT '创建人用户 ID，系统任务写 0',
+  `updated_by` BIGINT NOT NULL DEFAULT 0 COMMENT '更新人用户 ID，系统任务写 0',
+  PRIMARY KEY (`id`),
+  KEY `idx_checkin_media_record` (`record_id`, `sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='打卡附件表';
 
 SET FOREIGN_KEY_CHECKS = 1;
 

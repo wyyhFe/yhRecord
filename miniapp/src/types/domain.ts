@@ -104,6 +104,57 @@ export interface CheckinTask {
   startDate?: string
   totalCount: number
   latestCheckedAt?: string
+  remark?: string
+  mediaPaths?: string[]
+  mood?: string
+  tagNames?: string[]
+}
+
+/**
+ * 打卡标签。
+ */
+export interface CheckinTag {
+  id: Id
+  name: string
+  icon?: string
+  isSystem: boolean
+}
+
+/**
+ * 热力图每日数据。
+ */
+export interface HeatmapDay {
+  date: string
+  totalTasks: number
+  completedTasks: number
+}
+
+/**
+ * 热力图响应。
+ */
+export interface HeatmapData {
+  year: number
+  month: number
+  currentStreak: number
+  bestStreak: number
+  monthCheckinDays: number
+  monthTotalDays: number
+  days: HeatmapDay[]
+}
+
+/**
+ * 勋章信息。
+ */
+export interface Medal {
+  id: Id
+  code: string
+  name: string
+  description: string
+  icon: string
+  category: string
+  difficulty: number
+  unlocked: boolean
+  unlockedAt?: string
 }
 
 /**

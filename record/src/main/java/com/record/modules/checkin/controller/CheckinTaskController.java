@@ -3,9 +3,15 @@ package com.record.modules.checkin.controller;
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
 import com.record.modules.checkin.model.dto.CheckinRequest;
+import com.record.modules.checkin.model.dto.CreateCheckinTagRequest;
 import com.record.modules.checkin.model.dto.CreateCheckinTaskRequest;
+import com.record.modules.checkin.model.dto.MendCheckinRequest;
+import com.record.modules.checkin.model.entity.CheckinTag;
 import com.record.modules.checkin.model.vo.CheckinTaskVO;
+import com.record.modules.checkin.model.vo.HeatmapVO;
+import com.record.modules.checkin.model.vo.MedalVO;
 import com.record.modules.checkin.service.CheckinService;
+import com.record.modules.checkin.service.MedalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,9 +33,11 @@ import java.util.List;
 public class CheckinTaskController {
 
     private final CheckinService checkinService;
+    private final MedalService medalService;
 
-    public CheckinTaskController(CheckinService checkinService) {
+    public CheckinTaskController(CheckinService checkinService, MedalService medalService) {
         this.checkinService = checkinService;
+        this.medalService = medalService;
     }
 
     @Operation(summary = "创建打卡任务")
@@ -68,5 +76,42 @@ public class CheckinTaskController {
     @GetMapping("/day-detail")
     public ApiResponse<List<CheckinTaskVO>> dayDetail(@RequestParam LocalDate date) {
         return ApiResponse.success(checkinService.listByDate(UserContext.getUserId(), date));
+    }
+
+    @Operation(summary = "获取热力图数据")
+    @GetMapping("/heatmap")
+    public ApiResponse<HeatmapVO> heatmap(@RequestParam int year, @RequestParam int month) {
+        return ApiResponse.success(checkinService.getHeatmap(UserContext.getUserId(), year, month));
+    }
+
+    @Operation(summary = "获取标签列表")
+    @GetMapping("/tags")
+    public ApiResponse<List<CheckinTag>> listTags() {
+        return ApiResponse.success(checkinService.listTags(UserContext.getUserId()));
+    }
+
+    @Operation(summary = "创建自定义标签")
+    @PostMapping("/tags")
+    public ApiResponse<CheckinTag> createTag(@Valid @RequestBody CreateCheckinTagRequest request) {
+        return ApiResponse.success(checkinService.createTag(UserContext.getUserId(), request));
+    }
+
+    @Operation(summary = "补卡")
+    @PostMapping("/records/mend")
+    public ApiResponse<Void> mend(@Valid @RequestBody MendCheckinRequest request) {
+        checkinService.mendCheckin(UserContext.getUserId(), request);
+        return ApiResponse.success();
+    }
+
+    @Operation(summary = "查询当月剩余补卡次数")
+    @GetMapping("/mend-remaining")
+    public ApiResponse<Long> mendRemaining() {
+        return ApiResponse.success(checkinService.getMonthlyMendRemaining(UserContext.getUserId()));
+    }
+
+    @Operation(summary = "获取勋章列表")
+    @GetMapping("/medals")
+    public ApiResponse<List<MedalVO>> medals() {
+        return ApiResponse.success(medalService.listMedals(UserContext.getUserId()));
     }
 }
