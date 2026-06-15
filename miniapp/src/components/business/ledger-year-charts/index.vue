@@ -87,7 +87,12 @@
       </view>
     </view>
 
-    <!-- 加载/空状态 -->
+    <!-- 加载中 -->
+    <view v-if="loading" class="stats__empty">
+      <text class="stats__empty-text">加载中...</text>
+    </view>
+
+    <!-- 空状态 -->
     <view v-if="!data && !loading" class="stats__empty">
       <text class="stats__empty-text">暂无统计数据</text>
     </view>
@@ -301,12 +306,14 @@ function nextPeriod() {
 async function loadStats() {
   loading.value = true
   try {
-    data.value = await fetchPeriodStatistics({
+    const result = await fetchPeriodStatistics({
       startDate: dateRange.value.start,
       endDate: dateRange.value.end,
       type: entryType.value,
       bookId: props.bookId
     })
+    console.log('[stats] loaded', result)
+    data.value = result
   } catch (error) {
     console.error('[stats] loadStats failed', error)
     data.value = null
