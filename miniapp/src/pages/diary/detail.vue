@@ -1,59 +1,94 @@
 <template>
   <view class="page-shell-safe detail-page">
-    <!-- Hero 头部 -->
+    <!-- Hero -->
     <view class="detail-hero">
-      <view class="detail-hero__tags">
-        <view v-for="item in metaItems" :key="item.key" class="detail-hero__tag">
-          <text class="detail-hero__tag-label">{{ item.label }}</text>
-          <text class="detail-hero__tag-value">{{ item.value }}</text>
+      <view class="detail-hero__meta">
+        <view v-if="detail?.recordDate" class="detail-hero__chip">
+          <text class="detail-hero__chip-text">📅 {{ detail.recordDate }}</text>
+        </view>
+        <view v-if="detail?.weather" class="detail-hero__chip">
+          <text class="detail-hero__chip-text">{{ resolveDiaryWeatherLabel(detail.weather) }}</text>
+        </view>
+        <view v-if="detail?.mood" class="detail-hero__chip">
+          <text class="detail-hero__chip-text">{{ resolveDiaryMoodLabel(detail.mood) }}</text>
         </view>
       </view>
       <text class="detail-hero__title">{{ detail?.title || '正在加载...' }}</text>
-      <text class="detail-hero__subtitle">
-        {{ detail?.ageLabel || '把这一天的内容完整保留下来。' }}
-      </text>
+      <text v-if="detail?.ageLabel" class="detail-hero__age">{{ detail.ageLabel }}</text>
     </view>
 
     <!-- 正文 -->
-    <view class="detail-section">
-      <text class="detail-section__text">{{ detail?.content || '暂无内容' }}</text>
+    <view class="detail-card">
+      <text class="detail-card__text">{{ detail?.content || '暂无内容' }}</text>
     </view>
 
     <!-- 照片 -->
-    <view v-if="detail?.mediaPaths?.length" class="detail-section">
+    <view v-if="detail?.mediaPaths?.length" class="detail-card">
+      <view class="detail-card__header">
+        <text class="detail-card__title">📷 照片</text>
+        <text class="detail-card__badge">{{ detail.mediaPaths.length }}</text>
+      </view>
       <view class="detail-media">
         <image
-          v-for="path in detail.mediaPaths"
-          :key="path"
+          v-for="(path, idx) in detail.mediaPaths"
+          :key="idx"
           :src="resolveImage(path)"
           mode="aspectFill"
           class="detail-media__item"
+          @tap="previewImage(idx)"
         />
       </view>
     </view>
 
-    <!-- 补充信息 -->
-    <view v-if="detail?.address || detail?.visibility" class="detail-section">
-      <view class="detail-extra">
-        <view v-if="detail?.address" class="detail-extra__item">
-          <text class="detail-extra__label">地址</text>
-          <text class="detail-extra__value">{{ detail.address }}</text>
+    <!-- 标签 -->
+    <view v-if="detail?.tags?.length" class="detail-card">
+      <view class="detail-card__header">
+        <text class="detail-card__title">🏷️ 标签</text>
+      </view>
+      <view class="detail-tags">
+        <view v-for="tag in detail.tags" :key="tag.id" class="detail-tag">
+          <text class="detail-tag__name">{{ tag.name }}</text>
         </view>
-        <view v-if="detail?.visibility" class="detail-extra__item">
-          <text class="detail-extra__label">可见范围</text>
-          <text class="detail-extra__value">{{ visibilityText }}</text>
+      </view>
+    </view>
+
+    <!-- 位置信息 -->
+    <view v-if="detail?.address" class="detail-card">
+      <view class="detail-card__header">
+        <text class="detail-card__title">📍 位置</text>
+      </view>
+      <text class="detail-card__text detail-card__text--secondary">{{ detail.address }}</text>
+    </view>
+
+    <!-- 可见范围 -->
+    <view v-if="detail?.visibility" class="detail-card">
+      <view class="detail-card__row">
+        <text class="detail-card__row-label">可见范围</text>
+        <view class="detail-card__row-badge" :class="'detail-card__row-badge--' + detail.visibility?.toLowerCase()">
+          <text class="detail-card__row-badge-text">{{ visibilityText }}</text>
         </view>
       </view>
     </view>
 
     <!-- 操作按钮 -->
     <view class="detail-actions">
-      <view class="btn-secondary" @click="goEdit">
-        <text>编辑日记</text>
-      </view>
-      <view class="btn-ghost btn-ghost--danger" @click="removeDiary">
-        <text>删除</text>
-      </view>
+      <u-button
+        shape="circle"
+        type="primary"
+        color="var(--color-diary-gradient)"
+        @click="goEdit"
+      >
+        编辑日记
+      </u-button>
+      <u-button
+        shape="circle"
+        plain
+        type="error"
+        :hair-line="false"
+        @click="removeDiary"
+      >
+        删除
+      </u-button>
     </view>
   </view>
 </template>
@@ -69,40 +104,21 @@ import type { DiaryItem } from '@/types/domain'
 const detail = ref<DiaryItem | null>(null)
 const diaryId = ref('')
 
-const metaItems = computed(() => {
-  const items: Array<{ key: string; label: string; value: string }> = []
-  if (detail.value?.recordDate) {
-    items.push({ key: 'recordDate', label: '日期', value: detail.value.recordDate })
-  }
-  if (detail.value?.weather) {
-    items.push({
-      key: 'weather',
-      label: '天气',
-      value: resolveDiaryWeatherLabel(detail.value.weather)
-    })
-  }
-  if (detail.value?.mood) {
-    items.push({
-      key: 'mood',
-      label: '心情',
-      value: resolveDiaryMoodLabel(detail.value.mood)
-    })
-  }
-  if (detail.value?.locationName) {
-    items.push({ key: 'locationName', label: '位置', value: detail.value.locationName })
-  }
-  return items
-})
-
 const visibilityText = computed(() => {
-  const visibility = detail.value?.visibility
-  if (visibility === 'PUBLIC') return '公开'
-  if (visibility === 'SHARED') return '仅分享可见'
+  const v = detail.value?.visibility
+  if (v === 'PUBLIC') return '公开'
+  if (v === 'SHARED') return '仅分享可见'
   return '仅自己可见'
 })
 
 function resolveImage(path: string) {
   return path.startsWith('http') ? path : `${OSS_BASE_URL}/${path}`
+}
+
+function previewImage(idx: number) {
+  if (!detail.value?.mediaPaths?.length) return
+  const urls = detail.value.mediaPaths.map((p) => resolveImage(p))
+  uni.previewImage({ urls, current: idx })
 }
 
 function goEdit() {
@@ -138,83 +154,136 @@ onLoad((options) => {
 </script>
 
 <style scoped lang="scss">
-/* ============================================================
- * Diary Detail v4 · Warm Modern
- * ========================================================= */
-
 .detail-page {
   padding-bottom: var(--space-10);
 }
 
-/* Hero 渐变头部 */
+/* ========== Hero ========== */
 .detail-hero {
-  background: var(--hero-diary-gradient);
+  background: var(--color-diary-gradient);
   border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-7) var(--space-6) var(--space-6);
+  padding: var(--space-7) var(--space-6) var(--space-8);
+  color: #fff;
 }
 
-.detail-hero__tags {
+.detail-hero__meta {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 
-.detail-hero__tag {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: 8rpx 18rpx;
+.detail-hero__chip {
+  padding: 6rpx 18rpx;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.2);
 }
 
-.detail-hero__tag-label {
-  color: var(--color-text-muted);
+.detail-hero__chip-text {
+  color: #fff;
   font-size: var(--font-tiny);
-}
-
-.detail-hero__tag-value {
-  color: var(--color-text-primary);
-  font-size: var(--font-tiny);
-  font-weight: var(--weight-semibold);
 }
 
 .detail-hero__title {
-  margin-top: var(--space-4);
-  color: var(--color-text-primary);
+  display: block;
   font-size: var(--font-display);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
 }
 
-.detail-hero__subtitle {
+.detail-hero__age {
+  display: block;
   margin-top: var(--space-3);
-  color: var(--color-text-secondary);
-  font-size: var(--font-body);
-  line-height: var(--leading-relaxed);
+  font-size: var(--font-meta);
+  opacity: 0.8;
 }
 
-/* 内容区块 */
-.detail-section {
-  margin-top: var(--space-4);
+/* ========== 通用卡片 ========== */
+.detail-card {
+  margin: var(--space-4) var(--space-4) 0;
   background: var(--color-surface);
   border-radius: var(--radius-large);
   box-shadow: var(--shadow-card);
-  padding: var(--space-6);
+  padding: var(--space-5);
 }
 
-.detail-section__text {
+.detail-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.detail-card__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.detail-card__badge {
+  padding: 2rpx 14rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-diary-soft);
+  color: var(--color-diary);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-semibold);
+}
+
+.detail-card__text {
   color: var(--color-text-primary);
   font-size: var(--font-body);
   line-height: var(--leading-loose);
 }
 
-/* 照片网格 */
+.detail-card__text--secondary {
+  color: var(--color-text-secondary);
+  font-size: var(--font-caption);
+}
+
+.detail-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-card__row-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-body);
+}
+
+.detail-card__row-badge {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+}
+
+.detail-card__row-badge--public {
+  background: rgba(52, 199, 89, 0.12);
+}
+
+.detail-card__row-badge--shared {
+  background: rgba(90, 200, 250, 0.12);
+}
+
+.detail-card__row-badge--private {
+  background: var(--color-surface-soft);
+}
+
+.detail-card__row-badge-text {
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
+}
+
+.detail-card__row-badge--public .detail-card__row-badge-text {
+  color: var(--color-success);
+}
+
+/* ========== 照片 ========== */
 .detail-media {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
+  gap: 12rpx;
 }
 
 .detail-media__item {
@@ -223,44 +292,30 @@ onLoad((options) => {
   border-radius: var(--radius-medium);
 }
 
-/* 补充信息 */
-.detail-extra {
+/* ========== 标签 ========== */
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.detail-tag {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-diary-soft);
+}
+
+.detail-tag__name {
+  color: var(--color-diary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
+}
+
+/* ========== 操作按钮 ========== */
+.detail-actions {
+  margin: var(--space-6) var(--space-4) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-}
-
-.detail-extra__item {
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface-soft);
-  border-left: 6rpx solid var(--color-primary);
-}
-
-.detail-extra__label {
-  color: var(--color-text-muted);
-  font-size: var(--font-meta);
-}
-
-.detail-extra__value {
-  margin-top: var(--space-2);
-  color: var(--color-text-primary);
-  font-size: var(--font-caption);
-  line-height: var(--leading-relaxed);
-}
-
-/* 操作按钮 */
-.detail-actions {
-  margin-top: var(--space-7);
-  display: flex;
-  gap: var(--space-4);
-}
-
-.detail-actions .btn-secondary {
-  flex: 1;
-}
-
-.btn-ghost--danger {
-  color: var(--color-danger) !important;
+  gap: var(--space-3);
 }
 </style>
