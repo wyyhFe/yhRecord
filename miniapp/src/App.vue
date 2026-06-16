@@ -1,5 +1,6 @@
 <template>
   <slot />
+  <AppLoading :visible="loading.visible.value" :text="loading.text.value" />
 </template>
 
 <script setup lang="ts">
@@ -7,6 +8,10 @@ import { onLaunch, onShow } from '@dcloudio/uni-app'
 import { ensureEntryAuth } from '@/utils/auth'
 import { useAppStore } from '@/stores/app'
 import { ensureSession } from '@/utils/session'
+import AppLoading from '@/components/business/app-loading/index.vue'
+import { useLoading } from '@/composables/useLoading'
+
+const loading = useLoading()
 
 const appStore = useAppStore()
 
