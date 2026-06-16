@@ -354,11 +354,8 @@ watch([dateRange, entryType, () => props.bookId], () => { loadStats() }, { immed
   gap: var(--space-4);
 }
 
-/* ========== 吸顶面板 ========== */
+/* ========== 面板 ========== */
 .stats__panel {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   background: #E8EFF6;
   border-radius: var(--radius-large) var(--radius-large) 0 0;
   overflow: hidden;
