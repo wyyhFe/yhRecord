@@ -1,21 +1,18 @@
 import { message } from "@/utils/message";
-import { getDiaryList, deleteDiary } from "@/api/diary";
+import { getMemorialList, deleteMemorial } from "@/api/memorial";
 import { reactive, ref, onMounted } from "vue";
 import type { PaginationProps } from "@pureadmin/table";
 import {
   createColumns,
   formatDateTime,
-  formatDate,
-  renderMoodTag,
-  renderTags,
-  renderImagePreview
+  formatDate
 } from "@/utils/table";
+import { ElTag } from "element-plus";
 
-export function useDiary() {
+export function useMemorial() {
   const form = reactive({
-    recordDate: "",
-    mood: "",
-    content: ""
+    title: "",
+    type: ""
   });
 
   const dataList = ref([]);
@@ -29,40 +26,44 @@ export function useDiary() {
     background: true
   });
 
+  const typeMap = {
+    BIRTHDAY: { text: "生日", type: "primary" as const },
+    ANNIVERSARY: { text: "纪念日", type: "success" as const },
+    HOLIDAY: { text: "节日", type: "warning" as const },
+    OTHER: { text: "其他", type: "info" as const }
+  };
+
   const columns: TableColumnList = createColumns({
     selectable: true,
     showId: true,
     extra: [
+      { label: "标题", prop: "title", minWidth: 150 },
       {
-        label: "记录日期",
-        prop: "recordDate",
+        label: "类型",
+        prop: "type",
+        width: 100,
+        cellRenderer: ({ row }) => {
+          const t = typeMap[row.type] || { text: row.type || "-", type: "info" as const };
+          return <el-tag type={t.type}>{t.text}</el-tag>;
+        }
+      },
+      {
+        label: "纪念日期",
+        prop: "memorialDate",
         width: 120,
-        formatter: ({ recordDate }) => formatDate(recordDate)
+        formatter: ({ memorialDate }) => formatDate(memorialDate)
       },
       {
-        label: "内容",
-        prop: "content",
-        minWidth: 200,
-        showOverflowTooltip: true
-      },
-      {
-        label: "心情",
-        prop: "mood",
+        label: "每年重复",
+        prop: "annualRepeat",
         width: 100,
-        cellRenderer: ({ row }) => renderMoodTag(row.mood)
+        cellRenderer: ({ row }) => (
+          <el-tag type={row.annualRepeat ? "success" : "info"}>
+            {row.annualRepeat ? "是" : "否"}
+          </el-tag>
+        )
       },
-      {
-        label: "标签",
-        prop: "tags",
-        minWidth: 150,
-        cellRenderer: ({ row }) => renderTags(row.tags)
-      },
-      {
-        label: "图片",
-        prop: "imageUrls",
-        width: 100,
-        cellRenderer: ({ row }) => renderImagePreview(row.imageUrls)
-      },
+      { label: "备注", prop: "remark", minWidth: 150, showOverflowTooltip: true },
       {
         label: "创建时间",
         prop: "createdAt",
@@ -89,7 +90,7 @@ export function useDiary() {
 
   async function onSearch() {
     loading.value = true;
-    const { code, data } = await getDiaryList({
+    const { code, data } = await getMemorialList({
       pageNum: pagination.currentPage,
       pageSize: pagination.pageSize,
       ...form
@@ -110,22 +111,22 @@ export function useDiary() {
   };
 
   async function handleDelete(row) {
-    const { code } = await deleteDiary(row.id);
+    const { code } = await deleteMemorial(row.id);
     if (code === 0) {
-      message("删除日记成功", { type: "success" });
+      message("删除纪念日成功", { type: "success" });
       onSearch();
     }
   }
 
   async function handleBatchDelete() {
     if (!selectedIds.value.length) {
-      message("请选择要删除的日记", { type: "warning" });
+      message("请选择要删除的纪念日", { type: "warning" });
       return;
     }
     for (const id of selectedIds.value) {
-      await deleteDiary(id);
+      await deleteMemorial(id);
     }
-    message(`批量删除${selectedIds.value.length}条日记成功`, { type: "success" });
+    message(`批量删除${selectedIds.value.length}条纪念日成功`, { type: "success" });
     selectedIds.value = [];
     onSearch();
   }

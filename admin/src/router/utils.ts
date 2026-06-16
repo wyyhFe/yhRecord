@@ -82,16 +82,20 @@ function isOneOfArray(a: Array<string>, b: Array<string>) {
 }
 
 /** 从localStorage里取出当前登录用户的角色roles，过滤无权限的菜单 */
-function filterNoPermissionTree(data: RouteComponent[]) {
+function filterNoPermissionTree(data: RouteComponent[], depth = 0) {
   const currentRoles =
     storageLocal().getItem<DataInfo<number>>(userKey)?.roles ?? [];
+  console.log("[filterNoPermissionTree] depth=" + depth + " currentRoles:", currentRoles, " input:", data.map((v: any) => v.path));
   const newTree = cloneDeep(data).filter((v: any) =>
     isOneOfArray(v.meta?.roles, currentRoles)
   );
+  console.log("[filterNoPermissionTree] depth=" + depth + " after role filter:", newTree.map((v: any) => v.path));
   newTree.forEach(
-    (v: any) => v.children && (v.children = filterNoPermissionTree(v.children))
+    (v: any) => v.children && (v.children = filterNoPermissionTree(v.children, depth + 1))
   );
-  return filterChildrenTree(newTree);
+  const result = filterChildrenTree(newTree);
+  console.log("[filterNoPermissionTree] depth=" + depth + " after filterChildrenTree:", result.map((v: any) => v.path));
+  return result;
 }
 
 /** 通过指定 `key` 获取父级路径集合，默认 `key` 为 `path` */
@@ -157,18 +161,26 @@ function addPathMatch() {
 /** 处理动态路由（后端返回的路由） */
 function handleAsyncRoutes(routeList) {
   if (routeList.length === 0) {
+    console.warn("[handleAsyncRoutes] 路由列表为空");
     usePermissionStoreHook().handleWholeMenus(routeList);
   } else {
-    formatFlatteningRoutes(addAsyncRoutes(routeList)).map(
-      (v: RouteRecordRaw) => {
+    console.log("[handleAsyncRoutes] 收到路由:", routeList.length, "条");
+    const processedRoutes = addAsyncRoutes(routeList);
+    console.log("[handleAsyncRoutes] 处理完成, 即将注册:", JSON.stringify(processedRoutes.map((r: any) => ({ path: r.path, name: r.name, hasChildren: !!r.children, componentType: typeof r.component }))));
+
+    // 递归注册路由（保持树形结构）
+    function registerRoutes(routes: RouteRecordRaw[]) {
+      routes.forEach((v: RouteRecordRaw) => {
         // 防止重复添加路由
         if (
           router.options.routes[0].children.findIndex(
             value => value.path === v.path
           ) !== -1
         ) {
+          console.log("[registerRoutes] 跳过重复路由:", v.path);
           return;
         } else {
+          console.log("[registerRoutes] 注册路由:", v.path, "name:", v.name, "children:", v.children?.length ?? 0);
           // 切记将路由push到routes后还需要使用addRoute，这样路由才能正常跳转
           router.options.routes[0].children.push(v);
           // 最终路由进行升序
@@ -181,9 +193,15 @@ function handleAsyncRoutes(routeList) {
           flattenRouters.children = router.options.routes[0].children;
           router.addRoute(flattenRouters);
         }
-      }
-    );
+      });
+    }
+
+    registerRoutes(processedRoutes);
+
+    // 菜单使用原始的树形结构
+    console.log("[handleAsyncRoutes] 设置菜单, wholeMenus 前:", routeList.length, "条");
     usePermissionStoreHook().handleWholeMenus(routeList);
+    console.log("[handleAsyncRoutes] wholeMenus 后:", usePermissionStoreHook().wholeMenus.length, "条");
   }
   if (!useMultiTagsStoreHook().getMultiTagsCache) {
     useMultiTagsStoreHook().handleTags("equal", [
@@ -253,8 +271,7 @@ function formatFlatteningRoutes(routesList: RouteRecordRaw[]) {
 }
 
 /**
- * 一维数组处理成多级嵌套数组（三级及以上的路由全部拍成二级，keep-alive 只支持到二级缓存）
- * https://github.com/pure-admin/vue-pure-admin/issues/67
+ * 一维数组处理成多级嵌套数组（支持三级路由）
  * @param routesList 处理后的一维路由菜单数组
  * @returns 返回将一维数组重新处理成规定路由的格式
  */
@@ -316,24 +333,43 @@ function handleAliveRoute({ name }: ToRouteType, mode?: string) {
 /** 过滤后端传来的动态路由 重新生成规范路由 */
 function addAsyncRoutes(arrRoutes: Array<RouteRecordRaw>) {
   if (!arrRoutes || !arrRoutes.length) return;
+  const ParentView = () => import("@/layout/parent.vue");
   const modulesRoutesKeys = Object.keys(modulesRoutes);
   arrRoutes.forEach((v: RouteRecordRaw) => {
     // 将backstage属性加入meta，标识此路由为后端返回路由
     v.meta.backstage = true;
-    // 父级的redirect属性取值：如果子级存在且父级的redirect属性不存在，默认取第一个子级的path；如果子级存在且父级的redirect属性存在，取存在的redirect属性，会覆盖默认值
+    // 父级的redirect属性取值
     if (v?.children && v.children.length && !v.redirect)
       v.redirect = v.children[0].path;
-    // 父级的name属性取值：如果子级存在且父级的name属性不存在，默认取第一个子级的name；如果子级存在且父级的name属性存在，取存在的name属性，会覆盖默认值（注意：测试中发现父级的name不能和子级name重复，如果重复会造成重定向无效（跳转404），所以这里给父级的name起名的时候后面会自动加上`Parent`，避免重复）
+    // 父级的name属性取值
     if (v?.children && v.children.length && !v.name)
       v.name = (v.children[0].name as string) + "Parent";
-    if (v.meta?.frameSrc) {
+    // 目录类型（有子路由但没有component）使用 ParentView 组件
+    if (v?.children && v.children.length && !v.component) {
+      v.component = ParentView;
+    } else if (v.meta?.frameSrc) {
       v.component = IFrame;
-    } else {
-      // 对后端传component组件路径和不传做兼容（如果后端传component组件路径，那么path可以随便写，如果不传，component组件路径会跟path保持一致）
-      const index = v?.component
-        ? modulesRoutesKeys.findIndex(ev => ev.includes(v.component as any))
-        : modulesRoutesKeys.findIndex(ev => ev.includes(v.path));
-      v.component = modulesRoutes[modulesRoutesKeys[index]];
+    } else if (v.component) {
+      // 后端 component 存储的是 views/ 下的相对路径（如 business/diary/index）
+      // 与 glob key（/src/views/business/diary/index.vue）做精确匹配
+      const componentPath = (v.component as string).replace(/^\//, "");
+      const index = modulesRoutesKeys.findIndex(ev => {
+        // 从 glob key 中提取 views/ 之后的路径，去掉扩展名
+        const relativePath = ev
+          .replace(/^\/src\/views\//, "")
+          .replace(/\.(vue|tsx)$/, "");
+        return relativePath === componentPath;
+      });
+      if (index !== -1) {
+        v.component = modulesRoutes[modulesRoutesKeys[index]];
+      } else {
+        console.warn(
+          `[addAsyncRoutes] 组件匹配失败: component="${v.component}", ` +
+          `期望相对路径="${componentPath}", ` +
+          `可用 glob keys=`,
+          modulesRoutesKeys
+        );
+      }
     }
     if (v?.children && v.children.length) {
       addAsyncRoutes(v.children);

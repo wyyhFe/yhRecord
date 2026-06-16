@@ -63,16 +63,28 @@ public class AsyncRouteVO {
         /** 是否显示在菜单中。 */
         private Boolean showLink;
 
+        /** 是否显示父级菜单。 */
+        private Boolean showParent;
+
         /** 是否缓存。 */
         private Boolean keepAlive;
 
         /** 内嵌 iframe 地址。 */
         private String frameSrc;
 
+        /** iframe 页面是否开启首次加载动画。 */
+        private Boolean frameLoading;
+
         /** 按钮权限标识列表。 */
         private List<String> auths;
 
         /** 角色列表（用于前端权限过滤）。 */
         private List<String> roles;
+
+        /** 当前菜单名称禁止添加到标签页。 */
+        private Boolean hiddenTag;
+
+        /** 将某个菜单激活（用于 query 或 params 传参路由）。 */
+        private String activePath;
     }
 }

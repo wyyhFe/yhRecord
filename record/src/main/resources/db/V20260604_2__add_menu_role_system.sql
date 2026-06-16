@@ -72,26 +72,26 @@ INSERT INTO `sys_role` (`id`, `name`, `label`, `remark`) VALUES
 -- 默认菜单：根据现有前端路由配置
 -- 首页
 INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `path`, `component`, `redirect`, `title`, `icon`, `rank`, `menu_type`, `show_link`) VALUES
-(1, NULL, 'Home', '/', NULL, '/dashboard', '首页', 'ep/home-filled', 0, 'DIRECTORY', 1),
+(1, NULL, 'Home', '/', NULL, '/dashboard', '首页', 'ep:home-filled', 0, 'DIRECTORY', 1),
 (2, 1, 'Dashboard', '/dashboard', '/dashboard/index', NULL, '仪表盘', NULL, 1, 'PAGE', 1);
 
 -- 业务管理
 INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `path`, `component`, `redirect`, `title`, `icon`, `rank`, `menu_type`, `show_link`) VALUES
-(10, NULL, 'Business', '/business', NULL, '/business/diary', '业务管理', 'ep/document', 10, 'DIRECTORY', 1),
-(11, 10, 'Diary', '/business/diary', '/business/diary/index', NULL, '日记管理', 'ep/notebook', 1, 'PAGE', 1),
-(12, 10, 'Checkin', '/business/checkin', '/business/checkin/index', NULL, '打卡管理', 'ep/circle-check', 2, 'PAGE', 1),
-(13, 10, 'Memorial', '/business/memorial', '/business/memorial/index', NULL, '纪念日管理', 'ep/calendar', 3, 'PAGE', 1),
-(14, 10, 'Ledger', '/business/ledger', '/business/ledger/index', NULL, '记账管理', 'ep/money', 4, 'PAGE', 1),
-(15, 10, 'KnowledgeManage', '/business/knowledge', '/business/knowledge/index', NULL, '知识库管理', 'ep/collection', 5, 'PAGE', 1),
+(10, NULL, 'Business', '/business', NULL, '/business/diary', '业务管理', 'ep:document', 10, 'DIRECTORY', 1),
+(11, 10, 'Diary', '/business/diary', '/business/diary/index', NULL, '日记管理', 'ep:notebook', 1, 'PAGE', 1),
+(12, 10, 'Checkin', '/business/checkin', '/business/checkin/index', NULL, '打卡管理', 'ep:circle-check', 2, 'PAGE', 1),
+(13, 10, 'Memorial', '/business/memorial', '/business/memorial/index', NULL, '纪念日管理', 'ep:calendar', 3, 'PAGE', 1),
+(14, 10, 'Ledger', '/business/ledger', '/business/ledger/index', NULL, '记账管理', 'ep:money', 4, 'PAGE', 1),
+(15, 10, 'KnowledgeManage', '/business/knowledge', '/business/knowledge/index', NULL, '知识库管理', 'ep:collection', 5, 'PAGE', 1),
 (16, 10, 'KnowledgeDetail', '/business/knowledge/detail', '/business/knowledge/detail/index', NULL, '文档管理', NULL, 99, 'PAGE', 0),
-(17, 10, 'KnowledgeRag', '/business/knowledge/rag', '/business/knowledge/rag/index', NULL, 'RAG 分析', 'ep/chat-dot-square', 6, 'PAGE', 1);
+(17, 10, 'KnowledgeRag', '/business/knowledge/rag', '/business/knowledge/rag/index', NULL, 'RAG 分析', 'ep:chat-dot-square', 6, 'PAGE', 1);
 
 -- 系统管理
 INSERT INTO `sys_menu` (`id`, `parent_id`, `name`, `path`, `component`, `redirect`, `title`, `icon`, `rank`, `menu_type`, `show_link`) VALUES
-(20, NULL, 'System', '/system', NULL, '/system/menu', '系统管理', 'ep/setting', 99, 'DIRECTORY', 1),
-(21, 20, 'MenuManage', '/system/menu', '/system/menu/index', NULL, '菜单管理', 'ep/menu', 1, 'PAGE', 1),
-(22, 20, 'RoleManage', '/system/role', '/system/role/index', NULL, '角色管理', 'ep/user', 2, 'PAGE', 1),
-(23, 20, 'UserManage', '/system/user', '/system/user/index', NULL, '用户管理', 'ep/avatar', 3, 'PAGE', 1);
+(20, NULL, 'System', '/system', NULL, '/system/menu', '系统管理', 'ep:setting', 99, 'DIRECTORY', 1),
+(21, 20, 'MenuManage', '/system/menu', '/system/menu/index', NULL, '菜单管理', 'ep:menu', 1, 'PAGE', 1),
+(22, 20, 'RoleManage', '/system/role', '/system/role/index', NULL, '角色管理', 'ep:user', 2, 'PAGE', 1),
+(23, 20, 'UserManage', '/system/user', '/system/user/index', NULL, '用户管理', 'ep:avatar', 3, 'PAGE', 1);
 
 -- 管理员拥有所有菜单
 INSERT INTO `sys_role_menu` (`id`, `role_id`, `menu_id`) SELECT 100 + n, 1, n FROM (

@@ -65,7 +65,7 @@
     <!-- 趋势图 -->
     <view v-if="data" class="stats__chart-card">
       <text class="stats__chart-title">📈 {{ periodPrefix }}趋势</text>
-      <EChartPanel :option="trendOption" height="360rpx" />
+      <EChartPanel v-if="!hidden" :option="trendOption" height="360rpx" />
     </view>
 
     <!-- 分类饼图 -->
@@ -73,7 +73,7 @@
       <text class="stats__chart-title">🏷️ {{ entryType === 'EXPENSE' ? '支出' : '收入' }}分类构成</text>
 
       <view class="stats__donut-wrap">
-        <EChartPanel :option="pieOption" height="320rpx" />
+        <EChartPanel v-if="!hidden" :option="pieOption" height="320rpx" />
       </view>
 
       <!-- 分类列表 -->
@@ -112,6 +112,7 @@ const pieColors = ['#9B7EC8', '#CFA052', '#5BAE7C', '#5B8DBE', '#D4956B', '#E863
 
 const props = defineProps<{
   bookId?: Id
+  hidden?: boolean
 }>()
 
 const period = ref<'week' | 'month' | 'year'>('month')

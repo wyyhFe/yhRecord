@@ -68,7 +68,7 @@ const textClass = computed(() => {
     layout.value !== "horizontal" &&
     isCollapse.value &&
     !toRaw(item.meta.icon) &&
-    ((layout.value === "vertical" && item.parentId === null) ||
+    ((layout.value === "vertical" && item.parentId == null) ||
       (layout.value === "mix" && item.pathList.length === 2))
   ) {
     return `${baseClass} min-w-13.5! text-center! px-3!`;
@@ -203,7 +203,7 @@ function resolvePath(routePath) {
                 layout === 'vertical' &&
                 isCollapse &&
                 toRaw(item.meta.icon) &&
-                item.parentId === null
+                item.parentId == null
               )
         "
         :tippyProps="{

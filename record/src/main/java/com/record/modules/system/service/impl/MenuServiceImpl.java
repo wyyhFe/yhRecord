@@ -30,23 +30,40 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public List<AsyncRouteVO> getAsyncRoutesByUserId(Long userId) {
-        // 简化逻辑：只区分 admin / 非 admin
-        //   admin     → 所有启用菜单
-        //   非 admin  → 所有启用菜单中 admin_only != true 的部分
-        // 不再走 sys_role_menu，那张关联表保留给将来更细粒度的权限场景
-        boolean isAdmin = roleService.getRoleNamesByUserId(userId).contains(ADMIN_ROLE);
+        // 获取用户的角色列表
+        List<String> userRoles = roleService.getRoleNamesByUserId(userId);
 
+        // 查询所有启用的非按钮类型菜单，按 id 排序
         LambdaQueryWrapper<Menu> query = new LambdaQueryWrapper<Menu>()
                 .eq(Menu::getStatus, CommonStatus.ENABLED)
                 .ne(Menu::getMenuType, "BUTTON")
-                .orderByAsc(Menu::getRank);
-        if (!isAdmin) {
-            // adminOnly 默认 0；用 ne(true) 同时覆盖 false 和 NULL 两种历史数据
-            query.and(w -> w.ne(Menu::getAdminOnly, true).or().isNull(Menu::getAdminOnly));
-        }
+                .orderByAsc(Menu::getId);
         List<Menu> menus = menuMapper.selectList(query);
 
-        return buildRouteTree(menus, null);
+        // 根据 meta.roles 字段过滤菜单
+        List<Menu> filteredMenus = menus.stream()
+                .filter(menu -> {
+                    Map<String, Object> meta = menu.getMeta();
+                    if (meta == null) {
+                        return true;
+                    }
+                    Object rolesObj = meta.get("roles");
+                    // 如果没有设置 roles，则所有角色都可以访问
+                    if (rolesObj == null) {
+                        return true;
+                    }
+                    // 检查用户是否有任何一个角色
+                    List<String> menuRoles;
+                    if (rolesObj instanceof List) {
+                        menuRoles = (List<String>) rolesObj;
+                    } else {
+                        menuRoles = Arrays.asList(rolesObj.toString().split(","));
+                    }
+                    return menuRoles.stream().anyMatch(userRoles::contains);
+                })
+                .collect(Collectors.toList());
+
+        return buildRouteTree(filteredMenus, null);
     }
 
     @Override
@@ -54,7 +71,7 @@ public class MenuServiceImpl implements MenuService {
         return menuMapper.selectList(
                 new LambdaQueryWrapper<Menu>()
                         .eq(Menu::getStatus, CommonStatus.ENABLED)
-                        .orderByAsc(Menu::getRank));
+                        .orderByAsc(Menu::getId));
     }
 
     @Override
@@ -70,6 +87,57 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public void deleteMenu(Long menuId) {
         menuMapper.deleteById(menuId);
+    }
+
+    // ============ 辅助方法，安全地从 Map 中获取值 ============
+
+    private String getString(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? value.toString() : null;
+    }
+
+    private Integer getInteger(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof Integer) {
+            return (Integer) value;
+        } else if (value instanceof Long) {
+            return ((Long) value).intValue();
+        } else if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        return null;
+    }
+
+    private Boolean getBoolean(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        } else if (value instanceof String) {
+            return Boolean.parseBoolean((String) value);
+        } else if (value instanceof Integer) {
+            return ((Integer) value) == 1;
+        }
+        return null;
+    }
+
+    private List<String> getStringList(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof List) {
+            return (List<String>) value;
+        } else if (value instanceof String) {
+            String str = (String) value;
+            if (str.startsWith("[")) {
+                // JSON 数组格式
+                try {
+                    return new com.fasterxml.jackson.databind.ObjectMapper()
+                            .readValue(str, new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+                } catch (Exception e) {
+                    return Arrays.asList(str.split(","));
+                }
+            }
+            return Arrays.asList(str.split(","));
+        }
+        return null;
     }
 
     /**
@@ -92,28 +160,33 @@ public class MenuServiceImpl implements MenuService {
                         builder.redirect(m.getRedirect());
                     }
 
-                    // 构建 meta
-                    AsyncRouteVO.MetaVO.MetaVOBuilder metaBuilder = AsyncRouteVO.MetaVO.builder()
-                            .title(m.getTitle());
-                    if (m.getIcon() != null) {
-                        metaBuilder.icon(m.getIcon());
+                    // 构建 meta（从 JSON 字段中读取）
+                    Map<String, Object> metaMap = m.getMeta();
+                    AsyncRouteVO.MetaVO.MetaVOBuilder metaBuilder = AsyncRouteVO.MetaVO.builder();
+
+                    if (metaMap != null) {
+                        metaBuilder.title(getString(metaMap, "title"));
+                        metaBuilder.icon(getString(metaMap, "icon"));
+                        metaBuilder.rank(getInteger(metaMap, "rank"));
+                        metaBuilder.showLink(getBoolean(metaMap, "showLink"));
+                        metaBuilder.showParent(getBoolean(metaMap, "showParent"));
+                        metaBuilder.keepAlive(getBoolean(metaMap, "keepAlive"));
+                        metaBuilder.frameSrc(getString(metaMap, "frameSrc"));
+                        metaBuilder.frameLoading(getBoolean(metaMap, "frameLoading"));
+                        metaBuilder.hiddenTag(getBoolean(metaMap, "hiddenTag"));
+                        metaBuilder.activePath(getString(metaMap, "activePath"));
+                        metaBuilder.auths(getStringList(metaMap, "auths"));
+                        metaBuilder.roles(getStringList(metaMap, "roles"));
                     }
-                    if (m.getRank() != null && m.getRank() > 0) {
-                        metaBuilder.rank(m.getRank());
+
+                    // 如果没有 title，使用数据库的 title 字段
+                    AsyncRouteVO.MetaVO meta = metaBuilder.build();
+                    if (meta.getTitle() == null && m.getTitle() != null) {
+                        metaBuilder.title(m.getTitle());
+                        meta = metaBuilder.build();
                     }
-                    if (m.getShowLink() != null && !m.getShowLink()) {
-                        metaBuilder.showLink(false);
-                    }
-                    if (m.getKeepAlive() != null && m.getKeepAlive()) {
-                        metaBuilder.keepAlive(true);
-                    }
-                    if (m.getFrameSrc() != null) {
-                        metaBuilder.frameSrc(m.getFrameSrc());
-                    }
-                    if (m.getAuths() != null && !m.getAuths().isEmpty()) {
-                        metaBuilder.auths(Arrays.asList(m.getAuths().split(",")));
-                    }
-                    builder.meta(metaBuilder.build());
+
+                    builder.meta(meta);
 
                     // 递归构建子路由
                     List<AsyncRouteVO> children = buildRouteTree(menus, m.getId());

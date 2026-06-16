@@ -1,21 +1,22 @@
 import { message } from "@/utils/message";
-import { getDiaryList, deleteDiary } from "@/api/diary";
+import {
+  getLedgerEntryList,
+  deleteLedgerEntry
+} from "@/api/ledger";
 import { reactive, ref, onMounted } from "vue";
 import type { PaginationProps } from "@pureadmin/table";
 import {
   createColumns,
   formatDateTime,
-  formatDate,
-  renderMoodTag,
-  renderTags,
-  renderImagePreview
+  formatDate
 } from "@/utils/table";
+import { ElTag } from "element-plus";
 
-export function useDiary() {
+export function useLedger() {
   const form = reactive({
-    recordDate: "",
-    mood: "",
-    content: ""
+    type: "",
+    entryDate: "",
+    remark: ""
   });
 
   const dataList = ref([]);
@@ -34,34 +35,65 @@ export function useDiary() {
     showId: true,
     extra: [
       {
-        label: "记录日期",
-        prop: "recordDate",
-        width: 120,
-        formatter: ({ recordDate }) => formatDate(recordDate)
-      },
-      {
-        label: "内容",
-        prop: "content",
-        minWidth: 200,
-        showOverflowTooltip: true
-      },
-      {
-        label: "心情",
-        prop: "mood",
+        label: "类型",
+        prop: "type",
         width: 100,
-        cellRenderer: ({ row }) => renderMoodTag(row.mood)
+        cellRenderer: ({ row }) => (
+          <el-tag type={row.type === "INCOME" ? "success" : "danger"}>
+            {row.type === "INCOME" ? "收入" : "支出"}
+          </el-tag>
+        )
       },
+      {
+        label: "金额",
+        prop: "amount",
+        width: 120,
+        cellRenderer: ({ row }) => (
+          <span style={{ color: row.type === "INCOME" ? "#67c23a" : "#f56c6c", fontWeight: "bold" }}>
+            {row.type === "INCOME" ? "+" : "-"}{row.amount.toFixed(2)}
+          </span>
+        )
+      },
+      {
+        label: "记账日期",
+        prop: "entryDate",
+        width: 120,
+        formatter: ({ entryDate }) => formatDate(entryDate)
+      },
+      { label: "备注", prop: "remark", minWidth: 150, showOverflowTooltip: true },
       {
         label: "标签",
         prop: "tags",
         minWidth: 150,
-        cellRenderer: ({ row }) => renderTags(row.tags)
+        cellRenderer: ({ row }) => {
+          if (!row.tags?.length) return "-";
+          return (
+            <div class="flex flex-wrap gap-1">
+              {row.tags.map(tag => (
+                <el-tag size="small" key={tag.id} style={{ borderColor: tag.color, color: tag.color }}>
+                  {tag.name}
+                </el-tag>
+              ))}
+            </div>
+          );
+        }
       },
       {
         label: "图片",
-        prop: "imageUrls",
-        width: 100,
-        cellRenderer: ({ row }) => renderImagePreview(row.imageUrls)
+        prop: "imagePath",
+        width: 80,
+        cellRenderer: ({ row }) => {
+          if (!row.imagePath) return "-";
+          return (
+            <el-image
+              src={row.imagePath}
+              preview-teleported
+              preview-src-list={[row.imagePath]}
+              fit="cover"
+              style={{ width: "40px", height: "40px", borderRadius: "4px" }}
+            />
+          );
+        }
       },
       {
         label: "创建时间",
@@ -89,7 +121,7 @@ export function useDiary() {
 
   async function onSearch() {
     loading.value = true;
-    const { code, data } = await getDiaryList({
+    const { code, data } = await getLedgerEntryList({
       pageNum: pagination.currentPage,
       pageSize: pagination.pageSize,
       ...form
@@ -110,22 +142,22 @@ export function useDiary() {
   };
 
   async function handleDelete(row) {
-    const { code } = await deleteDiary(row.id);
+    const { code } = await deleteLedgerEntry(row.id);
     if (code === 0) {
-      message("删除日记成功", { type: "success" });
+      message("删除记账流水成功", { type: "success" });
       onSearch();
     }
   }
 
   async function handleBatchDelete() {
     if (!selectedIds.value.length) {
-      message("请选择要删除的日记", { type: "warning" });
+      message("请选择要删除的记录", { type: "warning" });
       return;
     }
     for (const id of selectedIds.value) {
-      await deleteDiary(id);
+      await deleteLedgerEntry(id);
     }
-    message(`批量删除${selectedIds.value.length}条日记成功`, { type: "success" });
+    message(`批量删除${selectedIds.value.length}条记录成功`, { type: "success" });
     selectedIds.value = [];
     onSearch();
   }

@@ -184,7 +184,11 @@ onShow(() => {
 .diary-hero {
   background: var(--color-diary-gradient);
   border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-5) var(--space-6) var(--space-5);
+  padding: var(--space-5) var(--space-6);
+  min-height: 200rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   color: #fff;
 }
 

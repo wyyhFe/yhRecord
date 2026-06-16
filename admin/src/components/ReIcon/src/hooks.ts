@@ -45,12 +45,12 @@ export function useRenderIcon(icon: any, attrs?: iconType): Component {
       }
     });
   } else {
-    // 通过是否存在 : 符号来判断是在线还是本地图标，存在即是在线图标，反之
+    // 通过是否存在 : 或 / 符号来判断是在线还是本地图标（ep:avatar 或 ep/avatar 均视为在线图标）
     return defineComponent({
       name: "Icon",
       render() {
         if (!icon) return;
-        const IconifyIcon = icon.includes(":")
+        const IconifyIcon = icon.includes(":") || icon.includes("/")
           ? IconifyIconOnline
           : IconifyIconOffline;
         return h(IconifyIcon, {

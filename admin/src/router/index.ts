@@ -94,6 +94,11 @@ export const router: Router = createRouter({
   }
 });
 
+// 临时调试：挂载 router 到 window，方便控制台调试
+if (typeof window !== "undefined") {
+  (window as any).__router = router;
+}
+
 /** 记录已经加载的页面路径 */
 const loadedPaths = new Set<string>();
 

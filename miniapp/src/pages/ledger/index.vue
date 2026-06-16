@@ -884,7 +884,11 @@ onShow(() => {
 .ledger-hero {
   background: var(--color-ledger-gradient);
   border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-4) var(--space-6) var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  min-height: 200rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   color: #fff;
 }
 

@@ -5,15 +5,18 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.record.common.enums.CommonStatus;
 import com.record.common.model.BaseEntity;
+import com.record.common.model.JsonTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.Map;
 
 /**
  * 菜单实体。
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("sys_menu")
+@TableName(value = "sys_menu", autoResultMap = true)
 public class Menu extends BaseEntity {
 
     @TableId
@@ -34,34 +37,56 @@ public class Menu extends BaseEntity {
     /** 重定向路径。 */
     private String redirect;
 
-    /** 菜单显示标题。 */
-    private String title;
-
-    /** 菜单图标。 */
-    private String icon;
-
-    /** 排序值。rank 是 MySQL 8 保留字，必须用反引号转义，否则生成的 SELECT/ORDER BY 都会语法错。 */
-    @TableField("`rank`")
-    private Integer rank;
+    /** 路由元信息（JSON 格式）。 */
+    @TableField(typeHandler = JsonTypeHandler.class)
+    private Map<String, Object> meta;
 
     /** 类型：DIRECTORY / PAGE / BUTTON。 */
     private String menuType;
 
-    /** 内嵌 iframe 地址。 */
-    private String frameSrc;
-
-    /** 是否在菜单中显示。 */
-    private Boolean showLink;
-
-    /** 是否缓存。 */
-    private Boolean keepAlive;
-
-    /** 按钮权限标识。 */
-    private String auths;
-
     /** 状态。 */
     private CommonStatus status;
 
-    /** 是否仅管理员可见：true 表示只对持有 admin 角色的用户返回。 */
-    private Boolean adminOnly;
+    // ============ 便捷方法，从 meta 中获取常用字段 ============
+
+    public String getTitle() {
+        return meta != null ? (String) meta.get("title") : null;
+    }
+
+    public String getIcon() {
+        return meta != null ? (String) meta.get("icon") : null;
+    }
+
+    public Integer getRank() {
+        if (meta == null) return 0;
+        Object value = meta.get("rank");
+        if (value instanceof Integer) return (Integer) value;
+        if (value instanceof Long) return ((Long) value).intValue();
+        if (value instanceof Number) return ((Number) value).intValue();
+        return 0;
+    }
+
+    public Boolean getShowLink() {
+        return meta != null ? (Boolean) meta.get("showLink") : true;
+    }
+
+    public Boolean getShowParent() {
+        return meta != null ? (Boolean) meta.get("showParent") : false;
+    }
+
+    public Boolean getKeepAlive() {
+        return meta != null ? (Boolean) meta.get("keepAlive") : false;
+    }
+
+    public String getFrameSrc() {
+        return meta != null ? (String) meta.get("frameSrc") : null;
+    }
+
+    public String getAuths() {
+        return meta != null ? (String) meta.get("auths") : null;
+    }
+
+    public Object getRoles() {
+        return meta != null ? meta.get("roles") : null;
+    }
 }

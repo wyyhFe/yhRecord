@@ -287,6 +287,7 @@ public class AuthServiceImpl implements AuthService {
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .sessionId(sessionId)
+                .username(user.getUsername())
                 .roles(roles)
                 .build();
     }

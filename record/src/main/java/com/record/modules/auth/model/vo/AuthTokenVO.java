@@ -32,6 +32,9 @@ public class AuthTokenVO {
     @Schema(description = "当前登录会话 ID")
     private String sessionId;
 
+    @Schema(description = "用户名")
+    private String username;
+
     @Schema(description = "用户角色列表", example = "[\"admin\"]")
     private List<String> roles;
 }

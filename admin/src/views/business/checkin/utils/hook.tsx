@@ -1,4 +1,3 @@
-import dayjs from "dayjs";
 import { message } from "@/utils/message";
 import {
   getCheckinTaskList,
@@ -8,18 +7,19 @@ import {
 } from "@/api/checkin";
 import { reactive, ref, onMounted } from "vue";
 import type { PaginationProps } from "@pureadmin/table";
+import {
+  createColumns,
+  formatDateTime,
+  formatDate,
+  renderMoodTag,
+  renderTags,
+  renderImagePreview,
+  renderCountTag
+} from "@/utils/table";
 
 export function useCheckin() {
-  // 任务表单
-  const taskForm = reactive({
-    name: ""
-  });
-
-  // 记录表单
-  const recordForm = reactive({
-    taskName: "",
-    checkinDate: ""
-  });
+  const taskForm = reactive({ name: "" });
+  const recordForm = reactive({ taskName: "", checkinDate: "" });
 
   const activeTab = ref("task");
   const taskList = ref([]);
@@ -43,160 +43,81 @@ export function useCheckin() {
     background: true
   });
 
-  const taskColumns: TableColumnList = [
-    {
-      type: "selection",
-      width: 55,
-      align: "center"
-    },
-    {
-      label: "ID",
-      prop: "id",
-      width: 80
-    },
-    {
-      label: "任务名称",
-      prop: "name",
-      minWidth: 150
-    },
-    {
-      label: "描述",
-      prop: "description",
-      minWidth: 200,
-      showOverflowTooltip: true
-    },
-    {
-      label: "开始日期",
-      prop: "startDate",
-      width: 120,
-      formatter: ({ startDate }) =>
-        startDate ? dayjs(startDate).format("YYYY-MM-DD") : "-"
-    },
-    {
-      label: "打卡次数",
-      prop: "totalCount",
-      width: 100,
-      cellRenderer: ({ row }) => (
-        <el-tag type="success">{row.totalCount}次</el-tag>
-      )
-    },
-    {
-      label: "最近打卡",
-      prop: "latestCheckedAt",
-      width: 160,
-      formatter: ({ latestCheckedAt }) =>
-        latestCheckedAt
-          ? dayjs(latestCheckedAt).format("YYYY-MM-DD HH:mm:ss")
-          : "-"
-    },
-    {
-      label: "创建时间",
-      prop: "createdAt",
-      width: 160,
-      formatter: ({ createdAt }) =>
-        createdAt ? dayjs(createdAt).format("YYYY-MM-DD HH:mm:ss") : ""
-    },
-    {
-      label: "操作",
-      fixed: "right",
-      width: 120,
-      slot: "operation"
-    }
-  ];
+  // 任务表格列
+  const taskColumns: TableColumnList = createColumns({
+    selectable: true,
+    showId: true,
+    extra: [
+      { label: "任务名称", prop: "name", minWidth: 150 },
+      { label: "描述", prop: "description", minWidth: 200, showOverflowTooltip: true },
+      {
+        label: "开始日期",
+        prop: "startDate",
+        width: 120,
+        formatter: ({ startDate }) => formatDate(startDate)
+      },
+      {
+        label: "打卡次数",
+        prop: "totalCount",
+        width: 100,
+        cellRenderer: ({ row }) => renderCountTag(row.totalCount)
+      },
+      {
+        label: "最近打卡",
+        prop: "latestCheckedAt",
+        width: 160,
+        formatter: ({ latestCheckedAt }) => formatDateTime(latestCheckedAt)
+      },
+      {
+        label: "创建时间",
+        prop: "createdAt",
+        width: 160,
+        formatter: ({ createdAt }) => formatDateTime(createdAt)
+      }
+    ],
+    operation: true
+  });
 
-  const recordColumns: TableColumnList = [
-    {
-      type: "selection",
-      width: 55,
-      align: "center"
-    },
-    {
-      label: "ID",
-      prop: "id",
-      width: 80
-    },
-    {
-      label: "任务名称",
-      prop: "taskName",
-      minWidth: 150
-    },
-    {
-      label: "打卡日期",
-      prop: "checkinDate",
-      width: 120,
-      formatter: ({ checkinDate }) =>
-        checkinDate ? dayjs(checkinDate).format("YYYY-MM-DD") : ""
-    },
-    {
-      label: "备注",
-      prop: "remark",
-      minWidth: 150,
-      showOverflowTooltip: true
-    },
-    {
-      label: "心情",
-      prop: "mood",
-      width: 100,
-      cellRenderer: ({ row }) => {
-        const moodMap = {
-          HAPPY: { text: "开心", type: "success" },
-          SAD: { text: "难过", type: "info" },
-          ANGRY: { text: "生气", type: "danger" },
-          CALM: { text: "平静", type: "" },
-          EXCITED: { text: "兴奋", type: "warning" }
-        };
-        const mood = moodMap[row.mood] || { text: row.mood || "-", type: "" };
-        return <el-tag type={mood.type as any}>{mood.text}</el-tag>;
+  // 记录表格列
+  const recordColumns: TableColumnList = createColumns({
+    selectable: true,
+    showId: true,
+    extra: [
+      { label: "任务名称", prop: "taskName", minWidth: 150 },
+      {
+        label: "打卡日期",
+        prop: "checkinDate",
+        width: 120,
+        formatter: ({ checkinDate }) => formatDate(checkinDate)
+      },
+      { label: "备注", prop: "remark", minWidth: 150, showOverflowTooltip: true },
+      {
+        label: "心情",
+        prop: "mood",
+        width: 100,
+        cellRenderer: ({ row }) => renderMoodTag(row.mood)
+      },
+      {
+        label: "标签",
+        prop: "tagNames",
+        minWidth: 150,
+        cellRenderer: ({ row }) => renderTags(row.tagNames)
+      },
+      {
+        label: "图片",
+        prop: "mediaPaths",
+        width: 100,
+        cellRenderer: ({ row }) => renderImagePreview(row.mediaPaths)
+      },
+      {
+        label: "创建时间",
+        prop: "createdAt",
+        width: 160,
+        formatter: ({ createdAt }) => formatDateTime(createdAt)
       }
-    },
-    {
-      label: "标签",
-      prop: "tagNames",
-      minWidth: 150,
-      cellRenderer: ({ row }) => {
-        if (!row.tagNames || row.tagNames.length === 0) return "-";
-        return (
-          <div class="flex flex-wrap gap-1">
-            {row.tagNames.map(tag => (
-              <el-tag size="small" key={tag}>
-                {tag}
-              </el-tag>
-            ))}
-          </div>
-        );
-      }
-    },
-    {
-      label: "图片",
-      prop: "mediaPaths",
-      width: 100,
-      cellRenderer: ({ row }) => {
-        if (!row.mediaPaths || row.mediaPaths.length === 0) return "-";
-        return (
-          <el-image
-            src={row.mediaPaths[0]}
-            preview-teleported={true}
-            preview-src-list={row.mediaPaths}
-            fit="cover"
-            class="w-10 h-10 rounded"
-          />
-        );
-      }
-    },
-    {
-      label: "创建时间",
-      prop: "createdAt",
-      width: 160,
-      formatter: ({ createdAt }) =>
-        createdAt ? dayjs(createdAt).format("YYYY-MM-DD HH:mm:ss") : ""
-    },
-    {
-      label: "操作",
-      fixed: "right",
-      width: 120,
-      slot: "operation"
-    }
-  ];
+    ],
+    operation: true
+  });
 
   // 任务相关方法
   function handleTaskSizeChange(val: number) {
@@ -238,22 +159,20 @@ export function useCheckin() {
   async function handleDeleteTask(row) {
     const { code } = await deleteCheckinTask(row.id);
     if (code === 0) {
-      message(`删除打卡任务成功`, { type: "success" });
+      message("删除打卡任务成功", { type: "success" });
       onSearchTasks();
     }
   }
 
   async function handleBatchDeleteTasks() {
-    if (selectedTaskIds.value.length === 0) {
+    if (!selectedTaskIds.value.length) {
       message("请选择要删除的任务", { type: "warning" });
       return;
     }
     for (const id of selectedTaskIds.value) {
       await deleteCheckinTask(id);
     }
-    message(`批量删除${selectedTaskIds.value.length}个任务成功`, {
-      type: "success"
-    });
+    message(`批量删除${selectedTaskIds.value.length}个任务成功`, { type: "success" });
     selectedTaskIds.value = [];
     onSearchTasks();
   }
@@ -298,22 +217,20 @@ export function useCheckin() {
   async function handleDeleteRecord(row) {
     const { code } = await deleteCheckinRecord(row.id);
     if (code === 0) {
-      message(`删除打卡记录成功`, { type: "success" });
+      message("删除打卡记录成功", { type: "success" });
       onSearchRecords();
     }
   }
 
   async function handleBatchDeleteRecords() {
-    if (selectedRecordIds.value.length === 0) {
+    if (!selectedRecordIds.value.length) {
       message("请选择要删除的记录", { type: "warning" });
       return;
     }
     for (const id of selectedRecordIds.value) {
       await deleteCheckinRecord(id);
     }
-    message(`批量删除${selectedRecordIds.value.length}条记录成功`, {
-      type: "success"
-    });
+    message(`批量删除${selectedRecordIds.value.length}条记录成功`, { type: "success" });
     selectedRecordIds.value = [];
     onSearchRecords();
   }
