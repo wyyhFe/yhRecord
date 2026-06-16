@@ -4,34 +4,16 @@
     <view class="checkin-hero">
       <view class="checkin-hero__top">
         <text class="checkin-hero__date">{{ todayDisplay }}</text>
+        <!-- 圆形进度 -->
+        <view class="checkin-hero__ring">
+          <view class="checkin-hero__ring-bg">
+            <view class="checkin-hero__ring-text">{{ progressPercent }}%</view>
+          </view>
+        </view>
       </view>
       <view class="checkin-hero__title">今日打卡</view>
       <view class="checkin-hero__sub">
         已完成 <text class="checkin-hero__highlight">{{ todayDoneIds.size }}</text> / {{ tasks.length }} 个任务
-      </view>
-
-      <!-- 进度条 -->
-      <view class="checkin-hero__progress">
-        <view class="checkin-hero__progress-track">
-          <view class="checkin-hero__progress-fill" :style="{ width: progressPercent + '%' }" />
-        </view>
-        <text class="checkin-hero__progress-text">{{ progressPercent }}%</text>
-      </view>
-
-      <!-- 快捷操作 -->
-      <view class="checkin-hero__actions">
-        <view class="checkin-hero__action" hover-class="checkin-hero__action--pressed" @click="goCreate">
-          <text class="checkin-hero__action-icon">＋</text>
-          <text class="checkin-hero__action-label">新建任务</text>
-        </view>
-        <view class="checkin-hero__action" hover-class="checkin-hero__action--pressed" @click="goMedals">
-          <text class="checkin-hero__action-icon">🏆</text>
-          <text class="checkin-hero__action-label">成就</text>
-        </view>
-        <view class="checkin-hero__action" hover-class="checkin-hero__action--pressed" @click="reloadAll">
-          <text class="checkin-hero__action-icon">↻</text>
-          <text class="checkin-hero__action-label">刷新</text>
-        </view>
       </view>
     </view>
 
@@ -151,6 +133,28 @@
 
     <!-- 勋章解锁弹窗 -->
     <MedalUnlockPopup v-model="showMedalPopup" :medal="unlockedMedal" />
+
+    <!-- 悬浮按钮 -->
+    <view class="fab" :class="{ 'fab--open': fabOpen }">
+      <view class="fab__mask" @tap="fabOpen = false" />
+      <!-- 小弧：始终包裹 + 按钮 -->
+      <view class="fab__arc-small" />
+      <!-- 大弧：展开后覆盖子菜单 -->
+      <view class="fab__arc-big" />
+      <!-- 子菜单 -->
+      <view class="fab__sub fab__sub--1" @tap="goMedals">
+        <view class="fab__sub-circle"><text class="fab__sub-emoji">🏆</text></view>
+        <text class="fab__sub-text">成就</text>
+      </view>
+      <view class="fab__sub fab__sub--2" @tap="goCreate">
+        <view class="fab__sub-circle"><text class="fab__sub-emoji">＋</text></view>
+        <text class="fab__sub-text">新任务</text>
+      </view>
+      <!-- 主按钮 -->
+      <view class="fab__btn" @tap="fabOpen = !fabOpen">
+        <text class="fab__btn-icon">＋</text>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -195,6 +199,7 @@ const tags = ref<CheckinTag[]>([])
 const mendRemaining = ref(0)
 const showMedalPopup = ref(false)
 const unlockedMedal = ref<Medal | null>(null)
+const fabOpen = ref(false)
 
 const textareaStyle = {
   background: 'var(--color-surface-soft)',
@@ -390,17 +395,50 @@ onShow(() => {
 .checkin-hero {
   background: var(--color-checkin-gradient);
   border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-5) var(--space-6) var(--space-5);
+  padding: var(--space-5) var(--space-6);
+  min-height: 200rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   color: #fff;
 }
 
 .checkin-hero__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: var(--space-1);
 }
 
 .checkin-hero__date {
   font-size: var(--font-tiny);
   opacity: 0.8;
+}
+
+/* 圆形进度 */
+.checkin-hero__ring {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkin-hero__ring-bg {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkin-hero__ring-text {
+  font-size: 18rpx;
+  font-weight: var(--weight-bold);
 }
 
 .checkin-hero__title {
@@ -420,68 +458,167 @@ onShow(() => {
   font-weight: var(--weight-bold);
 }
 
-/* 进度条 */
-.checkin-hero__progress {
-  margin-top: var(--space-3);
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
+/* ========== 悬浮按钮 ========== */
+.fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: 120rpx;
+  z-index: 50;
 }
 
-.checkin-hero__progress-track {
-  flex: 1;
-  height: 10rpx;
-  border-radius: 5rpx;
-  background: rgba(255, 255, 255, 0.25);
-  overflow: hidden;
+.fab__mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 49;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
-.checkin-hero__progress-fill {
-  height: 100%;
-  border-radius: 5rpx;
-  background: #fff;
-  transition: width 0.4s ease;
+.fab--open .fab__mask {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.checkin-hero__progress-text {
-  font-size: var(--font-tiny);
-  font-weight: var(--weight-semibold);
-  min-width: 50rpx;
-  text-align: right;
+/* 弧形通用样式 — 固定圆角半径，保证大小弧弧度一致 */
+.fab__arc-small,
+.fab__arc-big {
+  position: fixed;
+  border-radius: 500rpx;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: -4rpx -4rpx 24rpx rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: bottom right;
+  pointer-events: none;
 }
 
-/* 快捷操作 */
-.checkin-hero__actions {
-  margin-top: var(--space-3);
-  display: flex;
-  gap: var(--space-2);
+/* 小弧 — 包裹 + 按钮 */
+.fab__arc-small {
+  right: -60rpx;
+  bottom: -60rpx;
+  width: 300rpx;
+  height: 300rpx;
+  z-index: 50;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.checkin-hero__action {
-  flex: 1;
+.fab--open .fab__arc-small {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* 大弧 — 包裹菜单和 + 按钮 */
+.fab__arc-big {
+  right: -300rpx;
+  bottom: -300rpx;
+  width: 700rpx;
+  height: 700rpx;
+  z-index: 49;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fab--open .fab__arc-big {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  transition-delay: 0.15s;
+}
+
+/* 主按钮 */
+.fab__btn {
+  position: fixed;
+  right: 32rpx;
+  bottom: 45rpx;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: var(--color-checkin-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
-  border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.18);
-  transition: all var(--motion-fast) var(--ease-standard);
+  box-shadow: 0 8rpx 24rpx rgba(155, 126, 200, 0.4);
+  z-index: 52;
+  transition: transform 0.3s ease;
 }
 
-.checkin-hero__action--pressed {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(0.95);
+.fab--open .fab__btn {
+  transform: rotate(45deg);
 }
 
-.checkin-hero__action-icon {
-  font-size: 28rpx;
+.fab__btn-icon {
+  font-size: 48rpx;
+  color: #fff;
+  font-weight: 700;
   line-height: 1;
 }
 
-.checkin-hero__action-label {
-  font-size: var(--font-tiny);
-  opacity: 0.9;
+/* 子按钮 — 在弧形内部 */
+.fab__sub {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  opacity: 0;
+  transform: scale(0.3);
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 51;
+  pointer-events: none;
+}
+
+.fab__sub--1 {
+  right: 200rpx;
+  bottom: 180rpx;
+  transition-delay: 0s;
+}
+
+.fab__sub--2 {
+  right: 80rpx;
+  bottom: 280rpx;
+  transition-delay: 0.06s;
+}
+
+.fab--open .fab__sub {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.fab--open .fab__sub--1 {
+  transition-delay: 0.06s;
+}
+
+.fab--open .fab__sub--2 {
+  transition-delay: 0.12s;
+}
+
+.fab__sub-circle {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: var(--color-checkin-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(155, 126, 200, 0.3);
+}
+
+.fab__sub-emoji {
+  font-size: 36rpx;
+  line-height: 1;
+}
+
+.fab__sub-text {
+  color: #1C1C1E;
+  font-size: 22rpx;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* ========== 通用卡片 ========== */
