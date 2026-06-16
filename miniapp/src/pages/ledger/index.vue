@@ -140,7 +140,7 @@
     </view>
 
     <view v-else class="page-section">
-      <LedgerYearCharts :book-id="selectedBookId" />
+      <LedgerYearCharts :book-id="selectedBookId" :hidden="showEntryPopup || showFilterPopup" />
     </view>
 
     <!-- 底部操作栏 -->
@@ -884,7 +884,7 @@ onShow(() => {
 .ledger-hero {
   background: var(--color-ledger-gradient);
   border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-7) var(--space-6) var(--space-6);
+  padding: var(--space-4) var(--space-6) var(--space-4);
   color: #fff;
 }
 
@@ -892,11 +892,11 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-3);
 }
 
 .ledger-hero__title {
-  font-size: var(--font-title);
+  font-size: var(--font-section);
   font-weight: var(--weight-bold);
 }
 
@@ -906,7 +906,7 @@ onShow(() => {
 }
 
 .ledger-hero__action {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.18);
 }
@@ -920,7 +920,7 @@ onShow(() => {
   display: flex;
   background: rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-medium);
-  padding: var(--space-4) 0;
+  padding: var(--space-3) 0;
 }
 
 .ledger-hero__metric {
@@ -928,11 +928,11 @@ onShow(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4rpx;
+  gap: 2rpx;
 }
 
 .ledger-hero__metric-value {
-  font-size: var(--font-section);
+  font-size: var(--font-body);
   font-weight: var(--weight-bold);
 }
 

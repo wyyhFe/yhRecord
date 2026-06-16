@@ -390,39 +390,39 @@ onShow(() => {
 .checkin-hero {
   background: var(--color-checkin-gradient);
   border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-7) var(--space-6) var(--space-8);
+  padding: var(--space-5) var(--space-6) var(--space-5);
   color: #fff;
 }
 
 .checkin-hero__top {
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .checkin-hero__date {
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   opacity: 0.8;
 }
 
 .checkin-hero__title {
-  font-size: var(--font-hero);
+  font-size: var(--font-title);
   font-weight: var(--weight-bold);
-  line-height: 1.1;
+  line-height: 1.2;
 }
 
 .checkin-hero__sub {
-  margin-top: var(--space-3);
-  font-size: var(--font-body);
+  margin-top: var(--space-2);
+  font-size: var(--font-meta);
   opacity: 0.85;
 }
 
 .checkin-hero__highlight {
-  font-size: var(--font-title);
+  font-size: var(--font-section);
   font-weight: var(--weight-bold);
 }
 
 /* 进度条 */
 .checkin-hero__progress {
-  margin-top: var(--space-5);
+  margin-top: var(--space-3);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -430,40 +430,40 @@ onShow(() => {
 
 .checkin-hero__progress-track {
   flex: 1;
-  height: 12rpx;
-  border-radius: 6rpx;
+  height: 10rpx;
+  border-radius: 5rpx;
   background: rgba(255, 255, 255, 0.25);
   overflow: hidden;
 }
 
 .checkin-hero__progress-fill {
   height: 100%;
-  border-radius: 6rpx;
+  border-radius: 5rpx;
   background: #fff;
   transition: width 0.4s ease;
 }
 
 .checkin-hero__progress-text {
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   font-weight: var(--weight-semibold);
-  min-width: 60rpx;
+  min-width: 50rpx;
   text-align: right;
 }
 
 /* 快捷操作 */
 .checkin-hero__actions {
-  margin-top: var(--space-5);
+  margin-top: var(--space-3);
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .checkin-hero__action {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) 0;
+  padding: var(--space-2) 0;
   border-radius: var(--radius-medium);
   background: rgba(255, 255, 255, 0.18);
   transition: all var(--motion-fast) var(--ease-standard);
@@ -475,7 +475,7 @@ onShow(() => {
 }
 
 .checkin-hero__action-icon {
-  font-size: 36rpx;
+  font-size: 28rpx;
   line-height: 1;
 }
 

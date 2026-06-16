@@ -162,7 +162,7 @@ onLoad((options) => {
 .detail-hero {
   background: var(--color-diary-gradient);
   border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-7) var(--space-6) var(--space-8);
+  padding: var(--space-5) var(--space-6) var(--space-5);
   color: #fff;
 }
 
@@ -170,11 +170,11 @@ onLoad((options) => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
 .detail-hero__chip {
-  padding: 6rpx 18rpx;
+  padding: 4rpx 14rpx;
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.2);
 }
@@ -186,15 +186,15 @@ onLoad((options) => {
 
 .detail-hero__title {
   display: block;
-  font-size: var(--font-display);
+  font-size: var(--font-title);
   font-weight: var(--weight-bold);
   line-height: var(--leading-tight);
 }
 
 .detail-hero__age {
   display: block;
-  margin-top: var(--space-3);
-  font-size: var(--font-meta);
+  margin-top: var(--space-2);
+  font-size: var(--font-tiny);
   opacity: 0.8;
 }
 

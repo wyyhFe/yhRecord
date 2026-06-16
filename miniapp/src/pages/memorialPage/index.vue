@@ -1,138 +1,102 @@
 <template>
   <view class="page-shell-safe memorial-page">
-    <view class="section-shell">
-      <view class="section-head">
-        <view class="section-copy">
-          <view class="section-copy__title">纪念日管理</view>
-          <view class="section-copy__desc">把重要日期留下来，提醒、首页和去年今日都会复用这里的数据。</view>
-        </view>
-        <u-tag text="纪念日" type="warning" plain shape="circle" />
-      </view>
-
-      <view class="action-grid-2">
-        <u-button
-          type="primary"
-          shape="circle"
-          color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
-          @click="openCreatePopup"
-        >
-          新建纪念日
-        </u-button>
-        <u-button shape="circle" plain @click="loadMemorialDays">刷新列表</u-button>
-      </view>
+    <!-- Hero -->
+    <view class="memorial-hero">
+      <text class="memorial-hero__icon">📅</text>
+      <text class="memorial-hero__title">纪念日管理</text>
+      <text class="memorial-hero__sub">重要日期提醒、首页和去年今日都会复用</text>
     </view>
 
-    <view class="page-section">
-      <view v-if="items.length" class="list-stack">
-        <view v-for="item in items" :key="item.id" class="list-card">
-          <view class="list-card__head">
-            <view>
-              <view class="list-card__title">{{ item.title }}</view>
-              <view class="list-card__meta">{{ item.type || '纪念日' }} | {{ item.memorialDate }}</view>
-            </view>
-            <view class="memorial-repeat-tag">{{ item.annualRepeat ? '每年重复' : '单次' }}</view>
-          </view>
-
-          <view v-if="item.remark" class="list-card__meta memorial-remark">{{ item.remark }}</view>
-          <view class="list-card__meta">
-            {{ item.remindAt ? `提醒时间 ${formatReminder(item.remindAt)}` : '未设置提醒时间' }}
-          </view>
-
-          <view class="action-grid-2">
-            <u-button shape="circle" plain :hair-line="false" @click="editItem(item)">编辑</u-button>
-            <u-button type="error" shape="circle" plain @click="removeItem(item.id)">删除</u-button>
+    <!-- 列表 -->
+    <view v-if="items.length" class="memorial-list">
+      <view v-for="item in items" :key="item.id" class="memorial-item">
+        <view class="memorial-item__header">
+          <text class="memorial-item__title">{{ item.title }}</text>
+          <view class="memorial-item__badge" :class="item.annualRepeat ? 'memorial-item__badge--repeat' : ''">
+            <text class="memorial-item__badge-text">{{ item.annualRepeat ? '每年重复' : '单次' }}</text>
           </view>
         </view>
+        <text class="memorial-item__meta">{{ item.type || '纪念日' }} · {{ item.memorialDate }}</text>
+        <text v-if="item.remark" class="memorial-item__remark">{{ item.remark }}</text>
+        <text class="memorial-item__remind">{{ item.remindAt ? `提醒：${formatReminder(item.remindAt)}` : '未设置提醒' }}</text>
+        <view class="memorial-item__actions">
+          <u-button shape="circle" plain :hair-line="false" size="small" @click="editItem(item)">编辑</u-button>
+          <u-button shape="circle" type="error" plain :hair-line="false" size="small" @click="removeItem(item.id)">删除</u-button>
+        </view>
       </view>
-      <EmptyStateCard
-        v-else
-        title="还没有纪念日"
-        description="先新建一条重要日期，后续提醒和回顾页面都会自动使用。"
-      />
+    </view>
+    <EmptyStateCard v-else title="还没有纪念日" description="新建一条重要日期，提醒和回顾页面会自动使用" />
+
+    <!-- 新建按钮 -->
+    <view class="memorial-action">
+      <u-button shape="circle" type="primary" color="var(--color-memory-gradient)" @click="openCreatePopup">
+        ＋ 新建纪念日
+      </u-button>
     </view>
 
+    <!-- 弹窗 -->
     <u-popup v-model="showPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="true">
       <view class="memorial-popup">
         <scroll-view scroll-y class="memorial-popup__body">
           <view class="memorial-popup__head">
-            <view class="memorial-popup__title">{{ editingId ? '编辑纪念日' : '新建纪念日' }}</view>
-            <view class="memorial-popup__subtitle">先把必要信息填完整，提醒能力会直接复用这些字段。</view>
+            <text class="memorial-popup__title">{{ editingId ? '编辑纪念日' : '新建纪念日' }}</text>
           </view>
 
-          <view class="block-stack">
-            <view class="field-label">标题</view>
-            <u-input
-              v-model="form.title"
-              placeholder="例如：第一次旅行、生日、领证纪念日"
-              :border="true"
-              border-color="var(--color-border-strong)"
-              :custom-style="fieldStyle"
-            />
+          <!-- 标题 -->
+          <view class="memorial-popup__card">
+            <text class="memorial-popup__label">标题</text>
+            <input v-model="form.title" class="memorial-popup__input" placeholder="例如：第一次旅行、生日" />
           </view>
 
-          <view class="block-stack">
-            <view class="field-label">类型</view>
-            <u-input
-              v-model="form.type"
-              placeholder="例如：LIFE / LOVE / FAMILY"
-              :border="true"
-              border-color="var(--color-border-strong)"
-              :custom-style="fieldStyle"
-            />
+          <!-- 类型 -->
+          <view class="memorial-popup__card">
+            <text class="memorial-popup__label">类型</text>
+            <input v-model="form.type" class="memorial-popup__input" placeholder="例如：LIFE / LOVE / FAMILY" />
           </view>
 
-          <view class="block-stack">
-            <view class="picker-card-list">
-              <picker mode="date" :value="form.memorialDate" @change="onMemorialDateChange">
-                <view class="picker-card-row">
-                  <view class="picker-card-row__label">纪念日期</view>
-                  <view class="picker-card-row__value">{{ form.memorialDate }}</view>
-                </view>
-              </picker>
-              <picker mode="date" :value="remindDateText" @change="onRemindDateChange">
-                <view class="picker-card-row">
-                  <view class="picker-card-row__label">提醒日期</view>
-                  <view class="picker-card-row__value">{{ remindDateText }}</view>
-                </view>
-              </picker>
-              <picker mode="time" :value="remindTimeText" @change="onRemindTimeChange">
-                <view class="picker-card-row">
-                  <view class="picker-card-row__label">提醒时间</view>
-                  <view class="picker-card-row__value">{{ remindTimeText }}</view>
-                </view>
-              </picker>
+          <!-- 日期选择 -->
+          <view class="memorial-popup__card">
+            <picker mode="date" :value="form.memorialDate" @change="onMemorialDateChange">
+              <view class="memorial-popup__row">
+                <text class="memorial-popup__row-label">纪念日期</text>
+                <text class="memorial-popup__row-value">{{ form.memorialDate }} ›</text>
+              </view>
+            </picker>
+            <picker mode="date" :value="remindDateText" @change="onRemindDateChange">
+              <view class="memorial-popup__row">
+                <text class="memorial-popup__row-label">提醒日期</text>
+                <text class="memorial-popup__row-value">{{ remindDateText }} ›</text>
+              </view>
+            </picker>
+            <picker mode="time" :value="remindTimeText" @change="onRemindTimeChange">
+              <view class="memorial-popup__row">
+                <text class="memorial-popup__row-label">提醒时间</text>
+                <text class="memorial-popup__row-value">{{ remindTimeText }} ›</text>
+              </view>
+            </picker>
+          </view>
+
+          <!-- 每年重复 -->
+          <view class="memorial-popup__card">
+            <view class="memorial-popup__switch">
+              <view>
+                <text class="memorial-popup__label">每年重复</text>
+                <text class="memorial-popup__hint">生日、纪念日建议打开</text>
+              </view>
+              <switch :checked="form.annualRepeat" color="var(--color-primary)" @change="onRepeatChange" />
             </view>
           </view>
 
-          <view class="memorial-switch-row">
-            <view>
-              <view class="field-label">每年重复</view>
-              <view class="list-card__meta">生日、纪念日这类固定日期建议打开。</view>
-            </view>
-            <switch :checked="form.annualRepeat" color="var(--color-primary)" @change="onRepeatChange" />
+          <!-- 备注 -->
+          <view class="memorial-popup__card">
+            <text class="memorial-popup__label">备注</text>
+            <textarea v-model="form.remark" class="memorial-popup__textarea" placeholder="补充背景信息" />
           </view>
 
-          <view class="block-stack">
-            <view class="field-label">备注</view>
-            <u-textarea
-              v-model="form.remark"
-              placeholder="补充一点背景信息，后面回顾时更容易看懂。"
-              :border="true"
-              border-color="var(--color-border-strong)"
-              :custom-style="textareaStyle"
-              height="180"
-            />
-          </view>
-
-          <view class="action-grid-2 memorial-popup__actions">
+          <!-- 操作 -->
+          <view class="memorial-popup__actions">
             <u-button shape="circle" plain :hair-line="false" @click="closePopup">取消</u-button>
-            <u-button
-              type="primary"
-              shape="circle"
-              color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
-              :loading="submitting"
-              @click="submit"
-            >
+            <u-button shape="circle" type="primary" color="var(--color-memory-gradient)" :loading="submitting" @click="submit">
               {{ submitting ? '保存中...' : '保存' }}
             </u-button>
           </view>
@@ -171,23 +135,6 @@ const form = reactive({
   remindTime: '09:00'
 })
 
-const fieldStyle = {
-  background: 'var(--color-surface-soft)',
-  borderRadius: 'var(--radius-medium)',
-  padding: '0 var(--space-5)',
-  fontSize: 'var(--font-body)',
-  minHeight: '84rpx'
-}
-
-const textareaStyle = {
-  background: 'var(--color-surface-soft)',
-  borderRadius: 'var(--radius-medium)',
-  padding: 'var(--space-4) var(--space-5)',
-  fontSize: 'var(--font-caption)',
-  width: '100%',
-  boxSizing: 'border-box' as const
-}
-
 const remindDateText = computed(() => form.remindDate || '不设置')
 const remindTimeText = computed(() => form.remindTime || '09:00')
 
@@ -202,31 +149,15 @@ function resetForm() {
   form.remindTime = '09:00'
 }
 
-function openCreatePopup() {
-  resetForm()
-  showPopup.value = true
-}
-
-function closePopup() {
-  showPopup.value = false
-  resetForm()
-}
+function openCreatePopup() { resetForm(); showPopup.value = true }
+function closePopup() { showPopup.value = false; resetForm() }
 
 function onMemorialDateChange(event: { detail: { value: string } }) {
   form.memorialDate = event.detail.value
-  if (!editingId.value) {
-    form.remindDate = event.detail.value
-  }
+  if (!editingId.value) form.remindDate = event.detail.value
 }
-
-function onRemindDateChange(event: { detail: { value: string } }) {
-  form.remindDate = event.detail.value
-}
-
-function onRemindTimeChange(event: { detail: { value: string } }) {
-  form.remindTime = event.detail.value
-}
-
+function onRemindDateChange(event: { detail: { value: string } }) { form.remindDate = event.detail.value }
+function onRemindTimeChange(event: { detail: { value: string } }) { form.remindTime = event.detail.value }
 function onRepeatChange(event: Event) {
   const payload = event as Event & { detail?: { value?: boolean } }
   form.annualRepeat = Boolean(payload.detail?.value)
@@ -261,99 +192,170 @@ function editItem(item: MemorialDay) {
   showPopup.value = true
 }
 
-function formatReminder(value: string) {
-  return value.replace('T', ' ').slice(0, 16)
-}
+function formatReminder(value: string) { return value.replace('T', ' ').slice(0, 16) }
 
 async function loadMemorialDays() {
-  try {
-    items.value = await fetchMemorialDays()
-  } catch (error) {
-    items.value = []
-    uni.$feedback.error(error, undefined, '加载纪念日失败')
-  }
+  try { items.value = await fetchMemorialDays() }
+  catch (error) { items.value = []; uni.$feedback.error(error, undefined, '加载失败') }
 }
 
 async function removeItem(id: Id) {
-  const result = await uni.showModal({
-    title: '确认删除',
-    content: '删除后这条纪念日将不再参与提醒和回顾展示。'
-  })
+  const result = await uni.showModal({ title: '确认删除', content: '删除后不再参与提醒和回顾。' })
   if (!result.confirm) return
-
-  try {
-    await deleteMemorialDay(id)
-    uni.$feedback.success('已删除')
-    await loadMemorialDays()
-  } catch (error) {
-    uni.$feedback.error(error, undefined, '删除失败')
-  }
+  try { await deleteMemorialDay(id); uni.$feedback.success('已删除'); await loadMemorialDays() }
+  catch (error) { uni.$feedback.error(error, undefined, '删除失败') }
 }
 
 async function submit() {
-  if (!form.title.trim()) {
-    uni.$feedback.error('请先填写标题')
-    return
-  }
-
-  if (!form.type.trim()) {
-    uni.$feedback.error('请先填写类型')
-    return
-  }
-
+  if (!form.title.trim()) { uni.$feedback.error('请先填写标题'); return }
+  if (!form.type.trim()) { uni.$feedback.error('请先填写类型'); return }
   submitting.value = true
   try {
     const payload = buildPayload()
-    if (editingId.value) {
-      await updateMemorialDay(editingId.value, payload)
-      uni.$feedback.success('纪念日已更新')
-    } else {
-      await createMemorialDay(payload)
-      uni.$feedback.success('纪念日已创建')
-    }
+    if (editingId.value) { await updateMemorialDay(editingId.value, payload); uni.$feedback.success('已更新') }
+    else { await createMemorialDay(payload); uni.$feedback.success('已创建') }
     closePopup()
     await loadMemorialDays()
-  } catch (error) {
-    uni.$feedback.error(error, undefined, editingId.value ? '更新失败' : '创建失败')
-  } finally {
-    submitting.value = false
-  }
+  } catch (error) { uni.$feedback.error(error, undefined, '保存失败') }
+  finally { submitting.value = false }
 }
 
-onShow(() => {
-  loadMemorialDays()
-})
+onShow(() => { loadMemorialDays() })
 </script>
 
 <style scoped lang="scss">
 .memorial-page {
-  padding-bottom: var(--space-5);
+  padding-bottom: var(--space-10);
 }
 
-.memorial-repeat-tag {
-  padding: var(--space-2) var(--space-4);
+/* ========== Hero ========== */
+.memorial-hero {
+  background: var(--color-memory-gradient);
+  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
+  padding: var(--space-5) var(--space-6) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+}
+
+.memorial-hero__icon {
+  font-size: 44rpx;
+  margin-bottom: var(--space-2);
+}
+
+.memorial-hero__title {
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+}
+
+.memorial-hero__sub {
+  margin-top: var(--space-1);
+  font-size: var(--font-tiny);
+  opacity: 0.85;
+}
+
+/* ========== 列表 ========== */
+.memorial-list {
+  margin: var(--space-4) var(--space-4) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.memorial-item {
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4) var(--space-5);
+}
+
+.memorial-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.memorial-item__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-bold);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memorial-item__badge {
+  padding: 4rpx 14rpx;
   border-radius: var(--radius-full);
   background: var(--color-surface-soft);
-  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.memorial-item__badge--repeat {
+  background: var(--color-memory-soft);
+}
+
+.memorial-item__badge-text {
+  color: var(--color-text-muted);
   font-size: var(--font-tiny);
 }
 
-.memorial-remark {
-  margin-top: var(--space-3);
+.memorial-item__badge--repeat .memorial-item__badge-text {
+  color: var(--color-memory);
 }
 
+.memorial-item__meta {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+.memorial-item__remark {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  line-height: var(--leading-relaxed);
+}
+
+.memorial-item__remind {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+.memorial-item__actions {
+  margin-top: var(--space-3);
+  display: flex;
+  gap: var(--space-3);
+}
+
+/* ========== 操作 ========== */
+.memorial-action {
+  margin: var(--space-6) var(--space-4) 0;
+}
+
+/* ========== 弹窗 ========== */
 .memorial-popup {
-  max-height: 74vh;
-  padding: var(--space-6) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
   background: var(--color-bg);
+  max-height: 80vh;
+  padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
 }
 
 .memorial-popup__body {
-  max-height: calc(74vh - 48rpx);
+  max-height: calc(80vh - 40rpx);
 }
 
 .memorial-popup__head {
   text-align: center;
+  margin-bottom: var(--space-4);
 }
 
 .memorial-popup__title {
@@ -362,49 +364,87 @@ onShow(() => {
   font-weight: var(--weight-bold);
 }
 
-.memorial-popup__subtitle {
-  margin-top: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--font-meta);
+.memorial-popup__card {
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
-.memorial-switch-row {
-  margin-top: var(--space-4);
+.memorial-popup__label {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-2);
+}
+
+.memorial-popup__hint {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+  margin-top: 4rpx;
+}
+
+.memorial-popup__input {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  box-sizing: border-box;
+}
+
+.memorial-popup__textarea {
+  width: 100%;
+  min-height: 100rpx;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  box-sizing: border-box;
+}
+
+.memorial-popup__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-5);
+  padding: var(--space-3) 0;
+  border-bottom: 1rpx solid var(--color-divider);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.memorial-popup__row-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-body);
+}
+
+.memorial-popup__row-value {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-medium);
+}
+
+.memorial-popup__switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .memorial-popup__actions {
-  margin-top: var(--space-6);
-}
-
-.picker-card-list {
+  margin-top: var(--space-2);
   display: flex;
-  flex-direction: column;
   gap: var(--space-3);
 }
 
-.picker-card-row {
-  min-height: 84rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface-soft);
-}
-
-.picker-card-row__label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-meta);
-}
-
-.picker-card-row__value {
-  color: var(--color-text-primary);
-  font-size: var(--font-body);
-  font-weight: var(--weight-semibold);
+.memorial-popup__actions .u-button {
+  flex: 1;
 }
 </style>

@@ -184,49 +184,49 @@ onShow(() => {
 .diary-hero {
   background: var(--color-diary-gradient);
   border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-7) var(--space-6) var(--space-8);
+  padding: var(--space-5) var(--space-6) var(--space-5);
   color: #fff;
 }
 
 .diary-hero__top {
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .diary-hero__date {
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   opacity: 0.8;
 }
 
 .diary-hero__title {
-  font-size: var(--font-hero);
+  font-size: var(--font-title);
   font-weight: var(--weight-bold);
-  line-height: 1.1;
+  line-height: 1.2;
 }
 
 .diary-hero__sub {
-  margin-top: var(--space-3);
-  font-size: var(--font-body);
+  margin-top: var(--space-2);
+  font-size: var(--font-meta);
   opacity: 0.85;
 }
 
 .diary-hero__highlight {
-  font-size: var(--font-title);
+  font-size: var(--font-section);
   font-weight: var(--weight-bold);
 }
 
 .diary-hero__actions {
-  margin-top: var(--space-5);
+  margin-top: var(--space-3);
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .diary-hero__action {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  padding: var(--space-3) 0;
+  padding: var(--space-2) 0;
   border-radius: var(--radius-medium);
   background: rgba(255, 255, 255, 0.18);
   transition: all var(--motion-fast) var(--ease-standard);
@@ -238,7 +238,7 @@ onShow(() => {
 }
 
 .diary-hero__action-icon {
-  font-size: 36rpx;
+  font-size: 28rpx;
   line-height: 1;
 }
 
