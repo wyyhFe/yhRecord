@@ -6,9 +6,6 @@
       <view class="ledger-hero__top">
         <text class="ledger-hero__title">{{ pageTitle }}</text>
         <view class="ledger-hero__actions">
-          <view class="ledger-hero__action" @tap="goAiAnalysis">
-            <text class="ledger-hero__action-text">AI</text>
-          </view>
           <view class="ledger-hero__action" @tap="goLedgerTags">
             <text class="ledger-hero__action-text">标签</text>
           </view>
@@ -572,14 +569,6 @@ function syncPendingFilter() {
 
 function goBooks() {
   uni.navigateTo({ url: '/pages/ledger/books' })
-}
-
-function goAiAnalysis() {
-  // 直接进 AI 账单分析页，把当前账本名带过去预填补充问题。
-  // 之前是跳到聊天页只给一段 prompt scene，现在改成跳真正的账单分析页。
-  const bookName = selectedBookName.value || ''
-  const query = bookName ? `?bookName=${encodeURIComponent(bookName)}` : ''
-  uni.navigateTo({ url: `/pages/ai/bill-analysis${query}` })
 }
 
 function goLedgerTags() {
