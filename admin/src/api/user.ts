@@ -59,3 +59,30 @@ export const refreshTokenApi = (data?: object) => {
 export const getMine = (data?: object) => {
   return http.request<UserInfoResult>("get", "/auth/me", { data });
 };
+
+/** 用户资料 */
+export type UserProfileVO = {
+  id: number;
+  openid: string;
+  nickname: string;
+  avatarPath: string;
+  gender: string;
+  officialAccountOpenid: string;
+  birthday: string;
+  signature: string;
+  diaryCount: number;
+};
+
+type UserProfileResult = ApiResult<UserProfileVO>;
+
+/** 获取当前用户资料 */
+export const getUserProfile = () => {
+  return http.request<UserProfileResult>("get", "/users/profile");
+};
+
+/** 更新当前用户资料 */
+export const updateUserProfile = (data?: object) => {
+  return http.request<UserProfileResult>("put", "/users/profile/update", {
+    data
+  });
+};

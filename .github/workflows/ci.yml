@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [dev-ai, main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: 后端编译验证
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: 编译
+        working-directory: record
+        run: ./mvnw -q -DskipTests compile
+
+      - name: 单元测试
+        working-directory: record
+        run: ./mvnw -q test
+
+  admin:
+    name: 管理端构建验证
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 安装 pnpm
+        run: npm install -g pnpm
+
+      - name: 安装依赖
+        working-directory: admin
+        run: pnpm install --frozen-lockfile
+
+      - name: 类型检查
+        working-directory: admin
+        run: pnpm typecheck
+
+      - name: 构建
+        working-directory: admin
+        run: pnpm build
+
+  miniapp:
+    name: 小程序构建验证
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 安装依赖
+        working-directory: miniapp
+        run: npm ci
+
+      - name: 类型检查
+        working-directory: miniapp
+        run: npm run type-check
+
+      - name: 构建
+        working-directory: miniapp
+        run: npm run build:mp-weixin

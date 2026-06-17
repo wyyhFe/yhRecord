@@ -1,76 +1,59 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useDept } from "./utils/hook";
+import { useLedgerBook } from "./utils/hook";
 import { PureTableBar } from "@/components/RePureTableBar";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 
 import Delete from "~icons/ep/delete";
-import EditPen from "~icons/ep/edit-pen";
 import Refresh from "~icons/ep/refresh";
-import AddFill from "~icons/ri/add-circle-line";
+import Search from "~icons/ep/search";
 
-defineOptions({
-  name: "SystemDept"
-});
+defineOptions({ name: "LedgerBookManage" });
 
 const formRef = ref();
 const tableRef = ref();
+
 const {
   form,
   loading,
   columns,
   dataList,
+  pagination,
+  selectedIds,
   onSearch,
   resetForm,
-  openDialog,
   handleDelete,
+  handleBatchDelete,
+  handleSizeChange,
+  handleCurrentChange,
   handleSelectionChange
-} = useDept();
+} = useLedgerBook();
 
 function onFullscreen() {
-  // 重置表格高度
   tableRef.value.setAdaptive();
 }
 </script>
 
 <template>
   <div class="main">
-    <el-alert
-      title="此功能仅为演示，数据不持久化，刷新后恢复默认"
-      type="warning"
-      show-icon
-      :closable="false"
-      style="margin-bottom: 12px"
-    />
     <el-form
       ref="formRef"
       :inline="true"
       :model="form"
       class="search-form bg-bg_color w-full pl-8 pt-3 overflow-auto"
     >
-      <el-form-item label="部门名称：" prop="name">
+      <el-form-item label="账本名称：" prop="name">
         <el-input
           v-model="form.name"
-          placeholder="请输入部门名称"
+          placeholder="搜索账本名称"
           clearable
           class="w-45!"
         />
       </el-form-item>
-      <el-form-item label="状态：" prop="status">
-        <el-select
-          v-model="form.status"
-          placeholder="请选择状态"
-          clearable
-          class="w-45!"
-        >
-          <el-option label="启用" :value="1" />
-          <el-option label="停用" :value="0" />
-        </el-select>
-      </el-form-item>
       <el-form-item>
         <el-button
           type="primary"
-          :icon="useRenderIcon('ri/search-line')"
+          :icon="useRenderIcon(Search)"
           :loading="loading"
           @click="onSearch"
         >
@@ -83,7 +66,7 @@ function onFullscreen() {
     </el-form>
 
     <PureTableBar
-      title="部门管理（仅演示，操作后不生效）"
+      title="账本管理"
       :columns="columns"
       :tableRef="tableRef?.getTableRef()"
       @refresh="onSearch"
@@ -91,11 +74,12 @@ function onFullscreen() {
     >
       <template #buttons>
         <el-button
-          type="primary"
-          :icon="useRenderIcon(AddFill)"
-          @click="openDialog()"
+          type="danger"
+          :icon="useRenderIcon(Delete)"
+          :disabled="selectedIds.length === 0"
+          @click="handleBatchDelete"
         >
-          新增部门
+          批量删除
         </el-button>
       </template>
       <template v-slot="{ size, dynamicColumns }">
@@ -107,40 +91,22 @@ function onFullscreen() {
           row-key="id"
           showOverflowTooltip
           table-layout="auto"
-          default-expand-all
           :loading="loading"
           :size="size"
           :data="dataList"
           :columns="dynamicColumns"
+          :pagination="pagination"
           :header-cell-style="{
             background: 'var(--el-fill-color-light)',
             color: 'var(--el-text-color-primary)'
           }"
           @selection-change="handleSelectionChange"
+          @page-size-change="handleSizeChange"
+          @page-current-change="handleCurrentChange"
         >
           <template #operation="{ row }">
-            <el-button
-              class="reset-margin"
-              link
-              type="primary"
-              :size="size"
-              :icon="useRenderIcon(EditPen)"
-              @click="openDialog('修改', row)"
-            >
-              修改
-            </el-button>
-            <el-button
-              class="reset-margin"
-              link
-              type="primary"
-              :size="size"
-              :icon="useRenderIcon(AddFill)"
-              @click="openDialog('新增', { parentId: row.id } as any)"
-            >
-              新增
-            </el-button>
             <el-popconfirm
-              :title="`是否确认删除部门名称为${row.name}的这条数据`"
+              title="是否确认删除该账本？"
               @confirm="handleDelete(row)"
             >
               <template #reference>
