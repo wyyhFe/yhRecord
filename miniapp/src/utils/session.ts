@@ -21,6 +21,7 @@ export async function ensureSession() {
       .then((result) => {
         tokenStorage.setAccessToken(result.accessToken)
         tokenStorage.setRefreshToken(result.refreshToken)
+        tokenStorage.setTokenExpiresIn(result.expiresIn)
         return true
       })
       .catch((error) => {

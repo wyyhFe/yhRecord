@@ -30,6 +30,7 @@ interface RequestOptions<T = unknown> {
 interface RefreshTokenResult {
   accessToken: string
   refreshToken: string
+  expiresIn: number
 }
 
 /** 请求失败时自动重试的最大次数 */
@@ -52,9 +53,9 @@ let refreshingPromise: Promise<void> | null = null
  * 登录态彻底失效（refresh 也救不回 + 静默 wx.login 也失败）时调。
  * 清掉本地凭证，跳到登录页让用户手动操作。
  */
-function redirectToLogin() {
+function redirectToHome() {
   tokenStorage.clearAll()
-  uni.reLaunch({ url: '/pages/auth/login' })
+  uni.reLaunch({ url: '/pages/home/index' })
 }
 
 /**
@@ -97,7 +98,21 @@ async function refreshSessionToken(refreshTokenValue: string) {
 
   tokenStorage.setAccessToken(result.data.accessToken)
   tokenStorage.setRefreshToken(result.data.refreshToken)
+  tokenStorage.setTokenExpiresIn(result.data.expiresIn)
 }
+
+/**
+ * accessToken 还有 N 秒过期？
+ * 提前 3 分钟（180s）刷新，避免请求发到后端时已过期。
+ */
+function getTokenRemainingSeconds(): number {
+  const expiresAt = tokenStorage.getTokenExpiresAt()
+  if (!expiresAt) return 0
+  return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000))
+}
+
+/** 提前刷新的阈值（秒），accessToken 剩余时间不足此值时主动续签 */
+const PROACTIVE_REFRESH_THRESHOLD_SECONDS = 180
 
 /**
  * 判断当前错误是否应该重试。
@@ -124,7 +139,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-http.interceptors.request.use((config) => {
+http.interceptors.request.use(async (config) => {
   const nextConfig = config as HttpRequestConfig & {
     custom?: RequestCustomConfig
   }
@@ -147,6 +162,35 @@ http.interceptors.request.use((config) => {
     hasToken: Boolean(token),
     authorization: nextConfig.header.Authorization
   })
+
+  // ─── 主动续签：accessToken 快过期但 refreshToken 还有效时，提前刷新 ───
+  if (
+    withAuth &&
+    token &&
+    getTokenRemainingSeconds() < PROACTIVE_REFRESH_THRESHOLD_SECONDS &&
+    !nextConfig.custom?._retry
+  ) {
+    const refreshValue = tokenStorage.getRefreshToken()
+    if (refreshValue) {
+      if (!refreshingPromise) {
+        refreshingPromise = refreshSessionToken(refreshValue)
+          .then(() => {
+            // 刷新成功后重新读取最新的 accessToken 写入本次请求 header
+            const freshToken = tokenStorage.getAccessToken()
+            if (freshToken) {
+              nextConfig.header!.Authorization = `Bearer ${freshToken}`
+            }
+          })
+          .catch((err) => {
+            console.warn('[request] proactive refresh failed, will retry on 401', err)
+          })
+          .finally(() => {
+            refreshingPromise = null
+          })
+      }
+      await refreshingPromise
+    }
+  }
 
   return nextConfig
 })
@@ -222,9 +266,9 @@ http.interceptors.response.use(
           }
 
           // 第三层：彻底失败 → 跳登录页让用户手动登录
-          console.error('[request] all recovery failed, redirecting to login')
-          uni.$feedback?.info?.('登录已失效，请重新登录')
-          redirectToLogin()
+          console.error('[request] all recovery failed, redirecting to home')
+          uni.$feedback?.info?.('登录已失效，正在重新登录')
+          redirectToHome()
           throw new Error('登录已失效')
         })().finally(() => {
           refreshingPromise = null

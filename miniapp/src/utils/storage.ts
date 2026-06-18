@@ -1,5 +1,6 @@
 const TOKEN_KEY = 'life-record-token'
 const REFRESH_TOKEN_KEY = 'life-record-refresh-token'
+const TOKEN_EXPIRES_AT_KEY = 'life-record-token-expires-at'
 
 /**
  * 登录态本地存储工具。
@@ -37,10 +38,28 @@ export const tokenStorage = {
   clearRefreshToken: () => uni.removeStorageSync(REFRESH_TOKEN_KEY),
 
   /**
+   * 读取 accessToken 过期时间戳（毫秒）。
+   */
+  getTokenExpiresAt: () => {
+    const val = uni.getStorageSync(TOKEN_EXPIRES_AT_KEY)
+    return typeof val === 'number' ? val : 0
+  },
+
+  /**
+   * 保存 accessToken 过期时间戳（毫秒）。
+   * 传入 expiresIn（秒），自动换算为绝对时间戳。
+   */
+  setTokenExpiresIn: (expiresIn: number) => {
+    const expiresAt = Date.now() + expiresIn * 1000
+    uni.setStorageSync(TOKEN_EXPIRES_AT_KEY, expiresAt)
+  },
+
+  /**
    * 一次性清空全部登录态。
    */
   clearAll: () => {
     uni.removeStorageSync(TOKEN_KEY)
     uni.removeStorageSync(REFRESH_TOKEN_KEY)
+    uni.removeStorageSync(TOKEN_EXPIRES_AT_KEY)
   }
 }

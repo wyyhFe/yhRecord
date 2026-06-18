@@ -11,6 +11,8 @@ export interface LoginResult {
   accessToken: string
   refreshToken: string
   sessionId: string
+  /** accessToken 过期时间（秒），用于前端主动续签判断 */
+  expiresIn: number
 }
 
 /**
