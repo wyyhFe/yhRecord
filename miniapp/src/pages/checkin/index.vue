@@ -39,35 +39,44 @@
       </view>
 
       <view v-if="tasks.length" class="task-list">
-        <view
-          v-for="task in tasks"
+        <u-swipe-action
+          v-for="(task, index) in tasks"
           :key="task.id"
-          class="task-item"
-          :class="{ 'task-item--done': todayDoneIds.has(task.id) }"
+          :options="deleteSwipeOptions"
+          :index="index"
+          btn-width="140"
+          @click="onSwipeDelete"
         >
-          <view class="task-item__left">
-            <view class="task-item__status" :class="{ 'task-item__status--done': todayDoneIds.has(task.id) }">
-              <text v-if="todayDoneIds.has(task.id)">✓</text>
-            </view>
-            <view class="task-item__info">
-              <text class="task-item__name">{{ task.name }}</text>
-              <text class="task-item__meta">{{ task.totalCount }} 次 · {{ task.latestCheckedAt || '暂无记录' }}</text>
+          <view
+            class="task-item"
+            :class="{ 'task-item--done': todayDoneIds.has(task.id) }"
+          >
+            <view class="task-item__content">
+              <view class="task-item__left">
+                <view class="task-item__status" :class="{ 'task-item__status--done': todayDoneIds.has(task.id) }">
+                  <text v-if="todayDoneIds.has(task.id)">✓</text>
+                </view>
+                <view class="task-item__info">
+                  <text class="task-item__name">{{ task.name }}</text>
+                  <text class="task-item__meta">{{ task.totalCount }} 次 · {{ task.latestCheckedAt || '暂无记录' }}</text>
+                </view>
+              </view>
+              <view class="task-item__right">
+                <view
+                  v-if="!todayDoneIds.has(task.id)"
+                  class="task-item__btn"
+                  hover-class="task-item__btn--pressed"
+                  @click="handleCheckin(task)"
+                >
+                  <text class="task-item__btn-text">打卡</text>
+                </view>
+                <view v-else class="task-item__done-badge">
+                  <text class="task-item__done-text">已完成</text>
+                </view>
+              </view>
             </view>
           </view>
-          <view class="task-item__right">
-            <view
-              v-if="!todayDoneIds.has(task.id)"
-              class="task-item__btn"
-              hover-class="task-item__btn--pressed"
-              @click="handleCheckin(task)"
-            >
-              <text class="task-item__btn-text">打卡</text>
-            </view>
-            <view v-else class="task-item__done-badge">
-              <text class="task-item__done-text">已完成</text>
-            </view>
-          </view>
-        </view>
+        </u-swipe-action>
       </view>
       <EmptyStateCard
         v-else
@@ -134,6 +143,17 @@
     <!-- 勋章解锁弹窗 -->
     <MedalUnlockPopup v-model="showMedalPopup" :medal="unlockedMedal" />
 
+    <!-- 补卡弹窗 -->
+    <MendCheckinPopup
+      v-model="showMendPopup"
+      :mend-date="mendTargetDate"
+      :display-date="mendDisplayDate"
+      :tasks="mendTaskOptions"
+      :completed-ids="mendCompletedIds"
+      :remaining="mendRemaining"
+      @success="onMendSuccess"
+    />
+
     <!-- 悬浮按钮 -->
     <view class="fab" :class="{ 'fab--open': fabOpen }">
       <view class="fab__mask" @tap="fabOpen = false" />
@@ -168,6 +188,7 @@ import MoodPicker from '@/components/business/mood-picker/index.vue'
 import TagPicker from '@/components/business/tag-picker/index.vue'
 import { uploadImageToOss } from '@/utils/upload'
 import MedalUnlockPopup from '@/components/business/medal-unlock-popup/index.vue'
+import MendCheckinPopup from './modules/mend-checkin-popup/index.vue'
 import {
   createCheckinTag,
   fetchCheckinDayDetail,
@@ -197,9 +218,24 @@ const heatmapYear = ref(new Date().getFullYear())
 const heatmapMonth = ref(new Date().getMonth() + 1)
 const tags = ref<CheckinTag[]>([])
 const mendRemaining = ref(0)
+const showMendPopup = ref(false)
+const mendTargetDate = ref('')
+const mendDisplayDate = ref('')
+const mendTaskOptions = ref<CheckinTask[]>([])
+const mendCompletedIds = ref<Set<number>>(new Set())
 const showMedalPopup = ref(false)
 const unlockedMedal = ref<Medal | null>(null)
 const fabOpen = ref(false)
+
+// 左滑删除配置
+const deleteSwipeOptions = ref([
+  { text: '删除', style: { background: '#f56c6c', color: '#fff', fontSize: '26rpx', height: '100%' } }
+])
+
+function onSwipeDelete(index: number, btnIndex: number) {
+  const task = tasks.value[index]
+  if (task) handleDeleteTask(task)
+}
 
 const textareaStyle = {
   background: 'var(--color-surface-soft)',
@@ -260,8 +296,54 @@ function onHeatmapMonthChange(year: number, month: number) {
   loadHeatmap()
 }
 
-function onHeatmapDayTap(day: HeatmapDay) {
-  uni.navigateTo({ url: `/pages/checkin/history?date=${day.date}` })
+async function onHeatmapDayTap(day: HeatmapDay) {
+  const dayDate = new Date(day.date)
+  const todayDate = new Date(today)
+  todayDate.setHours(0, 0, 0, 0)
+
+  // 今天或未来 → 跳历史页
+  if (dayDate >= todayDate) {
+    uni.navigateTo({ url: `/pages/checkin/history?date=${day.date}` })
+    return
+  }
+
+  // 全部完成 → 跳历史页
+  if (day.completedTasks >= day.totalTasks) {
+    uni.navigateTo({ url: `/pages/checkin/history?date=${day.date}` })
+    return
+  }
+
+  // 超过 7 天 → 跳历史页
+  const sevenDaysAgo = new Date(todayDate)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  if (dayDate < sevenDaysAgo) {
+    uni.navigateTo({ url: `/pages/checkin/history?date=${day.date}` })
+    return
+  }
+
+  // 获取该日未完成的任务 → 弹窗展示（无论是否有补卡次数）
+  try {
+    const completedItems = await fetchCheckinDayDetail(day.date)
+    const completedIds = new Set(completedItems.map((item) => item.id))
+    // 当天所有有效任务（含已完成 + 未完成）
+    const relevant = tasks.value.filter(
+      (t) => !t.startDate || t.startDate <= day.date
+    )
+
+    if (relevant.length === 0) {
+      uni.navigateTo({ url: `/pages/checkin/history?date=${day.date}` })
+      return
+    }
+
+    mendTargetDate.value = day.date
+    const d = new Date(day.date)
+    mendDisplayDate.value = `${d.getMonth() + 1}月${d.getDate()}日`
+    mendTaskOptions.value = relevant
+    mendCompletedIds.value = completedIds
+    showMendPopup.value = true
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '获取任务列表失败')
+  }
 }
 
 async function handleCreateTag(name: string) {
@@ -281,6 +363,10 @@ async function loadMendRemaining() {
   } catch {
     mendRemaining.value = 0
   }
+}
+
+async function onMendSuccess() {
+  await reloadAll()
 }
 
 async function reloadAll() {
@@ -306,6 +392,21 @@ function handleCheckin(task: CheckinTask) {
   checkinMood.value = undefined
   checkinTagIds.value = []
   showCheckinPopup.value = true
+}
+
+async function handleDeleteTask(task: CheckinTask) {
+  const result = await uni.showModal({
+    title: '确认删除',
+    content: `确定要删除任务「${task.name}」吗？删除后相关打卡记录也会一并清除。`
+  })
+  if (!result.confirm) return
+  try {
+    await deleteCheckinTask(task.id)
+    uni.$feedback.success('已删除')
+    await reloadAll()
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '删除失败')
+  }
 }
 
 async function confirmCheckin() {
@@ -417,8 +518,8 @@ onShow(() => {
 
 /* 圆形进度 */
 .checkin-hero__ring {
-  width: 64rpx;
-  height: 64rpx;
+  width: 96rpx;
+  height: 96rpx;
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.2);
   display: flex;
@@ -427,8 +528,8 @@ onShow(() => {
 }
 
 .checkin-hero__ring-bg {
-  width: 52rpx;
-  height: 52rpx;
+  width: 78rpx;
+  height: 78rpx;
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.25);
   display: flex;
@@ -437,7 +538,7 @@ onShow(() => {
 }
 
 .checkin-hero__ring-text {
-  font-size: 18rpx;
+  font-size: 24rpx;
   font-weight: var(--weight-bold);
 }
 
