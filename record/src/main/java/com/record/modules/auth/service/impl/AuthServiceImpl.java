@@ -280,6 +280,7 @@ public class AuthServiceImpl implements AuthService {
         storeSession(user.getId(), sessionId, refreshToken);
 
         List<String> roles = roleService.getRoleNamesByUserId(user.getId());
+        long expiresInSeconds = appProperties.getSecurity().getJwt().getAccessTokenExpireMinutes() * 60L;
 
         return AuthTokenVO.builder()
                 .userId(user.getId())
@@ -289,6 +290,7 @@ public class AuthServiceImpl implements AuthService {
                 .sessionId(sessionId)
                 .username(user.getUsername())
                 .roles(roles)
+                .expiresIn(expiresInSeconds)
                 .build();
     }
 

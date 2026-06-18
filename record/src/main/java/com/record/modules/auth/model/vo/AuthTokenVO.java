@@ -37,4 +37,7 @@ public class AuthTokenVO {
 
     @Schema(description = "用户角色列表", example = "[\"admin\"]")
     private List<String> roles;
+
+    @Schema(description = "accessToken 过期时间（秒），前端可据此判断是否需要主动续签", example = "14400")
+    private Long expiresIn;
 }

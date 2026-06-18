@@ -127,7 +127,8 @@ public class AuthController {
                 .append("?accessToken=").append(URLEncoder.encode(token.getAccessToken(), StandardCharsets.UTF_8))
                 .append("&refreshToken=").append(URLEncoder.encode(token.getRefreshToken(), StandardCharsets.UTF_8))
                 .append("&userId=").append(token.getUserId())
-                .append("&provider=").append(provider);
+                .append("&provider=").append(provider)
+                .append("&expiresIn=").append(token.getExpiresIn());
         if (token.getRoles() != null && !token.getRoles().isEmpty()) {
             callbackUrl.append("&roles=").append(URLEncoder.encode(String.join(",", token.getRoles()), StandardCharsets.UTF_8));
         }
