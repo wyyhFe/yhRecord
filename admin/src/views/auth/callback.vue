@@ -15,7 +15,7 @@ const route = useRoute();
 const loading = ref(true);
 
 onMounted(async () => {
-  const { accessToken, refreshToken, userId, provider, roles } = route.query;
+  const { accessToken, refreshToken, userId, provider, roles, expiresIn } = route.query;
 
   if (!accessToken || !refreshToken) {
     message("授权失败，未获取到登录信息", { type: "error" });
@@ -24,8 +24,9 @@ onMounted(async () => {
   }
 
   try {
-    // 计算过期时间（默认 2 小时后）
-    const expires = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    // 过期时间从后端参数计算，默认兜底 4 小时
+    const expiresInSeconds = expiresIn ? Number(expiresIn) : 4 * 60 * 60;
+    const expires = new Date(Date.now() + expiresInSeconds * 1000);
 
     // 解析 roles（后端传的是逗号分隔或 JSON 数组）
     let parsedRoles: string[] = [];

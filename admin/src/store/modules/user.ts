@@ -81,7 +81,10 @@ export const useUserStore = defineStore("pure-user", {
         getLogin(data)
           .then(data => {
             if (data.code === 0) {
-              setToken(data.data);
+              setToken({
+                ...data.data,
+                expires: new Date(Date.now() + data.data.expiresIn * 1000)
+              });
               resolve(data);
             } else {
               reject(data.message);
@@ -108,7 +111,10 @@ export const useUserStore = defineStore("pure-user", {
         refreshTokenApi(data)
           .then(data => {
             if (data.code === 0) {
-              setToken(data.data);
+              setToken({
+                ...data.data,
+                expires: new Date(Date.now() + data.data.expiresIn * 1000)
+              });
               resolve(data);
             } else {
               reject(data.message);

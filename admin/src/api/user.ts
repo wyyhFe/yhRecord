@@ -15,12 +15,16 @@ export type UserResult = ApiResult<{
   accessToken: string;
   refreshToken: string;
   sessionId: string;
+  /** accessToken 过期时间（秒），用于前端主动续签判断 */
+  expiresIn: number;
 }>;
 
 /** 刷新 token 响应 */
 export type RefreshTokenResult = ApiResult<{
   accessToken: string;
   refreshToken: string;
+  /** accessToken 过期时间（秒） */
+  expiresIn: number;
 }>;
 
 /** 当前用户信息 */
