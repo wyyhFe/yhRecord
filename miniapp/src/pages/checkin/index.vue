@@ -191,6 +191,7 @@ import MedalUnlockPopup from '@/components/business/medal-unlock-popup/index.vue
 import MendCheckinPopup from './modules/mend-checkin-popup/index.vue'
 import {
   createCheckinTag,
+  deleteCheckinTask,
   fetchCheckinDayDetail,
   fetchCheckinHeatmap,
   fetchCheckinTags,
