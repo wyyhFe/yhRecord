@@ -1,8 +1,11 @@
 package com.record.modules.checkin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.enums.CommonStatus;
 import com.record.common.exception.CheckinException;
+import com.record.common.util.AuthUtil;
+import com.record.common.util.PageQuery;
 import com.record.modules.checkin.mapper.CheckinMediaMapper;
 import com.record.modules.checkin.mapper.CheckinRecordMapper;
 import com.record.modules.checkin.mapper.CheckinRecordTagMapper;
@@ -18,6 +21,7 @@ import com.record.modules.checkin.model.entity.CheckinRecord;
 import com.record.modules.checkin.model.entity.CheckinRecordTag;
 import com.record.modules.checkin.model.entity.CheckinTag;
 import com.record.modules.checkin.model.entity.CheckinTask;
+import com.record.modules.checkin.model.vo.CheckinRecordVO;
 import com.record.modules.checkin.model.vo.CheckinTaskVO;
 import com.record.modules.checkin.model.vo.HeatmapDayVO;
 import com.record.modules.checkin.model.vo.HeatmapVO;
@@ -30,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,13 +80,23 @@ public class CheckinServiceImpl implements CheckinService {
     }
 
     @Override
-    public List<CheckinTaskVO> listTasks(Long userId) {
-        return checkinTaskMapper.selectList(new LambdaQueryWrapper<CheckinTask>()
-                        .eq(CheckinTask::getUserId, userId)
-                        .eq(CheckinTask::getStatus, CommonStatus.ENABLED))
-                .stream()
-                .map(this::toVO)
-                .toList();
+    public Page<CheckinTaskVO> listTasks(Long userId, PageQuery pageQuery, String name) {
+        LambdaQueryWrapper<CheckinTask> wrapper = new LambdaQueryWrapper<CheckinTask>()
+                .eq(CheckinTask::getStatus, CommonStatus.ENABLED);
+        // 非管理员只看自己的
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(CheckinTask::getUserId, userId);
+        }
+        if (name != null && !name.isBlank()) {
+            wrapper.like(CheckinTask::getName, name.trim());
+        }
+        wrapper.orderByDesc(CheckinTask::getId);
+
+        Page<CheckinTask> page = checkinTaskMapper.selectPage(pageQuery.toPage(), wrapper);
+        List<CheckinTaskVO> vos = page.getRecords().stream().map(this::toVO).toList();
+        Page<CheckinTaskVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        result.setRecords(vos);
+        return result;
     }
 
     @Override
@@ -90,7 +105,7 @@ public class CheckinServiceImpl implements CheckinService {
         CheckinTask task = requireOwnedTask(userId, taskId);
         checkinRecordMapper.delete(new LambdaQueryWrapper<CheckinRecord>()
                 .eq(CheckinRecord::getTaskId, taskId)
-                .eq(CheckinRecord::getUserId, userId));
+                .eq(CheckinRecord::getUserId, task.getUserId()));
         checkinTaskMapper.deleteById(task.getId());
     }
 
@@ -116,7 +131,6 @@ public class CheckinServiceImpl implements CheckinService {
         record.setMood(request.getMood());
         checkinRecordMapper.insert(record);
 
-        // 保存标签关联
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             for (Long tagId : request.getTagIds()) {
                 CheckinRecordTag recordTag = new CheckinRecordTag();
@@ -138,15 +152,17 @@ public class CheckinServiceImpl implements CheckinService {
             }
         }
 
-        // 打卡成功后检查勋章
         medalService.checkAndUnlock(userId);
     }
 
     @Override
     public List<CheckinTaskVO> listByDate(Long userId, LocalDate date) {
-        List<CheckinRecord> records = checkinRecordMapper.selectList(new LambdaQueryWrapper<CheckinRecord>()
-                .eq(CheckinRecord::getUserId, userId)
-                .eq(CheckinRecord::getCheckinDate, date));
+        LambdaQueryWrapper<CheckinRecord> recordWrapper = new LambdaQueryWrapper<CheckinRecord>()
+                .eq(CheckinRecord::getCheckinDate, date);
+        if (!AuthUtil.isAdmin()) {
+            recordWrapper.eq(CheckinRecord::getUserId, userId);
+        }
+        List<CheckinRecord> records = checkinRecordMapper.selectList(recordWrapper);
         if (records.isEmpty()) {
             return List.of();
         }
@@ -156,7 +172,6 @@ public class CheckinServiceImpl implements CheckinService {
         Map<Long, CheckinRecord> recordMap = records.stream()
                 .collect(Collectors.toMap(CheckinRecord::getTaskId, r -> r, (a, b) -> a));
 
-        // 批量加载附件，避免 N+1
         List<Long> recordIds = records.stream().map(CheckinRecord::getId).toList();
         Map<Long, List<String>> mediaMap = checkinMediaMapper.selectList(
                 new LambdaQueryWrapper<CheckinMedia>()
@@ -167,7 +182,6 @@ public class CheckinServiceImpl implements CheckinService {
                         CheckinMedia::getRecordId,
                         Collectors.mapping(CheckinMedia::getFilePath, Collectors.toList())));
 
-        // 批量加载标签，避免 N+1
         List<CheckinRecordTag> recordTags = checkinRecordTagMapper.selectList(
                 new LambdaQueryWrapper<CheckinRecordTag>()
                         .in(CheckinRecordTag::getRecordId, recordIds));
@@ -189,7 +203,7 @@ public class CheckinServiceImpl implements CheckinService {
                             .name(task.getName())
                             .description(task.getDescription())
                             .startDate(task.getStartDate())
-                            .totalCount(0) // day-detail 场景不关心累计次数
+                            .totalCount(0)
                             .latestCheckedAt(record != null ? record.getCheckedAt() : null)
                             .remark(record != null ? record.getRemark() : null)
                             .mediaPaths(record != null ? mediaMap.getOrDefault(record.getId(), List.of()) : List.of())
@@ -202,19 +216,12 @@ public class CheckinServiceImpl implements CheckinService {
 
     @Override
     public Map<LocalDate, Long> countByDateRange(Long userId, LocalDate start, LocalDate end) {
-        List<Map<String, Object>> rows = checkinRecordMapper.countByDateRange(userId, start, end);
-        Map<LocalDate, Long> result = new HashMap<>();
-        for (Map<String, Object> row : rows) {
-            LocalDate date = toLocalDate(row.get("date"));
-            Long cnt = ((Number) row.get("cnt")).longValue();
-            result.put(date, cnt);
-        }
-        return result;
+        return checkinRecordMapper.countByDateRange(userId, start, end).stream()
+                .collect(Collectors.toMap(
+                        row -> toLocalDate(row.get("date")),
+                        row -> ((Number) row.get("cnt")).longValue()));
     }
 
-    /**
-     * 安全转换 SQL 日期为 LocalDate（兼容 java.sql.Date 和 java.time.LocalDate）。
-     */
     private LocalDate toLocalDate(Object value) {
         if (value instanceof LocalDate ld) return ld;
         if (value instanceof java.sql.Date sd) return sd.toLocalDate();
@@ -222,9 +229,15 @@ public class CheckinServiceImpl implements CheckinService {
         throw new IllegalArgumentException("无法转换日期类型: " + value.getClass());
     }
 
+    /**
+     * 校验任务归属，管理员可操作任意任务。
+     */
     private CheckinTask requireOwnedTask(Long userId, Long taskId) {
         CheckinTask task = checkinTaskMapper.selectById(taskId);
-        if (task == null || !task.getUserId().equals(userId)) {
+        if (task == null) {
+            throw new CheckinException("打卡任务不存在");
+        }
+        if (!AuthUtil.isAdmin() && !task.getUserId().equals(userId)) {
             throw new CheckinException("打卡任务不存在");
         }
         return task;
@@ -246,7 +259,21 @@ public class CheckinServiceImpl implements CheckinService {
 
     @Override
     public HeatmapVO getHeatmap(Long userId, int year, int month) {
-        // 1. 当月每天的完成数
+        long totalTasks;
+        if (AuthUtil.isAdmin()) {
+            totalTasks = checkinTaskMapper.selectCount(new LambdaQueryWrapper<CheckinTask>()
+                    .eq(CheckinTask::getStatus, CommonStatus.ENABLED));
+        } else {
+            totalTasks = checkinTaskMapper.selectCount(new LambdaQueryWrapper<CheckinTask>()
+                    .eq(CheckinTask::getUserId, userId)
+                    .eq(CheckinTask::getStatus, CommonStatus.ENABLED));
+        }
+
+        YearMonth ym = YearMonth.of(year, month);
+        LocalDate monthStart = ym.atDay(1);
+        LocalDate monthEnd = ym.atEndOfMonth();
+
+        // 打卡记录统计按用户过滤（热力图应该按用户看）
         List<Map<String, Object>> rows = checkinRecordMapper.countByMonth(userId, year, month);
         Map<LocalDate, Long> dayCountMap = new HashMap<>();
         for (Map<String, Object> row : rows) {
@@ -255,16 +282,7 @@ public class CheckinServiceImpl implements CheckinService {
             dayCountMap.put(date, cnt);
         }
 
-        // 2. 当月启用的任务数
-        long totalTasks = checkinTaskMapper.selectCount(new LambdaQueryWrapper<CheckinTask>()
-                .eq(CheckinTask::getUserId, userId)
-                .eq(CheckinTask::getStatus, CommonStatus.ENABLED));
-
-        // 3. 构建每天的详情
-        YearMonth ym = YearMonth.of(year, month);
-        LocalDate monthStart = ym.atDay(1);
-        LocalDate monthEnd = ym.atEndOfMonth();
-        List<HeatmapDayVO> days = new java.util.ArrayList<>();
+        List<HeatmapDayVO> days = new ArrayList<>();
         int monthCheckinDays = 0;
         for (LocalDate date = monthStart; !date.isAfter(monthEnd); date = date.plusDays(1)) {
             long completed = dayCountMap.getOrDefault(date, 0L);
@@ -278,7 +296,6 @@ public class CheckinServiceImpl implements CheckinService {
             }
         }
 
-        // 4. 计算连续天数
         int[] streaks = calculateStreaks(userId);
 
         return HeatmapVO.builder()
@@ -292,9 +309,6 @@ public class CheckinServiceImpl implements CheckinService {
                 .build();
     }
 
-    /**
-     * 计算连续天数。返回 [当前连续, 历史最佳]。
-     */
     private int[] calculateStreaks(Long userId) {
         List<LocalDate> dates = checkinRecordMapper.selectDistinctDates(userId);
         if (dates.isEmpty()) {
@@ -304,7 +318,6 @@ public class CheckinServiceImpl implements CheckinService {
         Set<LocalDate> dateSet = new HashSet<>(dates);
         LocalDate today = LocalDate.now();
 
-        // 当前连续天数：从今天（或昨天）开始往前数
         int currentStreak = 0;
         LocalDate cursor = dateSet.contains(today) ? today : today.minusDays(1);
         while (dateSet.contains(cursor)) {
@@ -312,11 +325,10 @@ public class CheckinServiceImpl implements CheckinService {
             cursor = cursor.minusDays(1);
         }
 
-        // 历史最佳连续天数
         int bestStreak = 0;
         int streak = 0;
         LocalDate prev = null;
-        for (LocalDate date : dates) { // dates 已降序
+        for (LocalDate date : dates) {
             if (prev == null || prev.minusDays(1).equals(date)) {
                 streak++;
             } else {
@@ -354,21 +366,17 @@ public class CheckinServiceImpl implements CheckinService {
         Long taskId = request.getTaskId();
         LocalDate mendDate = request.getMendDate();
 
-        // 1. 校验任务归属
         requireOwnedTask(userId, taskId);
 
-        // 2. 只能补最近 7 天
         if (mendDate.isBefore(LocalDate.now().minusDays(7)) || mendDate.isAfter(LocalDate.now())) {
             throw new CheckinException("只能补最近 7 天的打卡");
         }
 
-        // 3. 校验当月补卡次数不超过 2 次
         long used = checkinRecordMapper.countMonthlyMend(userId, mendDate.getYear(), mendDate.getMonthValue());
         if (used >= 2) {
             throw new CheckinException("本月补卡次数已用完");
         }
 
-        // 4. 该日该任务不能已有记录
         Long existCount = checkinRecordMapper.selectCount(new LambdaQueryWrapper<CheckinRecord>()
                 .eq(CheckinRecord::getTaskId, taskId)
                 .eq(CheckinRecord::getUserId, userId)
@@ -377,7 +385,6 @@ public class CheckinServiceImpl implements CheckinService {
             throw new CheckinException("该日已有打卡记录");
         }
 
-        // 5. 创建补卡记录
         CheckinRecord record = new CheckinRecord();
         record.setTaskId(taskId);
         record.setUserId(userId);
@@ -386,7 +393,6 @@ public class CheckinServiceImpl implements CheckinService {
         record.setIsMend(true);
         checkinRecordMapper.insert(record);
 
-        // 6. 检查勋章
         medalService.checkAndUnlock(userId);
     }
 
@@ -395,5 +401,56 @@ public class CheckinServiceImpl implements CheckinService {
         LocalDate today = LocalDate.now();
         long used = checkinRecordMapper.countMonthlyMend(userId, today.getYear(), today.getMonthValue());
         return Math.max(0, 2 - used);
+    }
+
+    @Override
+    public Page<CheckinRecordVO> listRecords(Long userId, PageQuery pageQuery, String taskName, LocalDate checkinDate) {
+        LambdaQueryWrapper<CheckinRecord> wrapper = new LambdaQueryWrapper<>();
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(CheckinRecord::getUserId, userId);
+        }
+        if (checkinDate != null) {
+            wrapper.eq(CheckinRecord::getCheckinDate, checkinDate);
+        }
+        wrapper.orderByDesc(CheckinRecord::getId);
+
+        Page<CheckinRecord> page = checkinRecordMapper.selectPage(pageQuery.toPage(), wrapper);
+
+        // 批量查任务名
+        List<Long> taskIds = page.getRecords().stream().map(CheckinRecord::getTaskId).distinct().toList();
+        Map<Long, String> taskNameMap = taskIds.isEmpty() ? Map.of() :
+                checkinTaskMapper.selectBatchIds(taskIds).stream()
+                        .collect(Collectors.toMap(CheckinTask::getId, CheckinTask::getName, (a, b) -> a));
+
+        // 按 taskName 过滤
+        List<CheckinRecord> filteredRecords = page.getRecords();
+        if (taskName != null && !taskName.isBlank()) {
+            String keyword = taskName.trim();
+            filteredRecords = filteredRecords.stream()
+                    .filter(r -> {
+                        String name = taskNameMap.get(r.getTaskId());
+                        return name != null && name.contains(keyword);
+                    })
+                    .toList();
+        }
+
+        List<CheckinRecordVO> vos = filteredRecords.stream()
+                .map(r -> CheckinRecordVO.builder()
+                        .id(r.getId())
+                        .taskId(r.getTaskId())
+                        .taskName(taskNameMap.getOrDefault(r.getTaskId(), ""))
+                        .checkinDate(r.getCheckinDate())
+                        .remark(r.getRemark())
+                        .mood(r.getMood())
+                        .mediaPaths(List.of())
+                        .tagNames(List.of())
+                        .isMend(r.getIsMend())
+                        .createdAt(r.getCreatedAt())
+                        .build())
+                .toList();
+
+        Page<CheckinRecordVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        result.setRecords(vos);
+        return result;
     }
 }

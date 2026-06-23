@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.enums.ResourceType;
 import com.record.common.enums.VisibilityType;
 import com.record.common.exception.DiaryException;
+import com.record.common.util.AuthUtil;
 import com.record.common.util.PageQuery;
 import com.record.common.cache.DictionaryCacheService;
 import com.record.modules.diary.mapper.DiaryCommentMapper;
@@ -97,13 +98,17 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public Page<DiaryVO> list(Long userId, PageQuery pageQuery, VisibilityType visibility, Long tagId, String keyword) {
-        Page<Diary> page = diaryMapper.selectPage(pageQuery.toPage(), new LambdaQueryWrapper<Diary>()
-                .eq(Diary::getUserId, userId)
+        LambdaQueryWrapper<Diary> wrapper = new LambdaQueryWrapper<Diary>()
                 .isNull(Diary::getDeletedAt)
                 .eq(visibility != null, Diary::getVisibility, visibility)
                 .and(keyword != null && !keyword.isBlank(),
-                        wrapper -> wrapper.like(Diary::getTitle, keyword).or().like(Diary::getContent, keyword))
-                .orderByDesc(Diary::getRecordDate));
+                        w -> w.like(Diary::getTitle, keyword).or().like(Diary::getContent, keyword))
+                .orderByDesc(Diary::getRecordDate);
+        // 管理员查看全量，普通用户只看自己的
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(Diary::getUserId, userId);
+        }
+        Page<Diary> page = diaryMapper.selectPage(pageQuery.toPage(), wrapper);
 
         List<Diary> diaryList = page.getRecords();
         if (diaryList.isEmpty()) {
@@ -183,10 +188,13 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public List<DiaryVO> listByDate(Long userId, LocalDate date) {
-        List<Diary> diaryList = diaryMapper.selectList(new LambdaQueryWrapper<Diary>()
-                        .eq(Diary::getUserId, userId)
-                        .eq(Diary::getRecordDate, date)
-                        .isNull(Diary::getDeletedAt));
+        LambdaQueryWrapper<Diary> wrapper = new LambdaQueryWrapper<Diary>()
+                .eq(Diary::getRecordDate, date)
+                .isNull(Diary::getDeletedAt);
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(Diary::getUserId, userId);
+        }
+        List<Diary> diaryList = diaryMapper.selectList(wrapper);
         if (diaryList.isEmpty()) {
             return List.of();
         }
@@ -385,7 +393,14 @@ public class DiaryServiceImpl implements DiaryService {
      */
     private Diary requireOwnedDiary(Long userId, Long diaryId, boolean includeDeleted) {
         Diary diary = diaryMapper.selectById(diaryId);
-        if (diary == null || !diary.getUserId().equals(userId) || (!includeDeleted && diary.getDeletedAt() != null)) {
+        if (diary == null) {
+            throw new DiaryException("日记不存在");
+        }
+        // 管理员可操作任意日记
+        if (AuthUtil.isAdmin()) {
+            return diary;
+        }
+        if (!diary.getUserId().equals(userId) || (!includeDeleted && diary.getDeletedAt() != null)) {
             throw new DiaryException("日记不存在或无权限访问");
         }
         return diary;

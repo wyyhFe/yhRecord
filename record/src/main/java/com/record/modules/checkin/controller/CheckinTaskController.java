@@ -2,11 +2,14 @@ package com.record.modules.checkin.controller;
 
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
+import com.record.common.model.PageResult;
+import com.record.common.util.PageQuery;
 import com.record.modules.checkin.model.dto.CheckinRequest;
 import com.record.modules.checkin.model.dto.CreateCheckinTagRequest;
 import com.record.modules.checkin.model.dto.CreateCheckinTaskRequest;
 import com.record.modules.checkin.model.dto.MendCheckinRequest;
 import com.record.modules.checkin.model.entity.CheckinTag;
+import com.record.modules.checkin.model.vo.CheckinRecordVO;
 import com.record.modules.checkin.model.vo.CheckinTaskVO;
 import com.record.modules.checkin.model.vo.HeatmapVO;
 import com.record.modules.checkin.model.vo.MedalVO;
@@ -46,13 +49,14 @@ public class CheckinTaskController {
         return ApiResponse.success(checkinService.createTask(UserContext.getUserId(), request));
     }
 
-    @Operation(summary = "查询任务列表")
+    @Operation(summary = "分页查询任务列表（管理员返回全量，普通用户返回自己的）")
     @GetMapping("/tasks/list")
-    public ApiResponse<List<CheckinTaskVO>> list() {
-        return ApiResponse.success(checkinService.listTasks(UserContext.getUserId()));
+    public ApiResponse<PageResult<CheckinTaskVO>> list(PageQuery pageQuery,
+                                                  @RequestParam(required = false) String name) {
+        return ApiResponse.success(PageResult.from(checkinService.listTasks(UserContext.getUserId(), pageQuery, name)));
     }
 
-    @Operation(summary = "删除打卡任务")
+    @Operation(summary = "删除打卡任务（管理员可删任意）")
     @DeleteMapping("/tasks/delete/{taskId}")
     public ApiResponse<Void> delete(@PathVariable Long taskId) {
         checkinService.deleteTask(UserContext.getUserId(), taskId);
@@ -113,5 +117,13 @@ public class CheckinTaskController {
     @GetMapping("/medals")
     public ApiResponse<List<MedalVO>> medals() {
         return ApiResponse.success(medalService.listMedals(UserContext.getUserId()));
+    }
+
+    @Operation(summary = "分页查询打卡记录（管理后台专用，管理员返回全量）")
+    @GetMapping("/records/list")
+    public ApiResponse<PageResult<CheckinRecordVO>> listRecords(PageQuery pageQuery,
+                                                           @RequestParam(required = false) String taskName,
+                                                           @RequestParam(required = false) LocalDate checkinDate) {
+        return ApiResponse.success(PageResult.from(checkinService.listRecords(UserContext.getUserId(), pageQuery, taskName, checkinDate)));
     }
 }

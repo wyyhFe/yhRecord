@@ -1,8 +1,11 @@
 package com.record.modules.memorial.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.enums.CommonStatus;
 import com.record.common.exception.MemorialException;
+import com.record.common.util.AuthUtil;
+import com.record.common.util.PageQuery;
 import com.record.modules.memorial.mapper.MemorialDayMapper;
 import com.record.modules.memorial.model.dto.CreateMemorialDayRequest;
 import com.record.modules.memorial.model.dto.UpdateMemorialDayRequest;
@@ -38,13 +41,17 @@ public class MemorialDayServiceImpl implements MemorialDayService {
     }
 
     @Override
-    public List<MemorialDayVO> list(Long userId) {
-        return memorialDayMapper.selectList(new LambdaQueryWrapper<MemorialDay>()
-                        .eq(MemorialDay::getUserId, userId)
-                        .orderByAsc(MemorialDay::getMemorialDate))
-                .stream()
-                .map(this::toVO)
-                .toList();
+    public Page<MemorialDayVO> list(Long userId, PageQuery pageQuery) {
+        LambdaQueryWrapper<MemorialDay> wrapper = new LambdaQueryWrapper<MemorialDay>()
+                .orderByAsc(MemorialDay::getMemorialDate);
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(MemorialDay::getUserId, userId);
+        }
+        Page<MemorialDay> page = memorialDayMapper.selectPage(pageQuery.toPage(), wrapper);
+        List<MemorialDayVO> vos = page.getRecords().stream().map(this::toVO).toList();
+        Page<MemorialDayVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        result.setRecords(vos);
+        return result;
     }
 
     @Override
@@ -63,8 +70,11 @@ public class MemorialDayServiceImpl implements MemorialDayService {
 
     @Override
     public List<MemorialDayVO> listByDate(Long userId, LocalDate date) {
-        return memorialDayMapper.selectList(new LambdaQueryWrapper<MemorialDay>()
-                        .eq(MemorialDay::getUserId, userId))
+        LambdaQueryWrapper<MemorialDay> wrapper = new LambdaQueryWrapper<>();
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(MemorialDay::getUserId, userId);
+        }
+        return memorialDayMapper.selectList(wrapper)
                 .stream()
                 .filter(item -> isSameDay(item, date))
                 .map(this::toVO)
@@ -73,9 +83,11 @@ public class MemorialDayServiceImpl implements MemorialDayService {
 
     @Override
     public Map<LocalDate, Long> countByDateRange(Long userId, LocalDate start, LocalDate end) {
-        List<MemorialDay> all = memorialDayMapper.selectList(
-                new LambdaQueryWrapper<MemorialDay>()
-                        .eq(MemorialDay::getUserId, userId));
+        LambdaQueryWrapper<MemorialDay> wrapper = new LambdaQueryWrapper<>();
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(MemorialDay::getUserId, userId);
+        }
+        List<MemorialDay> all = memorialDayMapper.selectList(wrapper);
 
         Map<LocalDate, Long> result = new HashMap<>();
         for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
@@ -100,7 +112,10 @@ public class MemorialDayServiceImpl implements MemorialDayService {
 
     private MemorialDay requireOwned(Long userId, Long id) {
         MemorialDay memorialDay = memorialDayMapper.selectById(id);
-        if (memorialDay == null || !memorialDay.getUserId().equals(userId)) {
+        if (memorialDay == null) {
+            throw new MemorialException("纪念日不存在或无权访问");
+        }
+        if (!AuthUtil.isAdmin() && !memorialDay.getUserId().equals(userId)) {
             throw new MemorialException("纪念日不存在或无权访问");
         }
         return memorialDay;

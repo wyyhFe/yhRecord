@@ -1,5 +1,7 @@
 package com.record.modules.ledger.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.record.common.util.PageQuery;
 import com.record.modules.ledger.model.dto.CreateBookRequest;
 import com.record.modules.ledger.model.dto.CreateLedgerEntryRequest;
 import com.record.modules.ledger.model.dto.UpdateLedgerEntryRequest;
@@ -14,7 +16,10 @@ import java.util.List;
 public interface LedgerService {
     LedgerBookVO createBook(Long userId, CreateBookRequest request);
 
-    List<LedgerBookVO> listBooks(Long userId);
+    /**
+     * 分页查询账本列表（管理员可查全量）。
+     */
+    Page<LedgerBookVO> listBooks(Long userId, PageQuery pageQuery);
 
     LedgerEntryVO createEntry(Long userId, CreateLedgerEntryRequest request);
 
@@ -26,26 +31,16 @@ public interface LedgerService {
 
     void forceDeleteEntry(Long userId, Long entryId);
 
-    List<LedgerEntryVO> monthEntries(Long userId, Integer year, Integer month, Long bookId);
+    /**
+     * 分页查询月账单（管理员可查全量）。
+     */
+    Page<LedgerEntryVO> monthEntries(Long userId, PageQuery pageQuery, Integer year, Integer month, Long bookId);
 
     YearStatisticsVO yearStatistics(Long userId, Integer year, Long bookId);
 
-    /**
-     * 区间统计（周报/月报/年报共用）。
-     * 按日期范围聚合，返回总额、日均、环比、结余、趋势、分类构成。
-     */
     PeriodStatisticsVO periodStatistics(Long userId, LocalDate startDate, LocalDate endDate, String type, Long bookId);
 
-    /**
-     * 按日期范围拉取账单。
-     * 仅给跨模块场景使用（例如 AI 模块做账单分析），需要带标签的 VO。
-     * limit 为空或 ≤ 0 时不限制条数；调用方需要负责把 limit 控制在合理范围。
-     */
     List<LedgerEntryVO> rangeEntries(Long userId, Long bookId, LocalDate startDate, LocalDate endDate, Integer limit);
 
-    /**
-     * 按账本 ID 查询账本，做用户归属校验。
-     * 找不到或不属于当前用户都返回 null，调用方需要自行处理。
-     */
     LedgerBookVO findBook(Long userId, Long bookId);
 }

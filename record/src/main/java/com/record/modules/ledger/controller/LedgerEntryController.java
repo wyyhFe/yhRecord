@@ -2,6 +2,8 @@ package com.record.modules.ledger.controller;
 
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
+import com.record.common.model.PageResult;
+import com.record.common.util.PageQuery;
 import com.record.modules.ledger.model.dto.CreateLedgerEntryRequest;
 import com.record.modules.ledger.model.dto.UpdateLedgerEntryRequest;
 import com.record.modules.ledger.model.vo.LedgerEntryVO;
@@ -22,11 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.util.List;
 
-/**
- * 记账流水接口。
- */
 @Tag(name = "记账流水")
 @RestController
 @RequestMapping("/ledger")
@@ -57,14 +55,13 @@ public class LedgerEntryController {
         return ApiResponse.success();
     }
 
-    @Operation(summary = "查询月账单")
+    @Operation(summary = "分页查询月账单（管理员返回全量）")
     @GetMapping("/entries/month")
-    public ApiResponse<List<LedgerEntryVO>> month(@RequestParam Integer year,
-                                                  // month 可以不传：
-                                                  // 传 month 时查某年某月；不传时查某年全年明细，给前端年视图一次性使用。
-                                                  @RequestParam(required = false) Integer month,
-                                                  @RequestParam(required = false) Long bookId) {
-        return ApiResponse.success(ledgerService.monthEntries(UserContext.getUserId(), year, month, bookId));
+    public ApiResponse<PageResult<LedgerEntryVO>> month(PageQuery pageQuery,
+                                                   @RequestParam Integer year,
+                                                   @RequestParam(required = false) Integer month,
+                                                   @RequestParam(required = false) Long bookId) {
+        return ApiResponse.success(PageResult.from(ledgerService.monthEntries(UserContext.getUserId(), pageQuery, year, month, bookId)));
     }
 
     @Operation(summary = "查询年度统计")

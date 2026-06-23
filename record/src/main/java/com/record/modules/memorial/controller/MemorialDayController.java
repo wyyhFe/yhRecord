@@ -2,6 +2,8 @@ package com.record.modules.memorial.controller;
 
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
+import com.record.common.model.PageResult;
+import com.record.common.util.PageQuery;
 import com.record.modules.memorial.model.dto.CreateMemorialDayRequest;
 import com.record.modules.memorial.model.dto.UpdateMemorialDayRequest;
 import com.record.modules.memorial.model.vo.MemorialDayVO;
@@ -17,8 +19,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * 纪念日接口。
@@ -40,10 +40,10 @@ public class MemorialDayController {
         return ApiResponse.success(memorialDayService.create(UserContext.getUserId(), request));
     }
 
-    @Operation(summary = "查询纪念日列表")
+    @Operation(summary = "分页查询纪念日列表（管理员返回全量）")
     @GetMapping("/list")
-    public ApiResponse<List<MemorialDayVO>> list() {
-        return ApiResponse.success(memorialDayService.list(UserContext.getUserId()));
+    public ApiResponse<PageResult<MemorialDayVO>> list(PageQuery pageQuery) {
+        return ApiResponse.success(PageResult.from(memorialDayService.list(UserContext.getUserId(), pageQuery)));
     }
 
     @Operation(summary = "更新纪念日")

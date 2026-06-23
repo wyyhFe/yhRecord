@@ -1,9 +1,12 @@
 package com.record.modules.ledger.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.enums.LedgerType;
 import com.record.common.enums.ResourceType;
 import com.record.common.exception.LedgerException;
+import com.record.common.util.AuthUtil;
+import com.record.common.util.PageQuery;
 import com.record.modules.ledger.mapper.LedgerBookMapper;
 import com.record.modules.ledger.mapper.LedgerEntryMapper;
 import com.record.modules.ledger.mapper.LedgerEntryTagRelMapper;
@@ -77,16 +80,23 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public List<LedgerBookVO> listBooks(Long userId) {
-        return ledgerBookMapper.selectList(new LambdaQueryWrapper<LedgerBook>()
-                        .eq(LedgerBook::getUserId, userId))
-                .stream()
+    public Page<LedgerBookVO> listBooks(Long userId, PageQuery pageQuery) {
+        LambdaQueryWrapper<LedgerBook> wrapper = new LambdaQueryWrapper<>();
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(LedgerBook::getUserId, userId);
+        }
+        wrapper.orderByDesc(LedgerBook::getId);
+        Page<LedgerBook> page = ledgerBookMapper.selectPage(pageQuery.toPage(), wrapper);
+        List<LedgerBookVO> vos = page.getRecords().stream()
                 .map(item -> LedgerBookVO.builder()
                         .id(item.getId())
                         .name(item.getName())
                         .description(item.getDescription())
                         .build())
                 .toList();
+        Page<LedgerBookVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        result.setRecords(vos);
+        return result;
     }
 
     @Override
@@ -140,30 +150,34 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public List<LedgerEntryVO> monthEntries(Long userId, Integer year, Integer month, Long bookId) {
-        return ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
-                        .eq(LedgerEntry::getUserId, userId)
-                        .eq(bookId != null, LedgerEntry::getBookId, bookId)
-                        .isNull(LedgerEntry::getDeletedAt)
-                        // 年份始终必传，所以月视图和年视图都会先按“某一年”收敛查询范围。
-                        .apply("YEAR(entry_date) = {0}", year)
-                        // month 传了就按“某年某月”查询；month 不传就只按“某年”查询，给前端年视图一次性拉全年数据用。
-                        .apply(month != null, "MONTH(entry_date) = {0}", month)
-                        // 即使是全年查询，也保持按日期倒序，前端可以直接复用当前明细处理逻辑。
-                        .orderByDesc(LedgerEntry::getEntryDate)
-                        .orderByDesc(LedgerEntry::getId))
-                .stream()
-                .map(this::toVO)
-                .toList();
+    public Page<LedgerEntryVO> monthEntries(Long userId, PageQuery pageQuery, Integer year, Integer month, Long bookId) {
+        LambdaQueryWrapper<LedgerEntry> wrapper = new LambdaQueryWrapper<LedgerEntry>()
+                .eq(bookId != null, LedgerEntry::getBookId, bookId)
+                .isNull(LedgerEntry::getDeletedAt)
+                .apply("YEAR(entry_date) = {0}", year)
+                .apply(month != null, "MONTH(entry_date) = {0}", month)
+                .orderByDesc(LedgerEntry::getEntryDate)
+                .orderByDesc(LedgerEntry::getId);
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(LedgerEntry::getUserId, userId);
+        }
+        Page<LedgerEntry> page = ledgerEntryMapper.selectPage(pageQuery.toPage(), wrapper);
+        List<LedgerEntryVO> vos = page.getRecords().stream().map(this::toVO).toList();
+        Page<LedgerEntryVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        result.setRecords(vos);
+        return result;
     }
 
     @Override
     public YearStatisticsVO yearStatistics(Long userId, Integer year, Long bookId) {
-        List<LedgerEntry> entries = ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
-                .eq(LedgerEntry::getUserId, userId)
+        LambdaQueryWrapper<LedgerEntry> wrapper = new LambdaQueryWrapper<LedgerEntry>()
                 .eq(bookId != null, LedgerEntry::getBookId, bookId)
                 .isNull(LedgerEntry::getDeletedAt)
-                .apply("YEAR(entry_date) = {0}", year));
+                .apply("YEAR(entry_date) = {0}", year);
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(LedgerEntry::getUserId, userId);
+        }
+        List<LedgerEntry> entries = ledgerEntryMapper.selectList(wrapper);
 
         Map<Long, BigDecimal> amountMap = new HashMap<>();
         BigDecimal total = BigDecimal.ZERO;
@@ -209,16 +223,15 @@ public class LedgerServiceImpl implements LedgerService {
         }
 
         LambdaQueryWrapper<LedgerEntry> wrapper = new LambdaQueryWrapper<LedgerEntry>()
-                .eq(LedgerEntry::getUserId, userId)
-                // bookId 可空：不传时分析所有账本
                 .eq(bookId != null, LedgerEntry::getBookId, bookId)
-                // 软删除的账单不参与分析
                 .isNull(LedgerEntry::getDeletedAt)
                 .ge(LedgerEntry::getEntryDate, startDate)
                 .le(LedgerEntry::getEntryDate, endDate)
-                // 按日期倒序，便于取最近 N 条样本，也方便分页
                 .orderByDesc(LedgerEntry::getEntryDate)
                 .orderByDesc(LedgerEntry::getId);
+        if (!AuthUtil.isAdmin()) {
+            wrapper.eq(LedgerEntry::getUserId, userId);
+        }
         if (limit != null && limit > 0) {
             // 直接拼 SQL 的 LIMIT，避免再走 MP 的 Page 包一层
             wrapper.last("LIMIT " + limit);
@@ -240,12 +253,15 @@ public class LedgerServiceImpl implements LedgerService {
         }
 
         // 1. 查区间内所有记录
-        List<LedgerEntry> entries = ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
-                .eq(LedgerEntry::getUserId, userId)
+        LambdaQueryWrapper<LedgerEntry> queryWrapper = new LambdaQueryWrapper<LedgerEntry>()
                 .eq(bookId != null, LedgerEntry::getBookId, bookId)
                 .isNull(LedgerEntry::getDeletedAt)
                 .ge(LedgerEntry::getEntryDate, startDate)
-                .le(LedgerEntry::getEntryDate, endDate));
+                .le(LedgerEntry::getEntryDate, endDate);
+        if (!AuthUtil.isAdmin()) {
+            queryWrapper.eq(LedgerEntry::getUserId, userId);
+        }
+        List<LedgerEntry> entries = ledgerEntryMapper.selectList(queryWrapper);
 
         // 2. 按类型过滤
         LedgerType filterType = "INCOME".equalsIgnoreCase(type) ? LedgerType.INCOME : LedgerType.EXPENSE;
@@ -351,8 +367,10 @@ public class LedgerServiceImpl implements LedgerService {
             return null;
         }
         LedgerBook book = ledgerBookMapper.selectById(bookId);
-        // 找不到或不属于当前用户，统一返回 null，避免返回别人的账本
-        if (book == null || !Objects.equals(book.getUserId(), userId)) {
+        if (book == null) {
+            return null;
+        }
+        if (!AuthUtil.isAdmin() && !Objects.equals(book.getUserId(), userId)) {
             return null;
         }
         return LedgerBookVO.builder()
@@ -401,7 +419,13 @@ public class LedgerServiceImpl implements LedgerService {
 
     private LedgerEntry requireOwnedEntry(Long userId, Long entryId, boolean includeDeleted) {
         LedgerEntry entry = ledgerEntryMapper.selectById(entryId);
-        if (entry == null || !entry.getUserId().equals(userId) || (!includeDeleted && entry.getDeletedAt() != null)) {
+        if (entry == null) {
+            throw new LedgerException("账单不存在");
+        }
+        if (AuthUtil.isAdmin()) {
+            return entry;
+        }
+        if (!entry.getUserId().equals(userId) || (!includeDeleted && entry.getDeletedAt() != null)) {
             throw new LedgerException("账单不存在或无权限访问");
         }
         return entry;
