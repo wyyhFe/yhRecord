@@ -71,11 +71,12 @@
           </view>
         </u-swipe-action>
       </view>
-      <view v-else class="checkin-empty">
-        <text class="checkin-empty__icon">{{ loadFailed ? '⚠️' : '✅' }}</text>
-        <text class="checkin-empty__title">{{ loadFailed ? '加载失败' : '还没有打卡任务' }}</text>
-        <text class="checkin-empty__desc">{{ loadFailed ? '请检查网络或登录状态' : '点击上方 ＋ 创建第一条任务' }}</text>
-      </view>
+      <EmptyStateCard
+        v-else
+        :title="loadFailed ? '加载失败' : '还没有打卡任务'"
+        :description="loadFailed ? '请检查网络或登录状态' : '点击上方 ＋ 创建第一条任务'"
+        :mode="loadFailed ? 'wifi' : 'data'"
+      />
     </view>
 
     <!-- 左滑删除提示 -->
@@ -84,7 +85,7 @@
     </view>
 
     <!-- 打卡弹窗 -->
-    <u-popup v-model="showCheckinPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="true">
+    <u-popup v-model="showCheckinPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="false">
       <view class="checkin-popup">
         <scroll-view scroll-y class="checkin-popup__scroll">
           <view class="checkin-popup__head">
@@ -93,12 +94,12 @@
           </view>
 
           <!-- 心情 -->
-          <view class="checkin-popup__section">
+          <view class="checkin-popup__card">
             <MoodPicker v-model="checkinMood" />
           </view>
 
           <!-- 标签行（点击弹出二级 popup） -->
-          <view class="checkin-popup__section">
+          <view class="checkin-popup__card">
             <view class="checkin-popup__tag-row" @tap="showTagPickerPopup = true">
               <text class="checkin-popup__tag-row-label">🏷️ 标签</text>
               <view class="checkin-popup__tag-row-right">
@@ -111,7 +112,7 @@
           </view>
 
           <!-- 备注 -->
-          <view class="checkin-popup__section">
+          <view class="checkin-popup__card">
             <textarea
               v-model="checkinRemark"
               class="checkin-popup__textarea"
@@ -124,20 +125,20 @@
           </view>
 
           <!-- 图片 -->
-          <view class="checkin-popup__section">
+          <view class="checkin-popup__card">
             <PhotoPicker v-model="checkinPhotos" :max-count="9" @retry="retryCheckinPhotoUpload" />
           </view>
+        </scroll-view>
 
-          <!-- 操作按钮 -->
-          <view class="checkin-popup__actions">
-            <view class="checkin-popup__btn checkin-popup__btn--cancel" hover-class="checkin-popup__btn--pressed" @click="showCheckinPopup = false">
-              <text>取消</text>
-            </view>
-            <view class="checkin-popup__btn checkin-popup__btn--confirm" hover-class="checkin-popup__btn--pressed" @click="confirmCheckin">
-              <text>{{ checkinSubmitting ? '提交中' : '确认打卡' }}</text>
-            </view>
+        <!-- 操作按钮（固定在底部，不随内容滚动） -->
+        <view class="checkin-popup__actions">
+          <view class="checkin-popup__btn checkin-popup__btn--cancel" hover-class="checkin-popup__btn--pressed" @click="showCheckinPopup = false">
+            <text>取消</text>
+          </view>
+          <view class="checkin-popup__btn checkin-popup__btn--confirm" hover-class="checkin-popup__btn--pressed" @click="confirmCheckin">
+            <text>{{ checkinSubmitting ? '提交中' : '确认打卡' }}</text>
+          </view>
         </view>
-      </scroll-view>
       </view>
     </u-popup>
 
@@ -189,6 +190,10 @@
         <view class="fab__sub-circle"><text class="fab__sub-emoji">＋</text></view>
         <text class="fab__sub-text">新任务</text>
       </view>
+      <view class="fab__sub fab__sub--3" @tap="goTags">
+        <view class="fab__sub-circle"><text class="fab__sub-emoji">🏷️</text></view>
+        <text class="fab__sub-text">标签</text>
+      </view>
       <!-- 主按钮 -->
       <view class="fab__btn" @tap="fabOpen = !fabOpen">
         <text class="fab__btn-icon">＋</text>
@@ -207,6 +212,7 @@ import MoodPicker from '@/components/business/mood-picker/index.vue'
 import TagPicker from '@/components/business/tag-picker/index.vue'
 import { uploadImageToOss } from '@/utils/upload'
 import { formatLatestTime } from '@/utils/format'
+import EmptyStateCard from '@/components/business/empty-state-card'
 import MedalUnlockPopup from '@/components/business/medal-unlock-popup/index.vue'
 import MendCheckinPopup from './modules/mend-checkin-popup/index.vue'
 import {
@@ -274,6 +280,10 @@ function goCreate() {
 
 function goMedals() {
   uni.navigateTo({ url: '/pages/checkin/medals' })
+}
+
+function goTags() {
+  uni.navigateTo({ url: '/pages/profile/tags/index?moduleType=CHECKIN' })
 }
 
 async function loadTasks() {
@@ -727,6 +737,12 @@ onShow(() => {
   transition-delay: 0.06s;
 }
 
+.fab__sub--3 {
+  right: 300rpx;
+  bottom: 100rpx;
+  transition-delay: 0.12s;
+}
+
 .fab--open .fab__sub {
   opacity: 1;
   transform: scale(1);
@@ -739,6 +755,10 @@ onShow(() => {
 
 .fab--open .fab__sub--2 {
   transition-delay: 0.12s;
+}
+
+.fab--open .fab__sub--3 {
+  transition-delay: 0.18s;
 }
 
 .fab__sub-circle {
@@ -868,34 +888,6 @@ onShow(() => {
   font-weight: var(--weight-medium);
 }
 
-/* ========== 空状态 ========== */
-.checkin-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 40rpx 0;
-}
-
-.checkin-empty__icon {
-  font-size: 64rpx;
-  line-height: 1;
-  margin-bottom: var(--space-3);
-}
-
-.checkin-empty__title {
-  color: var(--color-text-secondary);
-  font-size: var(--font-section);
-  line-height: var(--leading-snug);
-}
-
-.checkin-empty__desc {
-  margin-top: var(--space-1);
-  color: var(--color-text-muted);
-  font-size: var(--font-caption);
-  line-height: var(--leading-relaxed);
-  text-align: center;
-}
-
 /* ========== 提示 ========== */
 .checkin-hint {
   margin-top: var(--space-3);
@@ -913,13 +905,14 @@ onShow(() => {
 }
 
 .checkin-popup__scroll {
-  padding: var(--space-5) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
-  max-height: 65vh;
+  padding: var(--space-5);
+  max-height: 80vh;
+  box-sizing: border-box;
 }
 
 .checkin-popup__head {
   text-align: center;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 
 .checkin-popup__title {
@@ -934,8 +927,35 @@ onShow(() => {
   font-size: var(--font-tiny);
 }
 
-.checkin-popup__section {
-  margin-bottom: var(--space-4);
+/* 通用卡片 */
+.checkin-popup__card {
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+/* 心情卡片 */
+.checkin-popup__card .mood-picker {
+  margin-bottom: 0;
+}
+
+.checkin-popup__card .mood-picker__label {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
+  margin-bottom: var(--space-2);
+}
+
+.checkin-popup__card .mood-picker__item {
+  width: 66rpx;
+  height: 66rpx;
+}
+
+.checkin-popup__card .mood-picker__emoji {
+  font-size: 32rpx;
 }
 
 /* 标签行 */
@@ -943,14 +963,12 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-surface);
-  border-radius: var(--radius-medium);
 }
 
 .checkin-popup__tag-row-label {
   color: var(--color-text-secondary);
-  font-size: var(--font-body);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
 }
 
 .checkin-popup__tag-row-right {
@@ -973,10 +991,10 @@ onShow(() => {
 /* 备注 */
 .checkin-popup__textarea {
   width: 100%;
-  min-height: 100rpx;
+  min-height: 88rpx;
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-medium);
-  background: var(--color-surface);
+  background: var(--color-surface-soft);
   color: var(--color-text-primary);
   font-size: var(--font-body);
   box-sizing: border-box;
@@ -993,18 +1011,27 @@ onShow(() => {
   color: var(--color-danger);
 }
 
+/* PhotoPicker 在卡片内时去除自带 padding */
+.checkin-popup__card .photo-picker .section-shell {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
 /* 操作按钮 */
 .checkin-popup__actions {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom));
 }
 
 .checkin-popup__btn {
   flex: 1;
   text-align: center;
-  padding: var(--space-3) 0;
+  padding: 18rpx 0;
   border-radius: var(--radius-full);
-  font-size: var(--font-body);
+  font-size: var(--font-meta);
   font-weight: var(--weight-semibold);
   transition: all var(--motion-fast) var(--ease-standard);
 }
