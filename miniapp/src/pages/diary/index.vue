@@ -114,11 +114,12 @@
         </view>
       </template>
     </view>
-    <view v-else class="diary-empty">
-      <text class="diary-empty__icon">{{ keyword ? '🔍' : '📝' }}</text>
-      <text class="diary-empty__title">{{ keyword ? '没有匹配的日记' : '还没有日记' }}</text>
-      <text class="diary-empty__desc">{{ keyword ? '换个关键词试试' : '点击上方 ✏️ 写下第一篇日记' }}</text>
-    </view>
+    <EmptyStateCard
+      v-else
+      :title="keyword ? '没有匹配的日记' : '还没有日记'"
+      :description="keyword ? '换个关键词试试' : '点击上方 ✏️ 写下第一篇日记'"
+      :mode="keyword ? 'search' : 'page'"
+    />
 
     <!-- 底部加载状态 -->
     <LoadMore :state="loadingMore ? 'loading' : noMore ? 'noMore' : 'hidden'" />
@@ -128,6 +129,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { onReachBottom, onShow } from '@dcloudio/uni-app'
+import EmptyStateCard from '@/components/business/empty-state-card'
 import FilterTabs from '@/components/business/filter-tabs'
 import LoadMore from '@/components/business/load-more/index.vue'
 import { fetchDiaryList } from '@/api/diary'
@@ -514,32 +516,6 @@ onReachBottom(() => {
   max-width: 200rpx;
 }
 
-/* ========== 空状态 ========== */
-.diary-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 100rpx var(--space-6) 40rpx;
-}
 
-.diary-empty__icon {
-  font-size: 80rpx;
-  line-height: 1;
-  margin-bottom: var(--space-4);
-}
-
-.diary-empty__title {
-  color: var(--color-text-secondary);
-  font-size: var(--font-section);
-  line-height: var(--leading-snug);
-}
-
-.diary-empty__desc {
-  margin-top: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--font-caption);
-  line-height: var(--leading-relaxed);
-  text-align: center;
-}
 
 </style>

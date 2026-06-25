@@ -1,10 +1,8 @@
 <template>
   <view class="page-shell-safe books-page">
-    <!-- Hero -->
-    <view class="books-hero">
-      <text class="books-hero__icon">📚</text>
-      <text class="books-hero__title">账本管理</text>
-      <text class="books-hero__sub">创建账本，分类管理你的收支记录</text>
+    <!-- 顶栏 -->
+    <view class="books-header">
+      <text class="books-header__title">账本管理</text>
     </view>
 
     <!-- 账本列表 -->
@@ -20,13 +18,13 @@
         <text class="book-item__arrow">›</text>
       </view>
     </view>
-    <EmptyStateCard v-else title="还没有账本" description="先创建一个账本，后面新增收支时就能直接选择" />
+    <EmptyStateCard v-else title="还没有账本" description="先创建一个账本，后面新增收支时就能直接选择" mode="data" />
 
     <!-- 新建按钮 -->
     <view class="books-action">
-      <u-button shape="circle" type="primary" color="var(--color-ledger-gradient)" @click="showCreate = true">
-        ＋ 新建账本
-      </u-button>
+      <view class="books-action__btn" hover-class="books-action__btn--pressed" @click="showCreate = true">
+        <text>＋ 新建账本</text>
+      </view>
     </view>
 
     <!-- 新建弹窗 -->
@@ -44,10 +42,12 @@
           <textarea v-model="form.description" class="books-popup__textarea" placeholder="可选，用一句话说明用途" />
         </view>
         <view class="books-popup__actions">
-          <u-button shape="circle" plain :hair-line="false" @click="showCreate = false">取消</u-button>
-          <u-button shape="circle" type="primary" color="var(--color-ledger-gradient)" :loading="submitting" @click="submit">
-            {{ submitting ? '创建中...' : '创建' }}
-          </u-button>
+          <view class="bp-btn bp-btn--cancel" hover-class="bp-btn--pressed" @click="showCreate = false">
+            <text>取消</text>
+          </view>
+          <view class="bp-btn bp-btn--save" hover-class="bp-btn--pressed bp-btn--save-active" @click="submit">
+            <text>{{ submitting ? '创建中' : '创建' }}</text>
+          </view>
         </view>
       </view>
     </u-popup>
@@ -100,32 +100,15 @@ onShow(() => { loadBooks().catch((e) => uni.$feedback.error(e, undefined, '加�
   padding-bottom: var(--bottom-padding);
 }
 
-/* ========== Hero ========== */
-.books-hero {
-  background: var(--color-ledger-gradient);
-  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-8) var(--space-6) var(--space-7);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  color: #fff;
+/* ========== 顶栏 ========== */
+.books-header {
+  padding: var(--space-5) var(--space-6) var(--space-3);
 }
 
-.books-hero__icon {
-  font-size: 56rpx;
-  margin-bottom: var(--space-3);
-}
-
-.books-hero__title {
+.books-header__title {
+  color: var(--color-text-primary);
   font-size: var(--font-title);
   font-weight: var(--weight-bold);
-}
-
-.books-hero__sub {
-  margin-top: var(--space-2);
-  font-size: var(--font-meta);
-  opacity: 0.85;
 }
 
 /* ========== 列表 ========== */
@@ -199,6 +182,22 @@ onShow(() => { loadBooks().catch((e) => uni.$feedback.error(e, undefined, '加�
   margin: var(--space-6) var(--space-4) 0;
 }
 
+.books-action__btn {
+  text-align: center;
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-full);
+  background: var(--color-ledger-gradient);
+  color: #fff;
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.books-action__btn--pressed {
+  transform: scale(0.95);
+  opacity: 0.85;
+}
+
 /* ========== 弹窗 ========== */
 .books-popup {
   padding: var(--space-6);
@@ -255,7 +254,28 @@ onShow(() => { loadBooks().catch((e) => uni.$feedback.error(e, undefined, '加�
   gap: var(--space-3);
 }
 
-.books-popup__actions .u-button {
+.bp-btn {
   flex: 1;
+  text-align: center;
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-full);
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.bp-btn--cancel {
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+}
+
+.bp-btn--save {
+  background: var(--color-ledger-gradient);
+  color: #fff;
+}
+
+.bp-btn--pressed {
+  transform: scale(0.95);
+  opacity: 0.85;
 }
 </style>

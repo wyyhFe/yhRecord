@@ -23,12 +23,7 @@
         </view>
       </view>
     </view>
-    <!-- 空状态 -->
-    <view v-else class="memorial-empty">
-      <text class="memorial-empty__icon">📅</text>
-      <text class="memorial-empty__title">还没有纪念日</text>
-      <text class="memorial-empty__desc">新建一条重要日期，提醒和回顾页面会自动使用</text>
-    </view>
+    <EmptyStateCard v-else title="还没有纪念日" description="新建一条重要日期，提醒和回顾页面会自动使用" mode="history" />
 
     <!-- 新建按钮 -->
     <view class="memorial-action">
@@ -110,6 +105,7 @@
 </template>
 
 <script setup lang="ts">
+import EmptyStateCard from '@/components/business/empty-state-card'
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 
@@ -324,34 +320,6 @@ onShow(() => { loadMemorialDays() })
   margin-top: var(--space-3);
   display: flex;
   gap: var(--space-3);
-}
-
-/* ========== 空状态 ========== */
-.memorial-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 80rpx var(--space-6) 40rpx;
-}
-
-.memorial-empty__icon {
-  font-size: 96rpx;
-  line-height: 1;
-  margin-bottom: var(--space-5);
-}
-
-.memorial-empty__title {
-  color: var(--color-text-secondary);
-  font-size: var(--font-section);
-  line-height: var(--leading-snug);
-}
-
-.memorial-empty__desc {
-  margin-top: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--font-caption);
-  line-height: var(--leading-relaxed);
-  text-align: center;
 }
 
 /* ========== 操作 ========== */

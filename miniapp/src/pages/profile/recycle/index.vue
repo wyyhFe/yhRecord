@@ -25,15 +25,12 @@
       </view>
     </view>
     <!-- 空状态 -->
-    <view v-else class="recycle-empty">
-      <text class="recycle-empty__icon">📦</text>
-      <text class="recycle-empty__title">回收站是空的</text>
-      <text class="recycle-empty__desc">还没有进入回收站的内容</text>
-    </view>
+    <EmptyStateCard v-else title="回收站是空的" description="还没有进入回收站的内容" />
   </view>
 </template>
 
 <script setup lang="ts">
+import EmptyStateCard from '@/components/business/empty-state-card'
 import { onMounted, ref } from 'vue'
 import {
   fetchRecycleBinList,
@@ -80,34 +77,6 @@ onMounted(() => { loadRecycleBin().catch(() => undefined) })
 <style scoped lang="scss">
 .recycle-page {
   padding-bottom: var(--bottom-padding);
-}
-
-/* ========== 空状态 ========== */
-.recycle-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 80rpx var(--space-6) 40rpx;
-}
-
-.recycle-empty__icon {
-  font-size: 96rpx;
-  line-height: 1;
-  margin-bottom: var(--space-5);
-}
-
-.recycle-empty__title {
-  color: var(--color-text-secondary);
-  font-size: var(--font-section);
-  line-height: var(--leading-snug);
-}
-
-.recycle-empty__desc {
-  margin-top: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--font-caption);
-  line-height: var(--leading-relaxed);
-  text-align: center;
 }
 
 /* ========== 列表 ========== */

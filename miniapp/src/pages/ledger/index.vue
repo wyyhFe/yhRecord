@@ -4,15 +4,7 @@
     <!-- Hero -->
     <view class="ledger-hero">
       <view class="ledger-hero__top">
-        <text class="ledger-hero__title">{{ pageTitle }}</text>
-        <view class="ledger-hero__actions">
-          <view class="ledger-hero__action" @tap="goLedgerTags">
-            <text class="ledger-hero__action-text">标签</text>
-          </view>
-          <view class="ledger-hero__action" @tap="goBooks">
-            <text class="ledger-hero__action-text">账本</text>
-          </view>
-        </view>
+        <text class="ledger-hero__title" @tap="openBookSelector">{{ pageTitle }} ›</text>
       </view>
       <view class="ledger-hero__metrics">
         <view v-for="item in headerMetrics" :key="item.label" class="ledger-hero__metric">
@@ -32,7 +24,11 @@
             :value="yearMonthPickerValue"
             @change="onYearMonthChange"
           >
-            <view class="ledger-toolbar__chip">{{ currentMonthLabel }}</view>
+            <view class="ledger-toolbar__chip ledger-toolbar__chip--date">
+            <text class="ledger-toolbar__chip-icon">📅</text>
+            <text>{{ currentMonthLabel }}</text>
+            <text class="ledger-toolbar__chip-arrow">›</text>
+          </view>
           </picker>
 
           <view class="ledger-toolbar__chip" @tap="openFilterPopup">{{ filterSummaryLabel }}</view>
@@ -164,120 +160,157 @@
         </view>
 
         <view class="block-stack">
-          <view class="field-label">一级分类</view>
-          <ChoiceChips v-model="pendingTypeFilter" :items="filterTypeOptions" />
+          <view class="field-label">类型</view>
+          <view class="chip-row">
+            <text
+              v-for="opt in filterTypeOptions"
+              :key="opt.value"
+              class="chip-item"
+              :class="{ 'chip-item--on': pendingTypeFilter === opt.value }"
+              @tap="pendingTypeFilter = opt.value"
+            >{{ opt.label }}</text>
+          </view>
         </view>
 
         <view v-if="pendingTagOptions.length" class="block-stack">
-          <view class="field-label">二级标签</view>
-          <ChoiceChips v-model="pendingFilterTagId" :items="pendingTagOptions" />
+          <view class="field-label">标签</view>
+          <view class="chip-row">
+            <text
+              v-for="opt in pendingTagOptions"
+              :key="opt.value"
+              class="chip-item"
+              :class="{ 'chip-item--on': pendingFilterTagId === opt.value }"
+              @tap="pendingFilterTagId = opt.value"
+            >{{ opt.label }}</text>
+          </view>
         </view>
 
-        <view v-else class="note-card filter-popup__empty">
-          当前一级分类下还没有可选标签，可以只按一级分类筛选。
+        <view v-else class="filter-popup__empty">
+          当前没有可选标签
         </view>
 
-        <view class="action-grid-2">
-          <u-button plain shape="circle" :hair-line="false" @click="resetFilter">重置</u-button>
-          <u-button
-            type="primary"
-            shape="circle"
-            color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
-            @click="applyFilter"
-          >
-            应用
-          </u-button>
+        <view class="filter-actions">
+          <view class="fa-btn fa-btn--reset" hover-class="fa-btn--pressed" @click="resetFilter">
+            <text>重置</text>
+          </view>
+          <view class="fa-btn fa-btn--apply" hover-class="fa-btn--pressed" @click="applyFilter">
+            <text>应用</text>
+          </view>
         </view>
       </view>
     </u-popup>
 
     <u-popup v-model="showEntryPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="true">
       <view class="entry-popup">
-        <scroll-view scroll-y class="entry-popup__body">
+        <scroll-view scroll-y class="entry-popup__scroll">
           <!-- 头部 -->
           <view class="entry-popup__head">
             <text class="entry-popup__title">{{ editingEntryId ? '修改账单' : '记一笔' }}</text>
+            <text class="entry-popup__close" @tap="closeEntryPopup">✕</text>
           </view>
 
-          <!-- 类型 + 日期 + 账本 -->
-          <view class="entry-popup__card">
-            <view class="entry-popup__row">
-              <ChoiceChips v-model="entryForm.type" :items="typeOptions" />
-              <picker mode="date" :value="entryForm.entryDate" @change="onEntryDateChange">
-                <view class="entry-popup__date">{{ entryForm.entryDate }}</view>
-              </picker>
-            </view>
-            <view class="entry-popup__book" @tap="openBookSelector">
-              <text class="entry-popup__book-label">所属账本</text>
-              <view class="entry-popup__book-right">
-                <text class="entry-popup__book-value">{{ selectedBookLabel }}</text>
-                <text class="entry-popup__book-arrow">›</text>
+          <!-- 金额卡片（含类型切换） -->
+          <view class="ep-card">
+            <view class="ep-amount-row">
+              <view class="ep-amount-row__type">
+                <view
+                  v-for="opt in typeOptions"
+                  :key="opt.value"
+                  class="ep-type-pill"
+                  :class="{ 'ep-type-pill--active': entryForm.type === opt.value }"
+                  @tap="entryForm.type = opt.value"
+                >
+                  <text>{{ opt.label }}</text>
+                </view>
+              </view>
+              <view class="ep-amount-row__display">
+                <text class="ep-amount-row__symbol">¥</text>
+                <text class="ep-amount-row__value">{{ displayAmount || '0' }}</text>
               </view>
             </view>
           </view>
 
-          <!-- 金额 -->
-          <view class="entry-popup__card entry-popup__amount-card">
-            <text class="entry-popup__amount-symbol">¥</text>
-            <text class="entry-popup__amount-value">{{ displayAmount }}</text>
-          </view>
-
-          <!-- 键盘 -->
-          <view class="entry-popup__card">
-            <view class="entry-keyboard">
-              <view v-for="key in keyboardKeys" :key="key" class="entry-keyboard__key" @tap="tapKeyboard(key)">
-                {{ key }}
+          <!-- 信息卡片（账本 + 日期 + 标签） -->
+          <view class="ep-card">
+            <view class="ep-row" @tap="openBookSelector">
+              <text class="ep-row__label">账本</text>
+              <view class="ep-row__right">
+                <text class="ep-row__value">{{ selectedBookLabel }}</text>
+                <text class="ep-row__arrow">›</text>
               </view>
             </view>
-          </view>
-
-          <!-- 标签 -->
-          <view class="entry-popup__card">
-            <text class="entry-popup__card-label">记账标签</text>
-            <ChoiceChips v-model="selectedTagIds" :items="popupTagOptions" :multiple="true" />
+            <view class="ep-divider" />
+            <picker mode="date" :value="entryForm.entryDate" @change="onEntryDateChange">
+              <view class="ep-row">
+                <text class="ep-row__label">日期</text>
+                <view class="ep-row__right">
+                  <text class="ep-row__value">{{ entryForm.entryDate }}</text>
+                  <text class="ep-row__arrow">›</text>
+                </view>
+              </view>
+            </picker>
+            <view class="ep-divider" />
+            <view class="ep-tags-row">
+              <text class="ep-tags-row__label">标签</text>
+              <view class="chip-row">
+                <text
+                  v-for="opt in popupTagOptions"
+                  :key="opt.value"
+                  class="chip-item"
+                  :class="{ 'chip-item--on': selectedTagIds.includes(opt.value) }"
+                  @tap="toggleEntryTag(opt.value)"
+                >{{ opt.label }}</text>
+              </view>
+            </view>
           </view>
 
           <!-- 备注 + 图片 -->
-          <view class="entry-popup__card">
-            <view class="entry-popup__card-header">
-              <text class="entry-popup__card-label">备注</text>
-              <view class="entry-popup__add-image" @tap="chooseLedgerImage">
-                <text class="entry-popup__add-image-text">📷 {{ entryImagePath ? '重选图片' : '添加图片' }}</text>
+          <view class="ep-card">
+            <view class="ep-note">
+              <input
+                v-model="entryForm.remark"
+                class="ep-note__input"
+                placeholder="备注（选填）"
+              />
+              <view class="ep-note__image-btn" @tap="chooseLedgerImage">
+                <text>{{ entryImagePath ? '📷' : '📷' }}</text>
               </view>
             </view>
-            <view v-if="entryImagePath" class="entry-popup__image-preview">
-              <image :src="resolveMediaUrl(entryImagePath)" mode="aspectFill" class="entry-popup__image-img" />
+            <view v-if="entryImagePath" class="ep-note__preview">
+              <image :src="resolveMediaUrl(entryImagePath)" mode="aspectFill" class="ep-note__preview-img" />
+              <text class="ep-note__preview-clear" @tap="entryImagePath = ''">✕</text>
             </view>
-            <input
-              v-model="entryForm.remark"
-              class="entry-popup__remark-input"
-              placeholder="补充这一笔的备注"
-            />
+          </view>
+
+          <!-- 数字键盘 -->
+          <view class="ep-card ep-card--keyboard">
+            <view class="ep-keyboard">
+              <view v-for="key in keyboardKeys" :key="key" class="ep-keyboard__key" @tap="tapKeyboard(key)">
+                <text class="ep-keyboard__key-text">{{ key }}</text>
+              </view>
+            </view>
           </view>
 
           <!-- 操作按钮 -->
-          <view class="entry-popup__actions">
-            <u-button shape="circle" plain :hair-line="false" @click="closeEntryPopup">取消</u-button>
-            <u-button
+          <view class="ep-actions">
+            <view class="ep-actions__btn ep-actions__btn--cancel" hover-class="ep-actions__btn--pressed" @tap="closeEntryPopup">
+              <text>取消</text>
+            </view>
+            <view
               v-if="editingEntryId"
-              type="error"
-              shape="circle"
-              plain
-              :hair-line="false"
-              :loading="submitting"
-              @click="removeEntry"
+              class="ep-actions__btn ep-actions__btn--delete"
+              hover-class="ep-actions__btn--pressed"
+              @tap="removeEntry"
             >
-              删除
-            </u-button>
-            <u-button
-              shape="circle"
-              type="primary"
-              color="var(--color-ledger-gradient)"
-              :loading="submitting"
-              @click="submitEntry"
+              <text>删除</text>
+            </view>
+            <view
+              class="ep-actions__btn ep-actions__btn--save"
+              hover-class="ep-actions__btn--pressed"
+              @tap="submitEntry"
             >
-              {{ submitting ? '保存中...' : '保存' }}
-            </u-button>
+              <text>{{ submitting ? '保存中' : '保存' }}</text>
+            </view>
           </view>
         </scroll-view>
       </view>
@@ -288,7 +321,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import ChoiceChips from '@/components/business/choice-chips'
 import LedgerYearCharts from '@/components/business/ledger-year-charts/index.vue'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import { API_BASE_URL, OSS_BASE_URL } from '@/config/app'
@@ -392,21 +424,22 @@ const filterTagOptions = computed(() => {
   return allTags.value.filter((item) => item.ledgerType === typeFilter.value)
 })
 const pendingTagOptions = computed(() => {
-  if (pendingTypeFilter.value === 'ALL') return []
-  return allTags.value
-    .filter((item) => item.ledgerType === pendingTypeFilter.value)
-    .map((item) => ({
-      label: item.name,
-      value: item.id
-    }))
+  // 全部 → 显示所有标签；选具体类型 → 只显示该类型标签
+  const filtered = pendingTypeFilter.value === 'ALL'
+    ? allTags.value
+    : allTags.value.filter((item) => item.ledgerType === pendingTypeFilter.value)
+  return filtered.map((item) => ({
+    label: item.name,
+    value: item.id
+  }))
 })
 const popupTagOptions = computed(() => {
-  return allTags.value
-    .filter((item) => item.ledgerType === entryForm.value.type)
-    .map((item) => ({
-      label: item.name,
-      value: item.id
-    }))
+  const filtered = allTags.value.filter((item) => item.ledgerType === entryForm.value.type)
+  console.log('[entry-popup] tags:', { all: allTags.value.length, filtered: filtered.length, type: entryForm.value.type })
+  return filtered.map((item) => ({
+    label: item.name,
+    value: item.id
+  }))
 })
 const filterSummaryLabel = computed(() => {
   if (typeFilter.value === 'ALL') return '全部分类'
@@ -567,14 +600,6 @@ function syncPendingFilter() {
   pendingFilterTagId.value = selectedFilterTagId.value
 }
 
-function goBooks() {
-  uni.navigateTo({ url: '/pages/ledger/books' })
-}
-
-function goLedgerTags() {
-  uni.navigateTo({ url: '/pages/profile/tags/index?moduleType=LEDGER' })
-}
-
 function shareBook() {
   uni.$feedback.info('账本邀请功能下一步再接入')
 }
@@ -648,6 +673,13 @@ function editEntry(entry: LedgerEntry) {
     selectedBookId.value = entry.bookId
   }
   showEntryPopup.value = true
+}
+
+function toggleEntryTag(value: string | number) {
+  const id = String(value)
+  const idx = selectedTagIds.value.indexOf(id)
+  if (idx >= 0) selectedTagIds.value.splice(idx, 1)
+  else selectedTagIds.value.push(id)
 }
 
 function closeEntryPopup() {
@@ -782,12 +814,20 @@ async function removeEntry() {
 async function loadBooks() {
   const result = await fetchBooks()
   books.value = result.list || []
+  // 有已选账本 → 确认名称
   if (selectedBookId.value) {
     const target = books.value.find((item) => item.id === selectedBookId.value)
     if (target) {
       selectedBookName.value = target.name
       rememberCurrentBook()
+      return
     }
+  }
+  // 无已选账本 → 默认选中第一个
+  if (books.value.length > 0) {
+    selectedBookId.value = books.value[0].id
+    selectedBookName.value = books.value[0].name
+    rememberCurrentBook()
   }
 }
 
@@ -892,24 +932,14 @@ onShow(() => {
 }
 
 .ledger-hero__title {
-  font-size: var(--font-section);
+  color: #fff;
+  font-size: var(--font-title);
   font-weight: var(--weight-bold);
-}
-
-.ledger-hero__actions {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.ledger-hero__action {
+  line-height: 1.2;
   padding: var(--space-1) var(--space-3);
+  margin: calc(var(--space-1) * -1) calc(var(--space-3) * -1);
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.ledger-hero__action-text {
-  font-size: var(--font-tiny);
-  font-weight: var(--weight-semibold);
+  display: inline-block;
 }
 
 .ledger-hero__metrics {
@@ -1009,13 +1039,30 @@ onShow(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 68rpx;
+  min-height: 72rpx;
   padding: 0 var(--space-5);
   border-radius: var(--radius-full);
   background: var(--color-surface-soft);
   color: var(--color-text-primary);
   font-size: var(--font-caption);
   font-weight: var(--weight-semibold);
+}
+
+.ledger-toolbar__chip--date {
+  gap: var(--space-1);
+  padding: 0 var(--space-4) 0 var(--space-3);
+  background: var(--color-ledger-soft);
+  color: var(--color-ledger);
+  font-weight: var(--weight-bold);
+}
+
+.ledger-toolbar__chip-icon {
+  font-size: 28rpx;
+}
+
+.ledger-toolbar__chip-arrow {
+  font-size: 24rpx;
+  opacity: 0.6;
 }
 
 .ledger-group-stack {
@@ -1233,22 +1280,101 @@ onShow(() => {
   font-size: var(--font-meta);
   line-height: var(--leading-relaxed);
   color: var(--color-text-muted);
-  padding: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.chip-item {
+  display: inline-block;
+  padding: 6rpx 22rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+  font-weight: var(--weight-medium);
+  line-height: 1.6;
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.chip-item--on {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.filter-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.fa-btn {
+  flex: 1;
+  text-align: center;
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-full);
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.fa-btn--reset {
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+}
+
+.fa-btn--apply {
+  background: var(--color-primary-gradient);
+  color: #fff;
+}
+
+.fa-btn--pressed {
+  transform: scale(0.95);
+  opacity: 0.85;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+}
+
+.filter-chip {
+  padding: 6rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+  font-weight: var(--weight-medium);
+  line-height: 1.6;
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.filter-chip--on {
+  background: var(--color-primary);
+  color: #fff;
 }
 
 /* ========== 记一笔弹窗 ========== */
+/* ========== 记一笔弹窗 ========== */
 .entry-popup {
   background: var(--color-bg);
-  max-height: 80vh;
-  padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
 }
 
-.entry-popup__body {
-  max-height: calc(80vh - 40rpx);
+.entry-popup__scroll {
+  padding: var(--space-5);
+  max-height: 80vh;
+  box-sizing: border-box;
 }
 
 .entry-popup__head {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: var(--space-4);
 }
 
@@ -1258,7 +1384,20 @@ onShow(() => {
   font-weight: var(--weight-bold);
 }
 
-.entry-popup__card {
+.entry-popup__close {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
+}
+
+/* 通用卡片 */
+.ep-card {
   background: var(--color-surface);
   border-radius: var(--radius-large);
   box-shadow: var(--shadow-card);
@@ -1266,157 +1405,227 @@ onShow(() => {
   margin-bottom: var(--space-3);
 }
 
-.entry-popup__card-label {
-  display: block;
-  color: var(--color-text-secondary);
-  font-size: var(--font-meta);
-  font-weight: var(--weight-semibold);
-  margin-bottom: var(--space-3);
+.ep-card--keyboard {
+  padding: var(--space-2) var(--space-4) var(--space-4);
 }
 
-.entry-popup__card-header {
+/* 金额 + 类型同行 */
+.ep-amount-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-3);
 }
 
-.entry-popup__row {
+.ep-amount-row__type {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
-}
-
-.entry-popup__date {
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
-  background: var(--color-surface-soft);
-  color: var(--color-text-primary);
-  font-size: var(--font-meta);
-  font-weight: var(--weight-semibold);
-}
-
-.entry-popup__book {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) 0;
-  border-top: 1rpx solid var(--color-divider);
-}
-
-.entry-popup__book-label {
-  color: var(--color-text-muted);
-  font-size: var(--font-meta);
-}
-
-.entry-popup__book-right {
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: var(--space-2);
 }
 
-.entry-popup__book-value {
-  color: var(--color-text-primary);
-  font-size: var(--font-meta);
-  font-weight: var(--weight-semibold);
-}
-
-.entry-popup__book-arrow {
+.ep-type-pill {
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
   color: var(--color-text-muted);
-  font-size: 28rpx;
+  font-size: 22rpx;
+  font-weight: var(--weight-medium);
+  text-align: center;
+  transition: all var(--motion-fast) var(--ease-standard);
 }
 
-/* 金额卡片 */
-.entry-popup__amount-card {
+.ep-type-pill--active {
+  background: var(--color-ledger);
+  color: #fff;
+}
+
+.ep-amount-row__display {
   display: flex;
   align-items: baseline;
-  gap: 8rpx;
-  padding: var(--space-5) var(--space-4);
+  gap: 6rpx;
 }
 
-.entry-popup__amount-symbol {
-  color: var(--color-text-secondary);
-  font-size: 36rpx;
+.ep-amount-row__symbol {
+  color: var(--color-text-muted);
+  font-size: 32rpx;
   font-weight: var(--weight-bold);
 }
 
-.entry-popup__amount-value {
+.ep-amount-row__value {
   color: var(--color-ledger);
-  font-size: 72rpx;
+  font-size: 68rpx;
   font-weight: var(--weight-bold);
   line-height: 1;
+  letter-spacing: -2rpx;
 }
 
-/* 键盘 */
-.entry-keyboard {
+/* 数字键盘 */
+.ep-keyboard {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12rpx;
 }
 
-.entry-keyboard__key {
+.ep-keyboard__key {
+  height: 76rpx;
+  border-radius: var(--radius-medium);
+  background: var(--color-surface-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 88rpx;
-  border-radius: var(--radius-medium);
-  background: var(--color-surface-soft);
-  color: var(--color-text-primary);
-  font-size: 36rpx;
-  font-weight: var(--weight-semibold);
   transition: all var(--motion-fast) var(--ease-standard);
 }
 
-.entry-keyboard__key:active {
+.ep-keyboard__key:active {
   background: var(--color-surface-hover);
+  transform: scale(0.95);
 }
 
-/* 图片 */
-.entry-popup__add-image {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--color-ledger-soft);
-}
-
-.entry-popup__add-image-text {
-  color: var(--color-ledger);
-  font-size: var(--font-tiny);
+.ep-keyboard__key-text {
+  color: var(--color-text-primary);
+  font-size: 32rpx;
   font-weight: var(--weight-semibold);
 }
 
-.entry-popup__image-preview {
-  margin-bottom: var(--space-3);
+/* 信息行（账本/日期） */
+.ep-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
 }
 
-.entry-popup__image-img {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: var(--radius-medium);
-  background: var(--color-surface-soft);
+.ep-row__label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-body);
 }
 
-.entry-popup__remark-input {
-  width: 100%;
-  height: 80rpx;
+.ep-row__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ep-row__value {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-medium);
+}
+
+.ep-row__arrow {
+  color: var(--color-text-muted);
+  font-size: 28rpx;
+}
+
+.ep-divider {
+  height: 1rpx;
+  background: var(--color-divider);
+}
+
+/* 标签行 */
+.ep-tags-row {
+  padding: var(--space-3) 0 0;
+}
+
+.ep-tags-row__label {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-body);
+  margin-bottom: var(--space-2);
+}
+
+/* 备注 + 图片 */
+.ep-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ep-note__input {
+  flex: 1;
+  height: 72rpx;
   padding: 0 var(--space-4);
   border-radius: var(--radius-medium);
   background: var(--color-surface-soft);
   color: var(--color-text-primary);
-  font-size: var(--font-meta);
+  font-size: var(--font-body);
   box-sizing: border-box;
 }
 
-/* 操作按钮 */
-.entry-popup__actions {
+.ep-note__image-btn {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: var(--radius-medium);
+  background: var(--color-ledger-soft);
   display: flex;
-  gap: var(--space-3);
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  flex-shrink: 0;
+}
+
+.ep-note__preview {
+  position: relative;
+  display: inline-block;
   margin-top: var(--space-2);
 }
 
-.entry-popup__actions .u-button {
+.ep-note__preview-img {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: var(--radius-small);
+  background: var(--color-surface-soft);
+}
+
+.ep-note__preview-clear {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 操作按钮 */
+.ep-actions {
+  display: flex;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+}
+
+.ep-actions__btn {
   flex: 1;
+  text-align: center;
+  padding: 18rpx 0;
+  border-radius: var(--radius-full);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.ep-actions__btn--cancel {
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+}
+
+.ep-actions__btn--delete {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--color-danger);
+}
+
+.ep-actions__btn--save {
+  background: var(--color-ledger-gradient);
+  color: #fff;
+}
+
+.ep-actions__btn--pressed {
+  transform: scale(0.95);
+  opacity: 0.85;
 }
 
 </style>
