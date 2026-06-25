@@ -4,8 +4,8 @@
 spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://123.207.210.150:3306/life_record?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
-    username: ${root}
-    password: ${DB_PASSWORD}
+    username: root
+    password: ${DB_PASSWORD:wyh20040118}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
