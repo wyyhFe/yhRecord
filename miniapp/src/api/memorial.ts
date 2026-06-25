@@ -1,4 +1,5 @@
 import { request } from '@/utils/request'
+import type { Pagination } from '@/types/api'
 import type { Id, MemorialDay } from '@/types/domain'
 
 export interface MemorialDayPayload {
@@ -14,7 +15,7 @@ export interface MemorialDayPayload {
  * 获取纪念日列表。
  */
 export function fetchMemorialDays() {
-  return request<MemorialDay[]>({
+  return request<Pagination<MemorialDay>>({
     url: '/memorial-days/list',
     method: 'GET'
   })

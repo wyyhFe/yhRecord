@@ -21,14 +21,9 @@ export default defineNuxtConfig({
 
   // modules
   modules: [
-    // chore
-    '@nuxtjs/eslint-module',
-    // styling & ui
     '@nuxtjs/tailwindcss',
     'nuxt-headlessui',
     'nuxt-icon',
-    '@nuxtjs/color-mode',
-    // management
     '@pinia/nuxt',
     '@vueuse/nuxt',
   ],
@@ -66,6 +61,8 @@ export default defineNuxtConfig({
 
   // module::color-mode
   colorMode: {
+    preference: 'system',
+    fallback: 'light',
     classSuffix: '',
   },
 

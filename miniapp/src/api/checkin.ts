@@ -1,11 +1,12 @@
 import { request } from '@/utils/request'
+import type { Pagination } from '@/types/api'
 import type { CheckinTag, CheckinTask, HeatmapData, Id, Medal } from '@/types/domain'
 
 /**
  * 获取当前用户的打卡任务列表。
  */
 export function fetchCheckinTasks() {
-  return request<CheckinTask[]>({
+  return request<Pagination<CheckinTask>>({
     url: '/checkin/tasks/list',
     method: 'GET'
   })

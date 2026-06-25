@@ -9,11 +9,13 @@ import type { CreateDiaryPayload } from '@/types/diary'
 export function fetchDiaryList(params?: {
   keyword?: string
   visibility?: 'PRIVATE' | 'SHARED' | 'PUBLIC'
+  current?: number
+  size?: number
 }) {
   // 小程序运行环境没有 URLSearchParams，这里手动拼接查询串。
   const queryEntries: Array<[string, string]> = [
-    ['current', '1'],
-    ['size', '10']
+    ['current', String(params?.current ?? 1)],
+    ['size', String(params?.size ?? 10)]
   ]
   if (params?.keyword) queryEntries.push(['keyword', params.keyword])
   if (params?.visibility) queryEntries.push(['visibility', params.visibility])

@@ -11,10 +11,12 @@ export interface ApiResponse<T> {
 
 /**
  * 通用分页结构。
+ * 后端 Spring Boot MyBatis-Plus 分页返回字段：
+ *   list / total / pageNum / pageSize
  */
 export interface Pagination<T> {
-  records: T[]
+  list: T[]
   total: number
-  size: number
-  current: number
+  pageNum: number
+  pageSize: number
 }

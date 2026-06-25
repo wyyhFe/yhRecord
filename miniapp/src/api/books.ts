@@ -1,4 +1,5 @@
 import { request } from '@/utils/request'
+import type { Pagination } from '@/types/api'
 import type { Id } from '@/types/domain'
 
 /**
@@ -22,7 +23,7 @@ export interface CreateLedgerBookPayload {
  * 获取当前用户的账本列表。
  */
 export function fetchBooks() {
-  return request<LedgerBook[]>({
+  return request<Pagination<LedgerBook>>({
     url: '/books/list',
     method: 'GET'
   })
