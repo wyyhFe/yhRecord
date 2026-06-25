@@ -23,6 +23,16 @@ public class DiaryVO {
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
 
+    @Schema(description = "作者用户 ID", example = "10001")
+    @JsonSerialize(using = ToStringSerializer.class)
+    private Long authorId;
+
+    @Schema(description = "作者昵称", example = "wyh")
+    private String authorNickname;
+
+    @Schema(description = "作者头像路径", example = "avatar/20260321/demo.jpg")
+    private String authorAvatar;
+
     @Schema(description = "标题", example = "今天去了海边")
     private String title;
 

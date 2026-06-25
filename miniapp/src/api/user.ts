@@ -1,5 +1,5 @@
 import { request } from '@/utils/request'
-import type { UserProfile, UserProfileUpdatePayload } from '@/types/domain'
+import type { UserProfile, UserProfileUpdatePayload, PublicUserProfile, Id } from '@/types/domain'
 
 /**
  * 获取当前登录用户资料。
@@ -20,5 +20,15 @@ export function updateUserProfile(data: UserProfileUpdatePayload) {
     url: '/users/profile/update',
     method: 'PUT',
     data
+  })
+}
+
+/**
+ * 获取指定用户的公开资料（供他人主页展示）。
+ */
+export function fetchPublicUserProfile(userId: Id) {
+  return request<PublicUserProfile>({
+    url: `/users/public/${userId}`,
+    method: 'GET'
   })
 }

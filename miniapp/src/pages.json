@@ -22,12 +22,8 @@
         "text": "首页"
       },
       {
-        "pagePath": "pages/diary/index",
-        "text": "日记"
-      },
-      {
-        "pagePath": "pages/checkin/index",
-        "text": "打卡"
+        "pagePath": "pages/discover/index",
+        "text": "发现"
       },
       {
         "pagePath": "pages/profile/index",
@@ -113,6 +109,19 @@
       "path": "pages/memorialPage/index",
       "style": {
         "navigationBarTitleText": "纪念日"
+      }
+    },
+    {
+      "path": "pages/discover/index",
+      "style": {
+        "navigationBarTitleText": "发现",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/discover/user-profile",
+      "style": {
+        "navigationBarTitleText": "主页"
       }
     },
     {

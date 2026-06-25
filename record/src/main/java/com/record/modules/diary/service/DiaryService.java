@@ -46,4 +46,24 @@ public interface DiaryService {
      * @return Map<日期, 数量>
      */
     Map<LocalDate, Long> countByDateRange(Long userId, LocalDate start, LocalDate end);
+
+    /**
+     * 日记大厅：分页查询所有用户的公开日记。
+     */
+    Page<DiaryVO> hall(PageQuery pageQuery);
+
+    /**
+     * 查询指定用户的公开日记（供他人主页展示）。
+     */
+    Page<DiaryVO> publicListByUser(Long userId, PageQuery pageQuery);
+
+    /**
+     * 查看公开日记详情（不需要是日记所有者，但日记必须是 PUBLIC）。
+     */
+    DiaryVO publicDetail(Long diaryId);
+
+    /**
+     * 统计指定用户的公开日记数量。
+     */
+    long countPublicByUser(Long userId);
 }

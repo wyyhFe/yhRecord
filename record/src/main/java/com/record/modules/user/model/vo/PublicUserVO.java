@@ -2,28 +2,24 @@ package com.record.modules.user.model.vo;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-import com.record.common.enums.GenderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 用户资料返回对象。
+ * 用户公开资料返回对象（用于他人查看）。
+ * 不包含 openid、公众号 openid 等敏感信息。
  */
 @Data
 @Builder
-@Schema(description = "用户资料返回对象")
-public class UserProfileVO {
+@Schema(description = "用户公开资料返回对象")
+public class PublicUserVO {
 
     @Schema(description = "用户 ID", example = "10001")
     @JsonSerialize(using = ToStringSerializer.class)
     private Long id;
-
-    @Schema(description = "小程序 openid")
-    private String openid;
 
     @Schema(description = "昵称", example = "wyh")
     private String nickname;
@@ -31,21 +27,12 @@ public class UserProfileVO {
     @Schema(description = "头像路径", example = "avatar/20260321/demo.jpg")
     private String avatarPath;
 
-    @Schema(description = "性别", example = "FEMALE")
-    private GenderType gender;
-
-    @Schema(description = "公众号 openid", example = "oa-openid-demo")
-    private String officialAccountOpenid;
-
-    @Schema(description = "生日", example = "2004-02-11")
-    private LocalDate birthday;
-
     @Schema(description = "个性签名", example = "把生活认真记录下来")
     private String signature;
 
-    @Schema(description = "日记数量", example = "23")
-    private long diaryCount;
-
     @Schema(description = "注册时间（加入时间）", example = "2026-03-21T10:00:00")
     private LocalDateTime createdAt;
+
+    @Schema(description = "公开日记数量", example = "10")
+    private long publicDiaryCount;
 }

@@ -18,8 +18,8 @@
       </view>
       <view class="profile-stats__divider" />
       <view class="profile-stats__item">
-        <text class="profile-stats__value">{{ profile?.birthday || '--' }}</text>
-        <text class="profile-stats__label">生日</text>
+        <text class="profile-stats__value">{{ joinDate }}</text>
+        <text class="profile-stats__label">加入</text>
       </view>
       <view class="profile-stats__divider" />
       <view class="profile-stats__item">
@@ -65,6 +65,12 @@ const genderLabel = computed(() => {
   if (profile.value?.gender === 'MALE') return '男'
   if (profile.value?.gender === 'FEMALE') return '女'
   return '未设置'
+})
+
+const joinDate = computed(() => {
+  if (!profile.value?.createdAt) return '--'
+  const d = new Date(profile.value.createdAt)
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`
 })
 
 const menuItems = [

@@ -50,12 +50,29 @@
     </view>
 
     <!-- 操作按钮 -->
-    <view class="detail-actions">
+    <view v-if="!isPublicView" class="detail-actions">
       <view class="detail-actions__btn detail-actions__btn--edit" hover-class="detail-actions__btn--pressed" @click="goEdit">
         <text>✏️ 编辑</text>
       </view>
       <view class="detail-actions__btn detail-actions__btn--delete" hover-class="detail-actions__btn--pressed" @click="removeDiary">
         <text>🗑️ 删除</text>
+      </view>
+    </view>
+
+    <!-- 公开日记模式：显示作者信息 -->
+    <view v-if="isPublicView && detail?.authorId" class="detail-author" @tap="goUserProfile">
+      <view class="detail-author__avatar">
+        <image
+          v-if="detail?.authorAvatar"
+          :src="resolveImage(detail.authorAvatar)"
+          mode="aspectFill"
+          class="detail-author__avatar-img"
+        />
+        <text v-else class="detail-author__avatar-text">{{ (detail?.authorNickname || '?').charAt(0) }}</text>
+      </view>
+      <view class="detail-author__info">
+        <text class="detail-author__name">{{ detail?.authorNickname || '匿名用户' }}</text>
+        <text class="detail-author__hint">查看主页 ›</text>
       </view>
     </view>
   </view>
@@ -64,13 +81,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { deleteDiary, fetchDiaryDetail } from '@/api/diary'
+import { deleteDiary, fetchDiaryDetail, fetchPublicDiaryDetail } from '@/api/diary'
 import { OSS_BASE_URL } from '@/config/app'
 import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
 import type { DiaryItem } from '@/types/domain'
 
 const detail = ref<DiaryItem | null>(null)
 const diaryId = ref('')
+const isPublicView = ref(false)
 
 const visibilityText = computed(() => {
   const v = detail.value?.visibility
@@ -108,11 +126,21 @@ async function removeDiary() {
 
 async function loadDiaryDetail() {
   if (!diaryId.value) return
-  detail.value = await fetchDiaryDetail(diaryId.value)
+  if (isPublicView.value) {
+    detail.value = await fetchPublicDiaryDetail(diaryId.value)
+  } else {
+    detail.value = await fetchDiaryDetail(diaryId.value)
+  }
+}
+
+function goUserProfile() {
+  if (!detail.value?.authorId) return
+  uni.navigateTo({ url: `/pages/discover/user-profile?userId=${detail.value.authorId}` })
 }
 
 onLoad((options) => {
   diaryId.value = options?.id || ''
+  isPublicView.value = options?.public === '1'
   loadDiaryDetail().catch((error) => {
     uni.$feedback.error(error, undefined, '加载日记详情失败')
   })
@@ -269,5 +297,58 @@ onLoad((options) => {
 .detail-actions__btn--pressed {
   transform: scale(0.95);
   opacity: 0.85;
+}
+
+/* ========== 公开日记作者信息 ========== */
+.detail-author {
+  margin: var(--space-6) var(--space-4) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+}
+
+.detail-author__avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.detail-author__avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.detail-author__avatar-text {
+  color: var(--color-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-bold);
+}
+
+.detail-author__info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-author__name {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+}
+
+.detail-author__hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
 }
 </style>

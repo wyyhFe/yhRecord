@@ -88,4 +88,22 @@ public class DiaryController {
     public ApiResponse<PageResult<DiaryVO>> search(String keyword, PageQuery pageQuery) {
         return ApiResponse.success(PageResult.from(diaryService.list(UserContext.getUserId(), pageQuery, null, null, keyword)));
     }
+
+    @Operation(summary = "日记大厅 - 分页查询所有公开日记")
+    @GetMapping("/hall")
+    public ApiResponse<PageResult<DiaryVO>> hall(PageQuery pageQuery) {
+        return ApiResponse.success(PageResult.from(diaryService.hall(pageQuery)));
+    }
+
+    @Operation(summary = "查询指定用户的公开日记列表")
+    @GetMapping("/public/{userId}")
+    public ApiResponse<PageResult<DiaryVO>> publicListByUser(@PathVariable Long userId, PageQuery pageQuery) {
+        return ApiResponse.success(PageResult.from(diaryService.publicListByUser(userId, pageQuery)));
+    }
+
+    @Operation(summary = "查看公开日记详情")
+    @GetMapping("/public-detail/{id}")
+    public ApiResponse<DiaryVO> publicDetail(@PathVariable Long id) {
+        return ApiResponse.success(diaryService.publicDetail(id));
+    }
 }
