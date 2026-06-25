@@ -83,6 +83,13 @@ export function createCheckinTag(data: { name: string; icon?: string }) {
   })
 }
 
+export function deleteCheckinTag(id: Id) {
+  return request<void>({
+    url: `/checkin/tags/${id}`,
+    method: 'DELETE'
+  })
+}
+
 /**
  * 获取勋章列表。
  */

@@ -1,7 +1,7 @@
 import { request } from '@/utils/request'
 import type { Id } from '@/types/domain'
 
-export type TagModuleType = 'DIARY' | 'LEDGER'
+export type TagModuleType = 'DIARY' | 'LEDGER' | 'CHECKIN'
 export type LedgerTagType = 'EXPENSE' | 'INCOME'
 
 /**
