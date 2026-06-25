@@ -7,5 +7,7 @@ public enum TagModuleType {
     /** 日记模块。 */
     DIARY,
     /** 记账模块。 */
-    LEDGER
+    LEDGER,
+    /** 打卡模块。 */
+    CHECKIN
 }

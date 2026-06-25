@@ -361,6 +361,21 @@ public class CheckinServiceImpl implements CheckinService {
     }
 
     @Override
+    public void deleteTag(Long userId, Long tagId) {
+        CheckinTag tag = checkinTagMapper.selectById(tagId);
+        if (tag == null) {
+            throw new CheckinException("标签不存在");
+        }
+        if (tag.getIsSystem()) {
+            throw new CheckinException("系统预设标签不可删除");
+        }
+        if (!userId.equals(tag.getUserId())) {
+            throw new CheckinException("无权限删除该标签");
+        }
+        checkinTagMapper.deleteById(tagId);
+    }
+
+    @Override
     @Transactional
     public void mendCheckin(Long userId, MendCheckinRequest request) {
         Long taskId = request.getTaskId();

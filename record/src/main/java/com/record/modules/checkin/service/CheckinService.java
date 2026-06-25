@@ -43,6 +43,8 @@ public interface CheckinService {
 
     CheckinTag createTag(Long userId, CreateCheckinTagRequest request);
 
+    void deleteTag(Long userId, Long tagId);
+
     void mendCheckin(Long userId, MendCheckinRequest request);
 
     long getMonthlyMendRemaining(Long userId);

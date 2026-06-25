@@ -100,6 +100,13 @@ public class CheckinTaskController {
         return ApiResponse.success(checkinService.createTag(UserContext.getUserId(), request));
     }
 
+    @Operation(summary = "删除自定义标签")
+    @DeleteMapping("/tags/{id}")
+    public ApiResponse<Void> deleteTag(@PathVariable Long id) {
+        checkinService.deleteTag(UserContext.getUserId(), id);
+        return ApiResponse.success();
+    }
+
     @Operation(summary = "补卡")
     @PostMapping("/records/mend")
     public ApiResponse<Void> mend(@Valid @RequestBody MendCheckinRequest request) {
