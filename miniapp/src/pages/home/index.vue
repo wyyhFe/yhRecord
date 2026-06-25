@@ -112,17 +112,21 @@
         </view>
       </view>
     </view>
+
+    <!-- 自定义 TabBar -->
+    <TabBar current="home" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGreeting } from '@/composables/useGreeting'
 import { fetchCalendarSummaryRecent } from '@/api/calendar'
 import type { DaySummary } from '@/types/domain'
 import { tokenStorage } from '@/utils/storage'
 import { getLastLedgerBook } from '@/utils/ledger-book'
+import TabBar from '@/components/business/tab-bar/index.vue'
 
 const greeting = useGreeting()
 const calendarItems = ref<DaySummary[]>([])
@@ -273,6 +277,10 @@ function goCheckinList() {
 onLoad(() => {
   loadSummary()
 })
+
+onShow(() => {
+  uni.hideTabBar({ animation: false })
+})
 </script>
 
 <style scoped lang="scss">
@@ -282,7 +290,7 @@ onLoad(() => {
  * ========================================================= */
 
 .home-page {
-  padding-bottom: var(--bottom-padding);
+  padding-bottom: var(--bottom-padding-with-tabbar);
 }
 
 /* ---------- 1. Hero 渐变头部 ---------- */

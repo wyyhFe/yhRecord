@@ -3,7 +3,7 @@
     <!-- Hero 头部 -->
     <view class="discover-hero">
       <view class="discover-hero__top">
-        <text class="discover-hero__title">发现</text>
+        <text class="discover-hero__title">日记大厅</text>
         <text class="discover-hero__sub">看看大家都在记录什么</text>
       </view>
       <view class="discover-hero__stats">
@@ -111,6 +111,9 @@
 
     <!-- 底部加载状态 -->
     <LoadMore :state="loadingMore ? 'loading' : noMore ? 'noMore' : 'hidden'" />
+
+    <!-- 自定义 TabBar -->
+    <TabBar current="discover" />
   </view>
 </template>
 
@@ -119,6 +122,7 @@ import { ref } from 'vue'
 import { onReachBottom, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import LoadMore from '@/components/business/load-more/index.vue'
+import TabBar from '@/components/business/tab-bar/index.vue'
 import { fetchDiaryHall } from '@/api/diary'
 import { OSS_BASE_URL } from '@/config/app'
 import type { DiaryItem, Id } from '@/types/domain'
@@ -191,6 +195,7 @@ function goUserProfile(userId?: Id) {
 }
 
 onShow(() => {
+  uni.hideTabBar({ animation: false })
   if (list.value.length === 0) {
     loadDiaries(true)
   }
@@ -211,7 +216,7 @@ onPullDownRefresh(() => {
 
 <style scoped lang="scss">
 .discover-page {
-  padding-bottom: var(--bottom-padding);
+  padding-bottom: var(--bottom-padding-with-tabbar);
 }
 
 /* ---------- Hero 头部 ---------- */

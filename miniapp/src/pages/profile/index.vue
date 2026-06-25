@@ -46,12 +46,17 @@
         </view>
       </view>
     </view>
+
+    <!-- 自定义 TabBar -->
+    <TabBar current="profile" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
+import TabBar from '@/components/business/tab-bar/index.vue'
 
 const appStore = useAppStore()
 const profile = computed(() => appStore.profile)
@@ -106,11 +111,15 @@ function handleSelect(key: string) {
 onMounted(() => {
   appStore.loadProfile().catch(() => undefined)
 })
+
+onShow(() => {
+  uni.hideTabBar({ animation: false })
+})
 </script>
 
 <style scoped lang="scss">
 .profile-page {
-  padding-bottom: var(--bottom-padding);
+  padding-bottom: var(--bottom-padding-with-tabbar);
 }
 
 /* ========== 用户信息 ========== */

@@ -36,6 +36,14 @@ page {
   /* ============== 底部安全间距（用于有固定底栏/FAB 的页面） ============== */
   --bottom-padding: 30rpx;
 
+  /* ============== 自定义 TabBar 高度（胶囊浮动式，emoji 上文字下） ============== */
+  --tabbar-height: 120rpx;
+  --tabbar-pad-v: var(--space-1);    /* 8rpx wrap 上下内边距 */
+  --tabbar-total: calc(var(--tabbar-height) + var(--tabbar-pad-v) + env(safe-area-inset-bottom));
+
+  /* ============== 有 TabBar 的页面底部留白（内容不被遮挡） ============== */
+  --bottom-padding-with-tabbar: var(--tabbar-total);
+
   /* ============== 字号阶梯（按用途命名） ============== */
   --font-hero: 56rpx;
   --font-display: 44rpx;

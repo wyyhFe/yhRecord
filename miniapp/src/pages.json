@@ -33,13 +33,6 @@
   },
   "pages": [
     {
-      "path": "pages/auth/login",
-      "style": {
-        "navigationBarTitleText": "登录",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/home/index",
       "style": {
         "navigationBarTitleText": "生活记录"
@@ -114,7 +107,7 @@
     {
       "path": "pages/discover/index",
       "style": {
-        "navigationBarTitleText": "发现",
+        "navigationBarTitleText": "日记大厅",
         "enablePullDownRefresh": true
       }
     },
@@ -152,6 +145,13 @@
       "path": "pages/profile/tags/index",
       "style": {
         "navigationBarTitleText": "标签管理"
+      }
+    },
+    {
+      "path": "pages/auth/login",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
       }
     }
   ]
