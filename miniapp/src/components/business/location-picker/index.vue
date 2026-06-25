@@ -1,46 +1,35 @@
 <template>
-  <view class="section-shell">
-    <view class="section-head">
-      <view class="section-copy">
-        <view class="section-copy__title">位置</view>
-        <view class="section-copy__desc">可以直接获取当前位置，也可以调用微信地图选点。</view>
+  <view>
+    <!-- 展示行：位置名 + 箭头，点击弹出选择 -->
+    <view class="lp-row" @tap="showActionSheet = true">
+      <view class="lp-row__left">
+        <text class="lp-row__label">位置</text>
+        <text v-if="modelValue?.locationName" class="lp-row__value">{{ modelValue.locationName }}</text>
       </view>
-      <u-tag v-if="modelValue?.locationName" text="已选择" plain shape="circle" type="warning" />
-    </view>
-
-    <view v-if="modelValue?.locationName" class="location-picker__result">
-      <view class="location-picker__name">{{ modelValue.locationName }}</view>
-      <view class="location-picker__address">
-        {{ modelValue.address || '已获取坐标，保存时会继续补全地址信息' }}
+      <view class="lp-row__right">
+        <text v-if="!modelValue?.locationName" class="lp-row__placeholder">添加位置</text>
+        <text class="lp-row__arrow">›</text>
       </view>
     </view>
 
-    <view class="action-grid-2">
-      <u-button
-        type="primary"
-        shape="circle"
-        color="linear-gradient(135deg, var(--color-primary) 0%, var(--color-accent) 100%)"
-        @click="pickCurrentLocation"
-      >
-        当前位置
-      </u-button>
-      <u-button shape="circle" plain @click="pickManualLocation">微信地图选点</u-button>
+    <!-- 已选地址详情 -->
+    <view v-if="modelValue?.address" class="lp-detail">
+      <text class="lp-detail__text">{{ modelValue.address }}</text>
+      <text class="lp-detail__clear" @tap.stop="clearLocation">✕</text>
     </view>
 
-    <!-- 调试用：只调 wx.getLocation 拿原始经纬度，不打后端逆地址解析。
-         用于对比：如果这里显示的坐标和真实地点对得上 → 后端解析有问题；对不上 → wx 本身就给错了 -->
-    <view class="primary-action">
-      <u-button shape="circle" size="mini" plain :hair-line="false" @click="debugCoordinates">
-        🔍 显示原始经纬度（调试）
-      </u-button>
-      <view v-if="rawCoords" class="location-picker__debug">
-        <view>纬度 lat: {{ rawCoords.latitude }}</view>
-        <view>经度 lng: {{ rawCoords.longitude }}</view>
-        <view>精度（米）: {{ rawCoords.accuracy ?? '未知' }}</view>
-        <view class="location-picker__debug-hint">
-          复制坐标到 https://lbs.qq.com/getPoint/ 验证位置
-        </view>
-      </view>
+    <!-- 操作面板 -->
+    <u-action-sheet
+      v-model="showActionSheet"
+      :list="actionItems"
+      @click="onActionSelect"
+      :cancel-btn="false"
+      :border-radius="28"
+    />
+
+    <!-- 调试用原始经纬度 -->
+    <view v-if="rawCoords" class="lp-debug">
+      <text class="lp-debug__text">lat: {{ rawCoords.latitude }}, lng: {{ rawCoords.longitude }}</text>
     </view>
   </view>
 </template>
@@ -50,7 +39,7 @@ import { ref } from 'vue'
 import type { DiaryLocationInput } from '@/types/diary'
 import { pickCurrentLocationPayload, pickManualLocationPayload } from '@/utils/qqmap/location'
 
-defineProps<{
+const props = defineProps<{
   modelValue?: DiaryLocationInput
 }>()
 
@@ -58,12 +47,31 @@ const emit = defineEmits<{
   'update:modelValue': [value: DiaryLocationInput]
 }>()
 
-// 调试用：只存 wx.getLocation 拿到的原始经纬度，不传给后端。
+const showActionSheet = ref(false)
 const rawCoords = ref<{ latitude: number; longitude: number; accuracy?: number } | null>(null)
+
+const actionItems = [
+  { text: '📍 自动获取当前位置', value: 'auto' },
+  { text: '🗺️ 微信地图选点', value: 'manual' },
+  { text: '🔍 显示原始经纬度（调试）', value: 'debug' }
+]
+
+function onActionSelect(index: number) {
+  showActionSheet.value = false
+  const action = actionItems[index]
+  if (!action) return
+  if (action.value === 'auto') pickCurrentLocation()
+  else if (action.value === 'manual') pickManualLocation()
+  else if (action.value === 'debug') debugCoordinates()
+}
+
+function clearLocation() {
+  rawCoords.value = null
+  emit('update:modelValue', undefined as unknown as DiaryLocationInput)
+}
 
 async function debugCoordinates() {
   try {
-    // 用与正式定位完全一样的参数，确保对比有意义
     const result = await uni.getLocation({
       type: 'gcj02',
       isHighAccuracy: true,
@@ -74,7 +82,7 @@ async function debugCoordinates() {
       longitude: result.longitude,
       accuracy: result.accuracy
     }
-    uni.$feedback.success('原始经纬度已展示在下方')
+    uni.$feedback.success('原始经纬度已展示')
   } catch (error) {
     uni.$feedback.error(error, undefined, '获取经纬度失败')
   }
@@ -84,12 +92,10 @@ async function pickCurrentLocation() {
   try {
     const result = await pickCurrentLocationPayload()
     emit('update:modelValue', result.payload)
-
     if (result.reverseGeocodeError) {
       uni.$feedback.error(result.reverseGeocodeError, undefined, '已获取坐标，但地址解析失败')
       return
     }
-
     uni.$feedback.success(result.payload.address ? '已获取当前位置' : '已获取当前位置坐标')
   } catch (error) {
     uni.$feedback.error(error, undefined, '定位失败，请检查定位权限')
@@ -105,55 +111,103 @@ async function pickManualLocation() {
     uni.$feedback.info('已取消选点')
   }
   // #endif
-
   // #ifndef MP-WEIXIN
   uni.$feedback.info('当前环境不支持微信地图选点')
   // #endif
 }
 
-defineExpose({
-  pickCurrentLocation,
-  pickManualLocation
-})
+defineExpose({ pickCurrentLocation, pickManualLocation })
 </script>
 
 <style scoped lang="scss">
-.location-picker__result {
-  margin-top: 18rpx;
-  border-radius: 20rpx;
-  background: var(--color-surface-soft);
-  padding: 18rpx 22rpx;
+.lp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
 }
 
-.location-picker__name {
-  color: var(--color-text-primary);
-  font-size: 28rpx;
-  font-weight: 600;
+.lp-row__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
 }
 
-.location-picker__address {
-  margin-top: 10rpx;
+.lp-row__label {
   color: var(--color-text-secondary);
-  font-size: 22rpx;
+  font-size: var(--font-body);
+  flex-shrink: 0;
 }
 
-/* 调试块：用 surface-soft + 等宽字体，显示坐标方便复制核对 */
-.location-picker__debug {
-  margin-top: var(--space-3);
-  padding: var(--space-3);
-  border-radius: var(--radius-medium);
-  background: var(--color-surface-soft);
-  /* 调试展示的坐标用中性色，跟主题色调隔离开 */
-  color: var(--color-text-neutral);
+.lp-row__value {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lp-row__right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.lp-row__placeholder {
+  color: var(--color-primary);
   font-size: var(--font-meta);
-  font-family: 'SF Mono', Consolas, monospace;
-  line-height: 1.8;
+  font-weight: var(--weight-medium);
 }
 
-.location-picker__debug-hint {
-  margin-top: var(--space-2);
+.lp-row__arrow {
   color: var(--color-text-muted);
-  font-size: var(--font-tiny);
-  font-family: inherit;
+  font-size: 28rpx;
+}
+
+.lp-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-small);
+  background: var(--color-surface-soft);
+  margin-bottom: var(--space-2);
+}
+
+.lp-detail__text {
+  flex: 1;
+  color: var(--color-text-muted);
+  font-size: 20rpx;
+  line-height: var(--leading-snug);
+}
+
+.lp-detail__clear {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18rpx;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.lp-debug {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-small);
+  background: var(--color-surface-soft);
+  margin-top: var(--space-2);
+}
+
+.lp-debug__text {
+  color: var(--color-text-muted);
+  font-size: 20rpx;
+  font-family: 'SF Mono', Consolas, monospace;
 }
 </style>

@@ -1,12 +1,8 @@
 <template>
-  <view class="section-shell empty-state-card">
-    <u-empty :mode="mode" :text="title" :margin-top="0" />
-    <view v-if="description" class="empty-state-card__desc">
-      {{ description }}
-    </view>
-    <view v-if="$slots.action" class="empty-state-card__action">
-      <slot name="action" />
-    </view>
+  <view class="empty-state-card">
+    <text class="empty-state-card__icon">{{ iconMap[mode] }}</text>
+    <text class="empty-state-card__title">{{ title }}</text>
+    <text v-if="description" class="empty-state-card__desc">{{ description }}</text>
   </view>
 </template>
 
@@ -19,25 +15,50 @@ withDefaults(defineProps<{
   description: '',
   mode: 'data'
 })
+
+const iconMap: Record<string, string> = {
+  car: '🚗',
+  page: '📄',
+  search: '🔍',
+  address: '📍',
+  wifi: '📶',
+  order: '📋',
+  coupon: '🎫',
+  favor: '❤️',
+  permission: '🔒',
+  history: '🕰️',
+  news: '📰',
+  message: '💬',
+  list: '📝',
+  data: '📦'
+}
 </script>
 
 <style scoped lang="scss">
 .empty-state-card {
-  padding-top: 32rpx;
-  padding-bottom: 32rpx;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx var(--space-6) 40rpx;
+}
+
+.empty-state-card__icon {
+  font-size: 96rpx;
+  line-height: 1;
+  margin-bottom: var(--space-5);
+}
+
+.empty-state-card__title {
+  color: var(--color-text-secondary);
+  font-size: var(--font-section);
+  line-height: var(--leading-snug);
 }
 
 .empty-state-card__desc {
-  margin-top: 10rpx;
-  color: var(--color-text-secondary);
-  font-size: 22rpx;
-  line-height: 1.7;
-}
-
-.empty-state-card__action {
-  margin-top: 20rpx;
-  display: flex;
-  justify-content: center;
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-caption);
+  line-height: var(--leading-relaxed);
+  text-align: center;
 }
 </style>

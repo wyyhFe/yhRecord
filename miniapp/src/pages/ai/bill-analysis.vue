@@ -347,7 +347,7 @@ async function loadHistory() {
   historyLoading.value = true
   try {
     const page = await fetchBillAnalysisHistory({ current: 1, size: 10 })
-    history.value = page.records || []
+    history.value = page.list || []
   } catch (error) {
     console.warn('历史加载失败', error)
   } finally {

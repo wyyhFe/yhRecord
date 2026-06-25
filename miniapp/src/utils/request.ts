@@ -59,17 +59,42 @@ function redirectToHome() {
 }
 
 /**
- * 静默无感重登：调微信 wx.login 拿 code，再换 access/refresh token。
- * session.ts 已经实现了这套（带去重 lock），这里走同一份避免逻辑分裂。
+ * 静默无感重登：调微信 wx.login 拿 code，再调 /auth/wx-login 换 token。
  *
- * 用动态 import 避免循环依赖：
+ * 不引用 session.ts 来避免循环依赖：
  *   request.ts → session.ts → api/auth.ts → request.ts
- * 模块初始化期不解析这条链，运行期 lazy 拿到。
+ *
+ * 也不使用动态 import()，因为 uni-app 打包器会把
+ *   await import('./session')
+ * 编译成字符串 "./session.js"（一个无意义的字面量），
+ * 导致解构得到 undefined → 调用时抛出 TypeError。
+ *
+ * 这里直接内联实现，用局部的 http 实例和 tokenStorage 完成。
  */
 async function silentReLogin(): Promise<boolean> {
   try {
-    const { ensureSession } = await import('./session')
-    return await ensureSession()
+    const loginRes = await uni.login({ provider: 'weixin' })
+    const code = loginRes.code || ''
+    if (!code) {
+      throw new Error('Missing WeChat login code')
+    }
+
+    const response = await http.request<ApiResponse<RefreshTokenResult>>({
+      url: '/auth/wx-login',
+      method: 'POST',
+      data: { code },
+      custom: { withAuth: false }
+    })
+
+    const result = response.data
+    if (!result || result.code !== 0 || !result.data) {
+      throw new Error(result?.message || '静默登录失败')
+    }
+
+    tokenStorage.setAccessToken(result.data.accessToken)
+    tokenStorage.setRefreshToken(result.data.refreshToken)
+    tokenStorage.setTokenExpiresIn(result.data.expiresIn)
+    return true
   } catch (error) {
     console.error('[request] silent re-login failed', error)
     return false
