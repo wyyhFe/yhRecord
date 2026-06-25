@@ -26,6 +26,9 @@
       <view class="reminder-card__detail">
         <text class="reminder-card__detail-text">包含日记、纪念日、每日记账、记账月报四个模板</text>
       </view>
+      <view class="reminder-card__tip">
+        <text class="reminder-card__tip-text">如需重新授权，请到微信「发现 → 小程序」进入本小程序 → 右上角 "···" → 设置 → 订阅消息 管理</text>
+      </view>
     </view>
 
     <!-- 公众号模板消息 -->
@@ -83,17 +86,33 @@ async function onMiniProgramSwitch(event: Event) {
     form.miniProgramReminderEnabled = false
     return
   }
-  const granted = await requestMiniProgramSubscription()
-  form.miniProgramReminderEnabled = granted
-  if (!granted) uni.$feedback.info('未授权订阅消息')
+
+  const { granted, isReRequest } = await requestMiniProgramSubscription()
+  if (granted) {
+    form.miniProgramReminderEnabled = true
+    return
+  }
+
+  // 订阅失败（首次拒绝或重复请求）
+  form.miniProgramReminderEnabled = false
+  if (isReRequest) {
+    uni.showModal({
+      title: '已拒绝订阅',
+      content: '之前已拒绝过订阅消息，微信不再弹出授权窗口。\n\n请前往：小程序右上角 "···" → 设置 → 订阅消息，重新开启后返回此页保存。',
+      confirmText: '知道了',
+      showCancel: false
+    })
+  } else {
+    uni.$feedback.info('未授权订阅消息')
+  }
 }
 
 async function submit() {
   submitting.value = true
   try {
     if (form.miniProgramReminderEnabled) {
-      const granted = await requestMiniProgramSubscription()
-      if (!granted) throw new Error('请先允许小程序订阅消息')
+      const { granted } = await requestMiniProgramSubscription()
+      if (!granted) throw new Error('订阅消息未授权，请先开启订阅')
     }
     await saveReminderSettings({
       diaryReminderEnabled: form.diaryReminderEnabled,
@@ -117,7 +136,7 @@ async function init() {
   } catch { /* 默认值 */ }
 }
 
-async function requestMiniProgramSubscription() {
+async function requestMiniProgramSubscription(): Promise<{ granted: boolean; isReRequest: boolean }> {
   const templateIds = [
     MP_DIARY_TEMPLATE_ID,
     MP_LEDGER_TEMPLATE_ID,
@@ -125,15 +144,21 @@ async function requestMiniProgramSubscription() {
     MP_MEMORIAL_TEMPLATE_ID
   ].filter(Boolean)
   if (!templateIds.length) throw new Error('请先配置订阅消息模板 ID')
-  return new Promise<boolean>((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     // #ifdef MP-WEIXIN
     uni.requestSubscribeMessage({
       tmplIds: templateIds,
       success: (result) => {
         const subscribeResult = result as unknown as Record<string, string>
-        resolve(templateIds.some((id) => subscribeResult?.[id] === 'accept'))
+        const accepted = templateIds.some((id) => subscribeResult?.[id] === 'accept')
+        const allRejected = templateIds.every((id) => subscribeResult?.[id] === 'reject')
+        // 全部 reject → 可能是第一次拒绝或重复请求，都引导用户去微信设置
+        resolve({ granted: accepted, isReRequest: allRejected })
       },
-      fail: reject
+      fail: (err) => {
+        // 调用失败（如已拒绝过，微信不再弹窗），也引导去设置
+        resolve({ granted: false, isReRequest: true })
+      }
     })
     // #endif
     // #ifndef MP-WEIXIN
@@ -215,6 +240,19 @@ onMounted(() => { init() })
 .reminder-card__detail-text {
   color: var(--color-text-secondary);
   font-size: var(--font-tiny);
+  line-height: var(--leading-relaxed);
+}
+
+.reminder-card__tip {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-medium);
+  background: #FFF8E1;
+}
+
+.reminder-card__tip-text {
+  color: var(--color-text-muted);
+  font-size: 20rpx;
   line-height: var(--leading-relaxed);
 }
 

@@ -196,7 +196,7 @@ app:
       embedding-dimension: 1536
 
 alioss:
-  endpoint: ${ALIOSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
-  bucket-name: ${ALIOSS_BUCKET_NAME:wyhosskey}
+  endpoint: ${oss-cn-hangzhou.aliyuncs.com}
+  bucket-name: ${wyhosskey}
   access-key-id: ${ALIOSS_ACCESS_KEY_ID}
   access-key-secret: ${ALIOSS_ACCESS_KEY_SECRET}
