@@ -1,10 +1,8 @@
 <template>
   <view class="page-shell-safe tags-page">
-    <!-- Hero -->
-    <view class="tags-hero" :class="isLedger ? 'tags-hero--ledger' : 'tags-hero--diary'">
-      <text class="tags-hero__icon">{{ isLedger ? '¥' : '🏷️' }}</text>
-      <text class="tags-hero__title">{{ pageTitle }}</text>
-      <text class="tags-hero__sub">{{ pageDesc }}</text>
+    <!-- 顶栏 -->
+    <view class="tags-header">
+      <text class="tags-header__title">{{ pageTitle }}</text>
     </view>
 
     <!-- 记账标签类型切换 -->
@@ -181,48 +179,18 @@ onLoad((query) => {
 
 <style scoped lang="scss">
 .tags-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
-/* ========== Hero ========== */
-.tags-hero {
-  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-8) var(--space-6) var(--space-7);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  color: #fff;
+/* ========== 顶栏 ========== */
+.tags-header {
+  padding: var(--space-5) var(--space-6) var(--space-3);
 }
 
-.tags-hero--diary {
-  background: var(--color-diary-gradient);
-}
-
-.tags-hero--ledger {
-  background: var(--color-ledger-gradient);
-}
-
-.tags-hero__icon {
-  width: 96rpx;
-  height: 96rpx;
-  line-height: 96rpx;
-  text-align: center;
-  font-size: 48rpx;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.2);
-  margin-bottom: var(--space-4);
-}
-
-.tags-hero__title {
+.tags-header__title {
+  color: var(--color-text-primary);
   font-size: var(--font-title);
   font-weight: var(--weight-bold);
-}
-
-.tags-hero__sub {
-  margin-top: var(--space-2);
-  font-size: var(--font-meta);
-  opacity: 0.85;
 }
 
 /* ========== 类型切换 ========== */

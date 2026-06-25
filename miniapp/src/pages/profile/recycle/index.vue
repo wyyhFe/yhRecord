@@ -1,14 +1,7 @@
 <template>
   <view class="page-shell-safe recycle-page">
-    <!-- Hero -->
-    <view class="recycle-hero">
-      <text class="recycle-hero__icon">🗑️</text>
-      <text class="recycle-hero__title">回收站</text>
-      <text class="recycle-hero__sub">已删除内容保留 15 天，可恢复或彻底删除</text>
-    </view>
-
     <!-- 列表 -->
-    <view v-if="items.length" class="recycle-list">
+    <view v-if="items && items.length" class="recycle-list">
       <view v-for="item in items" :key="item.id" class="recycle-item">
         <view class="recycle-item__header">
           <text class="recycle-item__title">{{ item.title || formatResourceType(item.resourceType) }}</text>
@@ -31,13 +24,17 @@
         </view>
       </view>
     </view>
-    <EmptyStateCard v-else title="回收站是空的" description="还没有进入回收站的内容" />
+    <!-- 空状态 -->
+    <view v-else class="recycle-empty">
+      <text class="recycle-empty__icon">📦</text>
+      <text class="recycle-empty__title">回收站是空的</text>
+      <text class="recycle-empty__desc">还没有进入回收站的内容</text>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import EmptyStateCard from '@/components/business/empty-state-card'
 import {
   fetchRecycleBinList,
   forceDeleteRecycleBinItem,
@@ -60,6 +57,7 @@ function formatDateTime(value: string) {
 
 async function loadRecycleBin() {
   items.value = await fetchRecycleBinList()
+  console.log(items.value,items.value instanceof  Array)
 }
 
 async function restore(item: RecycleBinItem) {
@@ -81,35 +79,35 @@ onMounted(() => { loadRecycleBin().catch(() => undefined) })
 
 <style scoped lang="scss">
 .recycle-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
-/* ========== Hero ========== */
-.recycle-hero {
-  background: var(--color-primary-gradient);
-  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-8) var(--space-6) var(--space-7);
+/* ========== 空状态 ========== */
+.recycle-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  color: #fff;
+  padding: 80rpx var(--space-6) 40rpx;
 }
 
-.recycle-hero__icon {
-  font-size: 56rpx;
-  margin-bottom: var(--space-3);
+.recycle-empty__icon {
+  font-size: 96rpx;
+  line-height: 1;
+  margin-bottom: var(--space-5);
 }
 
-.recycle-hero__title {
-  font-size: var(--font-title);
-  font-weight: var(--weight-bold);
+.recycle-empty__title {
+  color: var(--color-text-secondary);
+  font-size: var(--font-section);
+  line-height: var(--leading-snug);
 }
 
-.recycle-hero__sub {
+.recycle-empty__desc {
   margin-top: var(--space-2);
-  font-size: var(--font-meta);
-  opacity: 0.85;
+  color: var(--color-text-muted);
+  font-size: var(--font-caption);
+  line-height: var(--leading-relaxed);
+  text-align: center;
 }
 
 /* ========== 列表 ========== */

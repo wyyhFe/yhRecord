@@ -21,16 +21,14 @@
 
       <view class="edit-field">
         <text class="edit-field__label">⚧ 性别</text>
-        <view class="edit-gender">
-          <view
-            v-for="item in genderOptions"
-            :key="item.value"
-            class="edit-gender__item"
-            :class="{ 'edit-gender__item--active': form.gender === item.value }"
-            @tap="form.gender = item.value"
+        <view class="edit-field__picker" @tap="genderPickerVisible = true">
+          <text
+            class="edit-field__picker-value"
+            :class="{ 'edit-field__picker-placeholder': !form.gender || form.gender === 'UNKNOWN' }"
           >
-            <text class="edit-gender__text">{{ item.label }}</text>
-          </view>
+            {{ genderLabel || '请选择' }}
+          </text>
+          <text class="edit-field__picker-arrow">›</text>
         </view>
       </view>
 
@@ -55,6 +53,33 @@
         />
       </view>
     </view>
+
+    <!-- 性别选择弹窗 -->
+    <u-popup :model-value="genderPickerVisible" mode="bottom" border-radius="28" @update:model-value="genderPickerVisible = $event">
+      <view class="edit-gender-popup">
+        <view class="edit-gender-popup__header">
+          <text class="edit-gender-popup__title">选择性别</text>
+          <text class="edit-gender-popup__close" @tap="genderPickerVisible = false">✕</text>
+        </view>
+        <view class="edit-gender-popup__tags">
+          <view
+            v-for="item in genderOptions"
+            :key="item.value"
+            class="edit-gender-popup__tag"
+            :class="{ 'edit-gender-popup__tag--active': form.gender === item.value }"
+            hover-class="edit-gender-popup__tag--pressed"
+            :hover-stay-time="80"
+            @tap="onGenderSelect(item.value)"
+          >
+            <text
+              class="edit-gender-popup__tag-icon"
+              :class="`edit-gender-popup__tag-icon--${item.value.toLowerCase()}`"
+            >{{ genderIcon(item.value) }}</text>
+            <text class="edit-gender-popup__tag-text">{{ item.label }}</text>
+          </view>
+        </view>
+      </view>
+    </u-popup>
 
     <!-- 保存 -->
     <view class="edit-submit">
@@ -81,11 +106,24 @@ import { uploadImageToOss } from '@/utils/upload'
 const appStore = useAppStore()
 const submitting = ref(false)
 
+const genderPickerVisible = ref(false)
+
 const genderOptions: Array<{ label: string; value: 'UNKNOWN' | 'MALE' | 'FEMALE' }> = [
   { label: '未设置', value: 'UNKNOWN' },
   { label: '男', value: 'MALE' },
   { label: '女', value: 'FEMALE' }
 ]
+
+const genderLabel = computed(() => genderOptions.find((g) => g.value === form.value.gender)?.label)
+
+function genderIcon(value: string) {
+  return value === 'MALE' ? '♂' : value === 'FEMALE' ? '♀' : '—'
+}
+
+function onGenderSelect(value: 'UNKNOWN' | 'MALE' | 'FEMALE') {
+  form.value.gender = value
+  genderPickerVisible.value = false
+}
 
 const form = ref<UserProfileUpdatePayload>({
   nickname: '',
@@ -156,7 +194,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .edit-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
 /* ========== Hero ========== */
@@ -289,33 +327,96 @@ onMounted(() => {
   font-size: 32rpx;
 }
 
-/* 性别选择 */
-.edit-gender {
-  display: flex;
-  gap: var(--space-2);
+/* 性别下拉框 */
+.edit-field__picker-placeholder {
+  color: var(--color-text-muted) !important;
 }
 
-.edit-gender__item {
-  flex: 1;
-  text-align: center;
-  padding: var(--space-3) 0;
+/* ========== 性别选择弹窗 ========== */
+.edit-gender-popup {
+  padding: var(--space-5) var(--space-6) var(--space-10);
+}
+
+.edit-gender-popup__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.edit-gender-popup__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+}
+
+.edit-gender-popup__close {
+  width: 52rpx;
+  height: 52rpx;
   border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-caption);
+  line-height: 1;
+}
+
+.edit-gender-popup__tags {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.edit-gender-popup__tag {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-large);
   background: var(--color-surface-soft);
   transition: all var(--motion-fast) var(--ease-standard);
 }
 
-.edit-gender__item--active {
-  background: var(--color-primary);
+.edit-gender-popup__tag--pressed {
+  transform: scale(0.97);
+  opacity: 0.8;
 }
 
-.edit-gender__text {
+.edit-gender-popup__tag--active {
+  background: var(--color-primary-soft);
+  border: 2rpx solid var(--color-primary);
+}
+
+.edit-gender-popup__tag-icon {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  line-height: 1;
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-  font-size: var(--font-meta);
-  font-weight: var(--weight-semibold);
+  flex-shrink: 0;
 }
 
-.edit-gender__item--active .edit-gender__text {
+.edit-gender-popup__tag--active .edit-gender-popup__tag-icon {
+  background: var(--color-primary);
   color: #fff;
+}
+
+.edit-gender-popup__tag-text {
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  font-weight: var(--weight-medium);
+}
+
+.edit-gender-popup__tag--active .edit-gender-popup__tag-text {
+  color: var(--color-primary);
+  font-weight: var(--weight-semibold);
 }
 
 /* ========== 提交 ========== */

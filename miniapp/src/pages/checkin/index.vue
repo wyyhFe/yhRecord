@@ -1,19 +1,15 @@
 <template>
   <view class="page-shell-safe checkin-page">
-    <!-- Hero 头部 -->
-    <view class="checkin-hero">
-      <view class="checkin-hero__top">
-        <text class="checkin-hero__date">{{ todayDisplay }}</text>
-        <!-- 圆形进度 -->
-        <view class="checkin-hero__ring">
-          <view class="checkin-hero__ring-bg">
-            <view class="checkin-hero__ring-text">{{ progressPercent }}%</view>
-          </view>
-        </view>
+    <!-- 顶栏 -->
+    <view class="checkin-header">
+      <view class="checkin-header__left">
+        <text class="checkin-header__title">今日打卡</text>
+        <text class="checkin-header__count">
+          已完成 {{ todayDoneIds.size }} / {{ tasks.length }} 个任务
+        </text>
       </view>
-      <view class="checkin-hero__title">今日打卡</view>
-      <view class="checkin-hero__sub">
-        已完成 <text class="checkin-hero__highlight">{{ todayDoneIds.size }}</text> / {{ tasks.length }} 个任务
+      <view class="checkin-header__ring">
+        <text class="checkin-header__ring-text">{{ progressPercent }}%</text>
       </view>
     </view>
 
@@ -38,54 +34,51 @@
         <text class="checkin-card__badge">{{ tasks.length }}</text>
       </view>
 
-      <view v-if="tasks.length" class="task-list">
+      <view v-if="tasks && tasks.length" class="task-list">
         <u-swipe-action
           v-for="(task, index) in tasks"
           :key="task.id"
           :options="deleteSwipeOptions"
           :index="index"
-          btn-width="140"
+          btn-width="160"
+          bg-color="var(--color-surface-soft)"
           @click="onSwipeDelete"
         >
           <view
             class="task-item"
             :class="{ 'task-item--done': todayDoneIds.has(task.id) }"
           >
-            <view class="task-item__content">
-              <view class="task-item__left">
-                <view class="task-item__status" :class="{ 'task-item__status--done': todayDoneIds.has(task.id) }">
-                  <text v-if="todayDoneIds.has(task.id)">✓</text>
-                </view>
-                <view class="task-item__info">
-                  <text class="task-item__name">{{ task.name }}</text>
-                  <text class="task-item__meta">{{ task.totalCount }} 次 · {{ task.latestCheckedAt || '暂无记录' }}</text>
-                </view>
+            <view class="task-item__left">
+              <view class="task-item__status" :class="{ 'task-item__status--done': todayDoneIds.has(task.id) }">
+                <text v-if="todayDoneIds.has(task.id)">✓</text>
               </view>
-              <view class="task-item__right">
-                <view
-                  v-if="!todayDoneIds.has(task.id)"
-                  class="task-item__btn"
-                  hover-class="task-item__btn--pressed"
-                  @click="handleCheckin(task)"
-                >
-                  <text class="task-item__btn-text">打卡</text>
-                </view>
-                <view v-else class="task-item__done-badge">
-                  <text class="task-item__done-text">已完成</text>
-                </view>
+              <view class="task-item__info">
+                <text class="task-item__name">{{ task.name }}</text>
+                <text class="task-item__meta">{{ task.totalCount }} 次 · {{ formatLatestTime(task.latestCheckedAt) }}</text>
               </view>
+            </view>
+            <view class="task-item__right">
+              <view
+                v-if="!todayDoneIds.has(task.id)"
+                class="task-item__btn"
+                hover-class="task-item__btn--pressed"
+                @click="handleCheckin(task)"
+              >
+                <text class="task-item__btn-text">打卡</text>
+              </view>
+              <text v-else class="task-item__done-text">已打卡</text>
             </view>
           </view>
         </u-swipe-action>
       </view>
-      <EmptyStateCard
-        v-else
-        :title="loadFailed ? '加载失败' : '还没有打卡任务'"
-        :description="loadFailed ? '请检查网络或登录状态' : '点击上方 ＋ 创建第一条任务'"
-      />
+      <view v-else class="checkin-empty">
+        <text class="checkin-empty__icon">{{ loadFailed ? '⚠️' : '✅' }}</text>
+        <text class="checkin-empty__title">{{ loadFailed ? '加载失败' : '还没有打卡任务' }}</text>
+        <text class="checkin-empty__desc">{{ loadFailed ? '请检查网络或登录状态' : '点击上方 ＋ 创建第一条任务' }}</text>
+      </view>
     </view>
 
-    <!-- 长按删除提示 -->
+    <!-- 左滑删除提示 -->
     <view v-if="tasks.length" class="checkin-hint">
       <text class="checkin-hint__text">左滑任务可删除</text>
     </view>
@@ -93,49 +86,75 @@
     <!-- 打卡弹窗 -->
     <u-popup v-model="showCheckinPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="true">
       <view class="checkin-popup">
-        <view class="checkin-popup__head">
-          <view class="checkin-popup__title">{{ checkinTargetTask?.name || '打卡' }}</view>
-          <view class="checkin-popup__subtitle">添加心情、标签、备注和图片（可选）</view>
-        </view>
-
-        <view class="block-stack">
-          <MoodPicker v-model="checkinMood" />
-        </view>
-
-        <view class="block-stack">
-          <TagPicker :tags="tags" v-model="checkinTagIds" @create-tag="handleCreateTag" />
-        </view>
-
-        <view class="block-stack">
-          <u-textarea
-            v-model="checkinRemark"
-            placeholder="一句话记录今天的感受..."
-            :border="true"
-            border-color="var(--color-border-strong)"
-            :custom-style="textareaStyle"
-            height="80"
-            :maxlength="50"
-          />
-          <view class="micro-record-counter" :class="{ 'is-over': checkinRemark.length > 50 }">
-            {{ checkinRemark.length }}/50
+        <scroll-view scroll-y class="checkin-popup__scroll">
+          <view class="checkin-popup__head">
+            <view class="checkin-popup__title">{{ checkinTargetTask?.name || '打卡' }}</view>
+            <view class="checkin-popup__subtitle">添加心情、标签、备注和图片（可选）</view>
           </view>
-        </view>
 
-        <view class="block-stack">
-          <PhotoPicker v-model="checkinPhotos" :max-count="9" @retry="retryCheckinPhotoUpload" />
-        </view>
+          <!-- 心情 -->
+          <view class="checkin-popup__section">
+            <MoodPicker v-model="checkinMood" />
+          </view>
 
-        <view class="checkin-popup__actions">
-          <u-button shape="circle" plain :hair-line="false" @click="showCheckinPopup = false">取消</u-button>
-          <u-button
-            shape="circle"
-            type="primary"
-            color="linear-gradient(135deg, var(--color-checkin) 0%, #B49AD8 100%)"
-            :loading="checkinSubmitting"
-            @click="confirmCheckin"
-          >
-            {{ checkinSubmitting ? '提交中...' : '确认打卡' }}
-          </u-button>
+          <!-- 标签行（点击弹出二级 popup） -->
+          <view class="checkin-popup__section">
+            <view class="checkin-popup__tag-row" @tap="showTagPickerPopup = true">
+              <text class="checkin-popup__tag-row-label">🏷️ 标签</text>
+              <view class="checkin-popup__tag-row-right">
+                <text class="checkin-popup__tag-row-value">
+                  {{ checkinTagIds.length ? `已选 ${checkinTagIds.length} 个` : '选择标签' }}
+                </text>
+                <text class="checkin-popup__tag-row-arrow">›</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 备注 -->
+          <view class="checkin-popup__section">
+            <textarea
+              v-model="checkinRemark"
+              class="checkin-popup__textarea"
+              placeholder="一句话记录今天的感受..."
+              :maxlength="50"
+            />
+            <view class="checkin-popup__counter" :class="{ 'is-over': checkinRemark.length > 50 }">
+              {{ checkinRemark.length }}/50
+            </view>
+          </view>
+
+          <!-- 图片 -->
+          <view class="checkin-popup__section">
+            <PhotoPicker v-model="checkinPhotos" :max-count="9" @retry="retryCheckinPhotoUpload" />
+          </view>
+
+          <!-- 操作按钮 -->
+          <view class="checkin-popup__actions">
+            <view class="checkin-popup__btn checkin-popup__btn--cancel" hover-class="checkin-popup__btn--pressed" @click="showCheckinPopup = false">
+              <text>取消</text>
+            </view>
+            <view class="checkin-popup__btn checkin-popup__btn--confirm" hover-class="checkin-popup__btn--pressed" @click="confirmCheckin">
+              <text>{{ checkinSubmitting ? '提交中' : '确认打卡' }}</text>
+            </view>
+        </view>
+      </scroll-view>
+      </view>
+    </u-popup>
+
+    <!-- 标签选择弹窗 -->
+    <u-popup v-model="showTagPickerPopup" mode="bottom" border-radius="28">
+      <view class="checkin-tag-popup" style="max-height: 65vh;">
+        <view class="checkin-tag-popup__head">
+          <text class="checkin-tag-popup__title">选择标签</text>
+          <text class="checkin-tag-popup__close" @tap="showTagPickerPopup = false">✕</text>
+        </view>
+        <scroll-view scroll-y class="checkin-tag-popup__scroll">
+          <TagPicker :tags="tags" v-model="checkinTagIds" @create-tag="handleCreateTag" />
+        </scroll-view>
+        <view class="checkin-tag-popup__foot">
+          <view class="checkin-tag-popup__btn" hover-class="checkin-tag-popup__btn--pressed" @tap="showTagPickerPopup = false">
+            <text>确定</text>
+          </view>
         </view>
       </view>
     </u-popup>
@@ -181,12 +200,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import EmptyStateCard from '@/components/business/empty-state-card'
+
 import PhotoPicker, { type SelectedPhoto } from '@/components/business/photo-picker/index.vue'
 import HeatmapCalendar from '@/components/business/heatmap-calendar/index.vue'
 import MoodPicker from '@/components/business/mood-picker/index.vue'
 import TagPicker from '@/components/business/tag-picker/index.vue'
 import { uploadImageToOss } from '@/utils/upload'
+import { formatLatestTime } from '@/utils/format'
 import MedalUnlockPopup from '@/components/business/medal-unlock-popup/index.vue'
 import MendCheckinPopup from './modules/mend-checkin-popup/index.vue'
 import {
@@ -207,6 +227,7 @@ const tasks = ref<CheckinTask[]>([])
 const loadFailed = ref(false)
 
 const showCheckinPopup = ref(false)
+const showTagPickerPopup = ref(false)
 const checkinTargetTask = ref<CheckinTask | null>(null)
 const checkinRemark = ref('')
 const checkinPhotos = ref<SelectedPhoto[]>([])
@@ -228,29 +249,18 @@ const showMedalPopup = ref(false)
 const unlockedMedal = ref<Medal | null>(null)
 const fabOpen = ref(false)
 
-// 左滑删除配置
 const deleteSwipeOptions = ref([
-  { text: '删除', style: { background: '#f56c6c', color: '#fff', fontSize: '26rpx', height: '100%' } }
+  { text: '删除', style: { background: 'var(--color-danger)', color: '#fff', fontSize: '26rpx' } }
 ])
 
-function onSwipeDelete(index: number, btnIndex: number) {
+function onSwipeDelete(index: number) {
   const task = tasks.value[index]
   if (task) handleDeleteTask(task)
-}
-
-const textareaStyle = {
-  background: 'var(--color-surface-soft)',
-  borderRadius: '20rpx',
-  padding: '18rpx 22rpx',
-  fontSize: '26rpx',
-  width: '100%',
-  boxSizing: 'border-box' as const
 }
 
 const WEEK = ['日', '一', '二', '三', '四', '五', '六']
 const now = new Date()
 const today = now.toISOString().slice(0, 10)
-const todayDisplay = `${now.getMonth() + 1}月${now.getDate()}日 周${WEEK[now.getDay()]}`
 const todayDoneIds = ref(new Set<Id>())
 
 const progressPercent = computed(() => {
@@ -267,7 +277,8 @@ function goMedals() {
 }
 
 async function loadTasks() {
-  tasks.value = await fetchCheckinTasks()
+  const result = await fetchCheckinTasks()
+  tasks.value = result.list || []
 }
 
 async function loadTodayStatus() {
@@ -490,74 +501,104 @@ onShow(() => {
 
 <style scoped lang="scss">
 .checkin-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
-/* ========== Hero 头部 ========== */
-.checkin-hero {
-  background: var(--color-checkin-gradient);
-  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-5) var(--space-6);
-  min-height: 200rpx;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  color: #fff;
-}
-
-.checkin-hero__top {
+/* ========== 顶栏 ========== */
+.checkin-header {
+  padding: var(--space-5) var(--space-6) var(--space-3);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-1);
 }
 
-.checkin-hero__date {
-  font-size: var(--font-tiny);
-  opacity: 0.8;
+.checkin-header__left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.checkin-header__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+}
+
+.checkin-header__count {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
 }
 
 /* 圆形进度 */
-.checkin-hero__ring {
-  width: 96rpx;
-  height: 96rpx;
+.checkin-header__ring {
+  width: 88rpx;
+  height: 88rpx;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-checkin-gradient);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(155, 126, 200, 0.3);
 }
 
-.checkin-hero__ring-bg {
-  width: 78rpx;
-  height: 78rpx;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.checkin-hero__ring-text {
+.checkin-header__ring-text {
   font-size: 24rpx;
   font-weight: var(--weight-bold);
+  color: #fff;
 }
 
-.checkin-hero__title {
-  font-size: var(--font-title);
-  font-weight: var(--weight-bold);
-  line-height: 1.2;
+/* ========== 卡片（热力图用） ========== */
+.checkin-card {
+  margin: var(--space-4) var(--space-4) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
 }
 
-.checkin-hero__sub {
-  margin-top: var(--space-2);
-  font-size: var(--font-meta);
-  opacity: 0.85;
+.checkin-card:last-child {
+  margin-bottom: var(--space-3);
 }
 
-.checkin-hero__highlight {
+.checkin-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.checkin-card__title {
+  color: var(--color-text-primary);
   font-size: var(--font-section);
   font-weight: var(--weight-bold);
+}
+
+.checkin-card__badge {
+  padding: 2rpx 14rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-checkin-soft);
+  color: var(--color-checkin);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-semibold);
+}
+
+.checkin-card__footer {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1rpx solid var(--color-divider);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.checkin-card__footer-text {
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+}
+
+.checkin-card__footer-divider {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
 }
 
 /* ========== 悬浮按钮 ========== */
@@ -723,57 +764,6 @@ onShow(() => {
   white-space: nowrap;
 }
 
-/* ========== 通用卡片 ========== */
-.checkin-card {
-  margin: var(--space-4) var(--space-4) 0;
-  background: var(--color-surface);
-  border-radius: var(--radius-large);
-  box-shadow: var(--shadow-card);
-  padding: var(--space-5);
-  overflow: hidden;
-}
-
-.checkin-card__header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
-}
-
-.checkin-card__title {
-  color: var(--color-text-primary);
-  font-size: var(--font-section);
-  font-weight: var(--weight-bold);
-}
-
-.checkin-card__badge {
-  padding: 2rpx 14rpx;
-  border-radius: var(--radius-full);
-  background: var(--color-checkin-soft);
-  color: var(--color-checkin);
-  font-size: var(--font-tiny);
-  font-weight: var(--weight-semibold);
-}
-
-.checkin-card__footer {
-  margin-top: var(--space-4);
-  padding-top: var(--space-3);
-  border-top: 1rpx solid var(--color-divider);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.checkin-card__footer-text {
-  color: var(--color-text-secondary);
-  font-size: var(--font-meta);
-}
-
-.checkin-card__footer-divider {
-  color: var(--color-text-muted);
-  font-size: var(--font-meta);
-}
-
 /* ========== 任务列表 ========== */
 .task-list {
   display: flex;
@@ -785,14 +775,18 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-medium);
   background: var(--color-surface-soft);
   transition: all var(--motion-fast) var(--ease-standard);
 }
 
 .task-item--done {
-  opacity: 0.65;
+  opacity: 0.6;
+}
+
+.task-item--pressed {
+  background: var(--color-surface-hover);
 }
 
 .task-item__left {
@@ -804,8 +798,8 @@ onShow(() => {
 }
 
 .task-item__status {
-  width: 48rpx;
-  height: 48rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: var(--radius-full);
   border: 3rpx solid var(--color-border-strong);
   display: flex;
@@ -819,7 +813,7 @@ onShow(() => {
   background: var(--color-checkin);
   border-color: var(--color-checkin);
   color: #fff;
-  font-size: 24rpx;
+  font-size: 20rpx;
   font-weight: var(--weight-bold);
 }
 
@@ -840,18 +834,18 @@ onShow(() => {
 
 .task-item__meta {
   display: block;
-  margin-top: 4rpx;
+  margin-top: 2rpx;
   color: var(--color-text-muted);
-  font-size: var(--font-tiny);
+  font-size: 20rpx;
 }
 
 .task-item__right {
   flex-shrink: 0;
-  margin-left: var(--space-3);
+  margin-left: var(--space-2);
 }
 
 .task-item__btn {
-  padding: var(--space-2) var(--space-5);
+  padding: 8rpx 20rpx;
   border-radius: var(--radius-full);
   background: var(--color-checkin-gradient);
   transition: all var(--motion-fast) var(--ease-standard);
@@ -864,19 +858,42 @@ onShow(() => {
 
 .task-item__btn-text {
   color: #fff;
-  font-size: var(--font-meta);
+  font-size: 22rpx;
   font-weight: var(--weight-semibold);
 }
 
-.task-item__done-badge {
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
-  background: var(--color-surface-soft);
+.task-item__done-text {
+  color: var(--color-checkin);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
 }
 
-.task-item__done-text {
+/* ========== 空状态 ========== */
+.checkin-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40rpx 0;
+}
+
+.checkin-empty__icon {
+  font-size: 64rpx;
+  line-height: 1;
+  margin-bottom: var(--space-3);
+}
+
+.checkin-empty__title {
+  color: var(--color-text-secondary);
+  font-size: var(--font-section);
+  line-height: var(--leading-snug);
+}
+
+.checkin-empty__desc {
+  margin-top: var(--space-1);
   color: var(--color-text-muted);
-  font-size: var(--font-meta);
+  font-size: var(--font-caption);
+  line-height: var(--leading-relaxed);
+  text-align: center;
 }
 
 /* ========== 提示 ========== */
@@ -892,8 +909,12 @@ onShow(() => {
 
 /* ========== 打卡弹窗 ========== */
 .checkin-popup {
-  padding: var(--space-6) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
   background: var(--color-bg);
+}
+
+.checkin-popup__scroll {
+  padding: var(--space-5) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
+  max-height: 65vh;
 }
 
 .checkin-popup__head {
@@ -908,29 +929,153 @@ onShow(() => {
 }
 
 .checkin-popup__subtitle {
-  margin-top: var(--space-2);
+  margin-top: var(--space-1);
   color: var(--color-text-muted);
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
 }
 
-.checkin-popup__actions {
-  margin-top: var(--space-5);
+.checkin-popup__section {
+  margin-bottom: var(--space-4);
+}
+
+/* 标签行 */
+.checkin-popup__tag-row {
   display: flex;
-  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-medium);
 }
 
-.checkin-popup__actions .u-button {
-  flex: 1;
+.checkin-popup__tag-row-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-body);
 }
 
-.micro-record-counter {
+.checkin-popup__tag-row-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.checkin-popup__tag-row-value {
+  color: var(--color-checkin);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
+}
+
+.checkin-popup__tag-row-arrow {
+  color: var(--color-text-muted);
+  font-size: 28rpx;
+}
+
+/* 备注 */
+.checkin-popup__textarea {
+  width: 100%;
+  min-height: 100rpx;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  box-sizing: border-box;
+}
+
+.checkin-popup__counter {
   text-align: right;
   margin-top: var(--space-1);
   color: var(--color-text-muted);
   font-size: var(--font-tiny);
 }
 
-.micro-record-counter.is-over {
+.checkin-popup__counter.is-over {
   color: var(--color-danger);
+}
+
+/* 操作按钮 */
+.checkin-popup__actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.checkin-popup__btn {
+  flex: 1;
+  text-align: center;
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-full);
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.checkin-popup__btn--cancel {
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+}
+
+.checkin-popup__btn--confirm {
+  background: var(--color-checkin-gradient);
+  color: #fff;
+}
+
+.checkin-popup__btn--pressed {
+  transform: scale(0.95);
+  opacity: 0.85;
+}
+
+/* ========== 标签选择弹窗 ========== */
+.checkin-tag-popup {
+  background: var(--color-bg);
+}
+
+.checkin-tag-popup__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-5) 0;
+}
+
+.checkin-tag-popup__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.checkin-tag-popup__close {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
+}
+
+.checkin-tag-popup__scroll {
+  padding: var(--space-4) var(--space-5);
+  max-height: calc(65vh - 140rpx);
+}
+
+.checkin-tag-popup__foot {
+  padding: 0 var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.checkin-tag-popup__btn {
+  text-align: center;
+  padding: var(--space-3) 0;
+  border-radius: var(--radius-full);
+  background: var(--color-checkin-gradient);
+  color: #fff;
+  font-size: var(--font-body);
+  font-weight: var(--weight-semibold);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.checkin-tag-popup__btn--pressed {
+  transform: scale(0.95);
+  opacity: 0.85;
 }
 </style>

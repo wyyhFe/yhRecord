@@ -140,7 +140,7 @@ async function loadHistory() {
       fetchMendRemaining()
     ])
     items.value = detail
-    allTasks.value = tasks
+    allTasks.value = tasks.list || []
     mendRemaining.value = remaining
   } catch {
     items.value = []

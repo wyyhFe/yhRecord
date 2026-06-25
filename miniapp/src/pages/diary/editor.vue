@@ -1,64 +1,51 @@
 <template>
   <view class="page-shell-safe diary-editor-page">
-    <!-- Hero -->
-    <view class="editor-hero">
-      <view class="editor-hero__top">
-        <view class="editor-hero__date" @tap="openDatePicker">
-          <text class="editor-hero__date-text">{{ displayDate }}</text>
-          <text class="editor-hero__date-arrow">›</text>
-        </view>
-        <u-button
-          size="small"
-          shape="circle"
-          type="primary"
-          color="rgba(255,255,255,0.25)"
-          :loading="submitting"
-          @click="submitDiary"
-        >
-          {{ submitting ? '保存中...' : '保存' }}
-        </u-button>
-      </view>
-
-      <!-- 属性选择 -->
-      <view class="editor-hero__attrs">
-        <view class="editor-hero__attr" @tap="openWeatherDialog">
-          <text class="editor-hero__attr-icon">{{ weatherDisplay.icon }}</text>
-          <text class="editor-hero__attr-text">{{ weatherDisplay.label }}</text>
-        </view>
-        <view class="editor-hero__attr" @tap="openMoodDialog">
-          <text class="editor-hero__attr-icon">{{ moodDisplay.icon }}</text>
-          <text class="editor-hero__attr-text">{{ moodDisplay.label }}</text>
-        </view>
-        <view class="editor-hero__attr" @tap="openTagDialog">
-          <text class="editor-hero__attr-icon">🏷️</text>
-          <text class="editor-hero__attr-text">{{ selectedTagSummary }}</text>
-        </view>
+    <!-- 顶栏 -->
+    <view class="editor-header">
+      <text class="editor-header__title">{{ isEdit ? '编辑日记' : '写日记' }}</text>
+      <view class="editor-header__action" hover-class="editor-header__action--pressed" @click="submitDiary">
+        <text class="editor-header__action-text">{{ submitting ? '保存中' : '发布' }}</text>
       </view>
     </view>
 
-    <!-- 标题 + 正文 -->
+    <!-- 主编辑区 -->
     <view class="editor-card">
       <input
         v-model="form.title"
-        class="editor-card__title-input"
+        class="editor-card__title"
         placeholder="给今天的记录起个标题"
         :maxlength="128"
       />
       <view class="editor-card__divider" />
       <textarea
         v-model="form.content"
-        class="editor-card__content-input"
+        class="editor-card__content"
         placeholder="时光易逝，点击记录..."
         :maxlength="3000"
         :auto-height="true"
         :max-height="600"
       />
+
+      <!-- 属性行（天气/心情/标签） -->
+      <view class="editor-card__attrs">
+        <view class="editor-card__attr" @tap="openWeatherDialog">
+          <text>{{ weatherDisplay.icon }} {{ weatherDisplay.label }}</text>
+        </view>
+        <view class="editor-card__attr" @tap="openMoodDialog">
+          <text>{{ moodDisplay.icon }} {{ moodDisplay.label }}</text>
+        </view>
+        <view class="editor-card__attr" @tap="openTagDialog">
+          <text>🏷️ {{ selectedTagSummary }}</text>
+        </view>
+      </view>
+
+      <!-- 底部：模板 + 字数 -->
       <view class="editor-card__footer">
         <view class="editor-card__templates">
-          <view class="editor-card__template" @tap="fillDraftTemplate">📝 草稿</view>
-          <view class="editor-card__template" @tap="fillWeekendTemplate">💬 佳句</view>
-          <view class="editor-card__template" @tap="fillMemoryTemplate">📋 模板</view>
-          <view class="editor-card__template" @tap="clearForm">🗑️ 清空</view>
+          <text class="editor-card__template" @tap="fillDraftTemplate">📝 草稿</text>
+          <text class="editor-card__template" @tap="fillWeekendTemplate">💬 佳句</text>
+          <text class="editor-card__template" @tap="fillMemoryTemplate">📋 模板</text>
+          <text class="editor-card__template" @tap="clearForm">🗑️ 清空</text>
         </view>
         <text class="editor-card__count">{{ form.content.length }}/3000</text>
       </view>
@@ -66,28 +53,17 @@
 
     <!-- 照片 -->
     <view class="editor-card">
-      <view class="editor-card__header">
-        <text class="editor-card__header-title">📷 照片</text>
-        <text class="editor-card__header-hint">支持从相册选择或拍照</text>
+      <view class="editor-card__section-head">
+        <text class="editor-card__section-title">📷 照片</text>
+        <text class="editor-card__section-action" @tap="openPhotoSection">添加</text>
       </view>
       <PhotoPicker ref="photoPickerRef" v-model="photos" @retry="retryUpload" />
     </view>
 
-    <!-- 位置 -->
+    <!-- 设置（日期 + 可见范围 + 位置） -->
     <view class="editor-card">
-      <view class="editor-card__header">
-        <text class="editor-card__header-title">📍 位置</text>
-        <view class="editor-card__header-action" @tap="openLocationSection">
-          <text class="editor-card__header-action-text">添加位置</text>
-        </view>
-      </view>
-      <LocationPicker ref="locationPickerRef" v-model="form.location" />
-    </view>
-
-    <!-- 设置 -->
-    <view class="editor-card">
-      <view class="editor-card__header">
-        <text class="editor-card__header-title">⚙️ 设置</text>
+      <view class="editor-card__section-head">
+        <text class="editor-card__section-title">⚙️ 设置</text>
       </view>
       <view class="editor-settings">
         <picker mode="date" :value="form.recordDate" @change="onDateChange">
@@ -110,6 +86,7 @@
             </view>
           </view>
         </picker>
+        <LocationPicker ref="locationPickerRef" v-model="form.location" />
       </view>
     </view>
 
@@ -198,13 +175,6 @@ const showWeatherDialog = ref(false)
 const showMoodDialog = ref(false)
 const showTagDialog = ref(false)
 
-const displayDate = computed(() => {
-  const d = form.value.recordDate
-  const month = Number(d.slice(5, 7))
-  const day = Number(d.slice(8, 10))
-  return `${month}月${day}日`
-})
-
 const weatherDisplay = computed(() => WEATHER_MAP[form.value.weather || ''] || { icon: '🌤️', label: '天气' })
 const moodDisplay = computed(() => MOOD_MAP[form.value.mood || ''] || { icon: '😊', label: '心情' })
 
@@ -255,9 +225,7 @@ function goTagManager() {
   showTagDialog.value = false
   uni.navigateTo({ url: '/pages/profile/tags/index' })
 }
-function openDatePicker() { uni.$feedback.info('日期可在下方设置里修改') }
 function openPhotoSection() { photoPickerRef.value?.openActionSheet() }
-function openLocationSection() { locationPickerRef.value?.pickManualLocation?.() }
 
 function fillDraftTemplate() {
   if (!form.value.title) form.value.title = '今天的小记'
@@ -355,113 +323,53 @@ onLoad((options) => {
 
 <style scoped lang="scss">
 .diary-editor-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
-/* ========== Hero ========== */
-.editor-hero {
-  background: var(--color-diary-gradient);
-  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-6) var(--space-6) var(--space-7);
-  color: #fff;
-}
-
-.editor-hero__top {
+/* ========== 顶栏 ========== */
+.editor-header {
+  padding: var(--space-5) var(--space-6) var(--space-4);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-5);
 }
 
-.editor-hero__date {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.editor-hero__date-text {
+.editor-header__title {
+  color: var(--color-text-primary);
   font-size: var(--font-title);
   font-weight: var(--weight-bold);
 }
 
-.editor-hero__date-arrow {
-  font-size: 32rpx;
-  opacity: 0.7;
-}
-
-.editor-hero__attrs {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.editor-hero__attr {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6rpx;
-  padding: var(--space-3) 0;
-  border-radius: var(--radius-medium);
-  background: rgba(255, 255, 255, 0.18);
+.editor-header__action {
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-full);
+  background: var(--color-diary-gradient);
   transition: all var(--motion-fast) var(--ease-standard);
 }
 
-.editor-hero__attr:active {
-  background: rgba(255, 255, 255, 0.3);
+.editor-header__action--pressed {
+  transform: scale(0.93);
+  opacity: 0.85;
 }
 
-.editor-hero__attr-icon {
-  font-size: 32rpx;
-  line-height: 1;
-}
-
-.editor-hero__attr-text {
-  font-size: var(--font-tiny);
-  opacity: 0.9;
+.editor-header__action-text {
+  color: #fff;
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
 }
 
 /* ========== 编辑卡片 ========== */
 .editor-card {
-  margin: var(--space-4) var(--space-4) 0;
+  margin: 0 var(--space-4) var(--space-3);
   background: var(--color-surface);
   border-radius: var(--radius-large);
   box-shadow: var(--shadow-card);
   padding: var(--space-5);
 }
 
-.editor-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-4);
-}
-
-.editor-card__header-title {
-  color: var(--color-text-primary);
-  font-size: var(--font-section);
-  font-weight: var(--weight-bold);
-}
-
-.editor-card__header-hint {
-  color: var(--color-text-muted);
-  font-size: var(--font-tiny);
-}
-
-.editor-card__header-action {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--color-diary-soft);
-}
-
-.editor-card__header-action-text {
-  color: var(--color-diary);
-  font-size: var(--font-tiny);
-  font-weight: var(--weight-semibold);
-}
-
-.editor-card__title-input {
+.editor-card__title {
   width: 100%;
-  font-size: var(--font-title);
+  font-size: var(--font-display);
   font-weight: var(--weight-bold);
   color: var(--color-text-primary);
   min-height: 80rpx;
@@ -473,7 +381,7 @@ onLoad((options) => {
   margin: var(--space-3) 0;
 }
 
-.editor-card__content-input {
+.editor-card__content {
   width: 100%;
   min-height: 240rpx;
   font-size: var(--font-body);
@@ -481,6 +389,31 @@ onLoad((options) => {
   line-height: var(--leading-loose);
 }
 
+/* 属性行 */
+.editor-card__attrs {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.editor-card__attr {
+  flex: 1;
+  text-align: center;
+  padding: var(--space-2) 0;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  color: var(--color-text-secondary);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-medium);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.editor-card__attr:active {
+  transform: scale(0.95);
+  opacity: 0.7;
+}
+
+/* 底部 */
 .editor-card__footer {
   margin-top: var(--space-4);
   display: flex;
@@ -490,16 +423,16 @@ onLoad((options) => {
 
 .editor-card__templates {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .editor-card__template {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
   background: var(--color-surface-soft);
   color: var(--color-text-secondary);
-  font-size: var(--font-tiny);
+  font-size: 20rpx;
   transition: all var(--motion-fast) var(--ease-standard);
 }
 
@@ -513,6 +446,29 @@ onLoad((options) => {
   flex-shrink: 0;
 }
 
+/* ========== 区块头 ========== */
+.editor-card__section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.editor-card__section-title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.editor-card__section-action {
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-diary-soft);
+  color: var(--color-diary);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-semibold);
+}
+
 /* ========== 设置 ========== */
 .editor-settings {
   display: flex;
@@ -523,7 +479,7 @@ onLoad((options) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) 0;
+  padding: var(--space-3) 0;
   border-bottom: 1rpx solid var(--color-divider);
 
   &:last-child {
@@ -546,6 +502,10 @@ onLoad((options) => {
   color: var(--color-text-primary);
   font-size: var(--font-body);
   font-weight: var(--weight-medium);
+  max-width: 300rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .editor-setting-row__arrow {

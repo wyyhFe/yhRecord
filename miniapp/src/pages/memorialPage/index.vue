@@ -1,14 +1,12 @@
 <template>
   <view class="page-shell-safe memorial-page">
-    <!-- Hero -->
-    <view class="memorial-hero">
-      <text class="memorial-hero__icon">📅</text>
-      <text class="memorial-hero__title">纪念日管理</text>
-      <text class="memorial-hero__sub">重要日期提醒、首页和去年今日都会复用</text>
+    <!-- 顶栏 -->
+    <view class="memorial-header">
+      <text class="memorial-header__title">纪念日管理</text>
     </view>
 
     <!-- 列表 -->
-    <view v-if="items.length" class="memorial-list">
+    <view v-if="items && items.length" class="memorial-list">
       <view v-for="item in items" :key="item.id" class="memorial-item">
         <view class="memorial-item__header">
           <text class="memorial-item__title">{{ item.title }}</text>
@@ -25,7 +23,12 @@
         </view>
       </view>
     </view>
-    <EmptyStateCard v-else title="还没有纪念日" description="新建一条重要日期，提醒和回顾页面会自动使用" />
+    <!-- 空状态 -->
+    <view v-else class="memorial-empty">
+      <text class="memorial-empty__icon">📅</text>
+      <text class="memorial-empty__title">还没有纪念日</text>
+      <text class="memorial-empty__desc">新建一条重要日期，提醒和回顾页面会自动使用</text>
+    </view>
 
     <!-- 新建按钮 -->
     <view class="memorial-action">
@@ -109,7 +112,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import EmptyStateCard from '@/components/business/empty-state-card'
+
 import {
   createMemorialDay,
   deleteMemorialDay,
@@ -195,7 +198,10 @@ function editItem(item: MemorialDay) {
 function formatReminder(value: string) { return value.replace('T', ' ').slice(0, 16) }
 
 async function loadMemorialDays() {
-  try { items.value = await fetchMemorialDays() }
+  try {
+    const result = await fetchMemorialDays()
+    items.value = result.list || []
+  }
   catch (error) { items.value = []; uni.$feedback.error(error, undefined, '加载失败') }
 }
 
@@ -225,35 +231,18 @@ onShow(() => { loadMemorialDays() })
 
 <style scoped lang="scss">
 .memorial-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
-/* ========== Hero ========== */
-.memorial-hero {
-  background: var(--color-memory-gradient);
-  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-5) var(--space-6) var(--space-5);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  color: #fff;
+/* ========== 顶栏 ========== */
+.memorial-header {
+  padding: var(--space-5) var(--space-6) var(--space-3);
 }
 
-.memorial-hero__icon {
-  font-size: 44rpx;
-  margin-bottom: var(--space-2);
-}
-
-.memorial-hero__title {
+.memorial-header__title {
+  color: var(--color-text-primary);
   font-size: var(--font-title);
   font-weight: var(--weight-bold);
-}
-
-.memorial-hero__sub {
-  margin-top: var(--space-1);
-  font-size: var(--font-tiny);
-  opacity: 0.85;
 }
 
 /* ========== 列表 ========== */
@@ -335,6 +324,34 @@ onShow(() => { loadMemorialDays() })
   margin-top: var(--space-3);
   display: flex;
   gap: var(--space-3);
+}
+
+/* ========== 空状态 ========== */
+.memorial-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80rpx var(--space-6) 40rpx;
+}
+
+.memorial-empty__icon {
+  font-size: 96rpx;
+  line-height: 1;
+  margin-bottom: var(--space-5);
+}
+
+.memorial-empty__title {
+  color: var(--color-text-secondary);
+  font-size: var(--font-section);
+  line-height: var(--leading-snug);
+}
+
+.memorial-empty__desc {
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-caption);
+  line-height: var(--leading-relaxed);
+  text-align: center;
 }
 
 /* ========== 操作 ========== */

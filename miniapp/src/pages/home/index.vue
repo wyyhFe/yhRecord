@@ -240,7 +240,7 @@ onLoad(() => {
  * ========================================================= */
 
 .home-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
 /* ---------- 1. Hero 渐变头部 ---------- */

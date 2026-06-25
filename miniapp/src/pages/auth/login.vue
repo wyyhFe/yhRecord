@@ -55,8 +55,13 @@ async function handleLogin() {
     tokenStorage.setAccessToken(result.accessToken)
     tokenStorage.setRefreshToken(result.refreshToken)
     uni.$feedback.success('登录成功')
-    // 登录成功后返回上一页
-    uni.navigateBack()
+    // 登录成功后返回上一页；若已是首页则切到 tab（home 在 tabBar 中）
+    const pages = getCurrentPages()
+    if (pages.length > 1) {
+      uni.navigateBack()
+    } else {
+      uni.switchTab({ url: '/pages/home/index' })
+    }
   } catch (error) {
     uni.$feedback.error(error, undefined, '登录失败，请稍后重试')
     console.error('[Login]', error)

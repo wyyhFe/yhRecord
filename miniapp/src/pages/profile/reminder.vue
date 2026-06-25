@@ -1,10 +1,8 @@
 <template>
   <view class="page-shell-safe reminder-page">
-    <!-- Hero -->
-    <view class="reminder-hero">
-      <text class="reminder-hero__icon">🔔</text>
-      <text class="reminder-hero__title">提醒设置</text>
-      <text class="reminder-hero__sub">管理订阅消息和公众号提醒通道</text>
+    <!-- 顶栏 -->
+    <view class="reminder-header">
+      <text class="reminder-header__title">提醒设置</text>
     </view>
 
     <!-- 固定提醒时间 -->
@@ -149,35 +147,18 @@ onMounted(() => { init() })
 
 <style scoped lang="scss">
 .reminder-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
-/* ========== Hero ========== */
-.reminder-hero {
-  background: var(--color-primary-gradient);
-  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-8) var(--space-6) var(--space-7);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  color: #fff;
+/* ========== 顶栏 ========== */
+.reminder-header {
+  padding: var(--space-5) var(--space-6) var(--space-3);
 }
 
-.reminder-hero__icon {
-  font-size: 56rpx;
-  margin-bottom: var(--space-3);
-}
-
-.reminder-hero__title {
+.reminder-header__title {
+  color: var(--color-text-primary);
   font-size: var(--font-title);
   font-weight: var(--weight-bold);
-}
-
-.reminder-hero__sub {
-  margin-top: var(--space-2);
-  font-size: var(--font-meta);
-  opacity: 0.85;
 }
 
 /* ========== 卡片 ========== */

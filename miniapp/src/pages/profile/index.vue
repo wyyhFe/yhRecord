@@ -1,35 +1,38 @@
 <template>
   <view class="page-shell-safe profile-page">
-    <!-- Hero -->
-    <view class="profile-hero">
-      <view class="profile-hero__main">
-        <view class="profile-hero__avatar">
-          <image v-if="profile?.avatarPath" :src="profile.avatarPath" mode="aspectFill" class="profile-hero__avatar-img" />
-          <text v-else class="profile-hero__avatar-text">{{ avatarText }}</text>
-        </view>
-        <view class="profile-hero__info">
-          <text class="profile-hero__name">{{ profile?.nickname || '未设置昵称' }}</text>
-          <text class="profile-hero__sign">{{ profile?.signature || '把生活慢慢记下来' }}</text>
-        </view>
+    <!-- 用户信息区 -->
+    <view class="profile-user">
+      <view class="profile-user__avatar">
+        <image v-if="profile?.avatarPath" :src="profile.avatarPath" mode="aspectFill" class="profile-user__avatar-img" />
+        <text v-else class="profile-user__avatar-text">{{ avatarText }}</text>
       </view>
-      <view class="profile-hero__stats">
-        <view class="profile-hero__stat">
-          <text class="profile-hero__stat-value">{{ profile?.diaryCount ?? 0 }}</text>
-          <text class="profile-hero__stat-label">日记</text>
-        </view>
-        <view class="profile-hero__stat">
-          <text class="profile-hero__stat-value">{{ profile?.birthday || '--' }}</text>
-          <text class="profile-hero__stat-label">生日</text>
-        </view>
-        <view class="profile-hero__stat">
-          <text class="profile-hero__stat-value">{{ genderLabel }}</text>
-          <text class="profile-hero__stat-label">性别</text>
-        </view>
+      <text class="profile-user__name">{{ profile?.nickname || '未设置昵称' }}</text>
+      <text class="profile-user__sign">{{ profile?.signature || '把生活慢慢记下来' }}</text>
+    </view>
+
+    <!-- 统计三列 -->
+    <view class="profile-stats">
+      <view class="profile-stats__item">
+        <text class="profile-stats__value">{{ profile?.diaryCount ?? 0 }}</text>
+        <text class="profile-stats__label">日记</text>
+      </view>
+      <view class="profile-stats__divider" />
+      <view class="profile-stats__item">
+        <text class="profile-stats__value">{{ profile?.birthday || '--' }}</text>
+        <text class="profile-stats__label">生日</text>
+      </view>
+      <view class="profile-stats__divider" />
+      <view class="profile-stats__item">
+        <text class="profile-stats__value">{{ genderLabel }}</text>
+        <text class="profile-stats__label">性别</text>
       </view>
     </view>
 
     <!-- 快捷操作 -->
     <view class="profile-card">
+      <view class="profile-card__header">
+        <text class="profile-card__title">快捷操作</text>
+      </view>
       <view class="profile-shortcuts">
         <view class="profile-shortcut" hover-class="profile-shortcut--pressed" @click="goEditProfile">
           <text class="profile-shortcut__icon">✏️</text>
@@ -50,13 +53,13 @@
       </view>
     </view>
 
-    <!-- 功能列表 -->
+    <!-- 设置菜单 -->
     <view class="profile-card">
       <view class="profile-card__header">
         <text class="profile-card__title">设置</text>
       </view>
       <view class="profile-menu">
-        <view v-for="item in menuItems" :key="item.key" class="profile-menu__item" @tap="handleSelect(item.key)">
+        <view v-for="item in menuItems" :key="item.key" class="profile-menu__item" hover-class="profile-menu__item--pressed" @tap="handleSelect(item.key)">
           <view class="profile-menu__left">
             <text class="profile-menu__icon">{{ item.icon }}</text>
             <view class="profile-menu__info">
@@ -120,75 +123,66 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .profile-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
-/* ========== Hero ========== */
-.profile-hero {
-  background: var(--color-primary-gradient);
-  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-7) var(--space-6) var(--space-6);
-  color: #fff;
-}
-
-.profile-hero__main {
+/* ========== 用户信息 ========== */
+.profile-user {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
+  padding: var(--space-8) var(--space-6) var(--space-5);
 }
 
-.profile-hero__avatar {
-  width: 112rpx;
-  height: 112rpx;
+.profile-user__avatar {
+  width: 128rpx;
+  height: 128rpx;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-primary-soft);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  flex-shrink: 0;
+  margin-bottom: var(--space-4);
+  box-shadow: 0 0 0 6rpx var(--color-primary-soft);
 }
 
-.profile-hero__avatar-img {
+.profile-user__avatar-img {
   width: 100%;
   height: 100%;
 }
 
-.profile-hero__avatar-text {
-  font-size: 48rpx;
+.profile-user__avatar-text {
+  font-size: 52rpx;
   font-weight: var(--weight-bold);
+  color: var(--color-primary);
 }
 
-.profile-hero__info {
-  flex: 1;
-  min-width: 0;
-}
-
-.profile-hero__name {
-  display: block;
+.profile-user__name {
+  color: var(--color-text-primary);
   font-size: var(--font-title);
   font-weight: var(--weight-bold);
+  line-height: var(--leading-tight);
 }
 
-.profile-hero__sign {
-  display: block;
+.profile-user__sign {
   margin-top: var(--space-2);
+  color: var(--color-text-muted);
   font-size: var(--font-meta);
-  opacity: 0.85;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.profile-hero__stats {
+/* ========== 统计 ========== */
+.profile-stats {
+  margin: 0 var(--space-6) var(--space-4);
   display: flex;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: var(--radius-medium);
-  padding: var(--space-3) 0;
+  align-items: center;
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4) 0;
 }
 
-.profile-hero__stat {
+.profile-stats__item {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -196,19 +190,26 @@ onMounted(() => {
   gap: 4rpx;
 }
 
-.profile-hero__stat-value {
+.profile-stats__value {
+  color: var(--color-text-primary);
   font-size: var(--font-body);
   font-weight: var(--weight-bold);
 }
 
-.profile-hero__stat-label {
+.profile-stats__label {
+  color: var(--color-text-muted);
   font-size: var(--font-tiny);
-  opacity: 0.8;
+}
+
+.profile-stats__divider {
+  width: 1rpx;
+  height: 48rpx;
+  background: var(--color-divider);
 }
 
 /* ========== 卡片 ========== */
 .profile-card {
-  margin: var(--space-4) var(--space-4) 0;
+  margin: 0 var(--space-4) var(--space-3);
   background: var(--color-surface);
   border-radius: var(--radius-large);
   box-shadow: var(--shadow-card);
@@ -265,10 +266,15 @@ onMounted(() => {
   justify-content: space-between;
   padding: var(--space-4) 0;
   border-bottom: 1rpx solid var(--color-divider);
+  transition: all var(--motion-fast) var(--ease-standard);
 
   &:last-child {
     border-bottom: none;
   }
+}
+
+.profile-menu__item--pressed {
+  opacity: 0.6;
 }
 
 .profile-menu__left {

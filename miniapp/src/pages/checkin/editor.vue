@@ -1,10 +1,8 @@
 <template>
   <view class="page-shell-safe editor-page">
-    <!-- Hero -->
-    <view class="editor-hero">
-      <text class="editor-hero__icon">✓</text>
-      <text class="editor-hero__title">创建打卡任务</text>
-      <text class="editor-hero__sub">设定一个小目标，每天坚持完成</text>
+    <!-- 顶栏 -->
+    <view class="editor-header">
+      <text class="editor-header__title">创建打卡任务</text>
     </view>
 
     <!-- 表单卡片 -->
@@ -133,41 +131,18 @@ async function submit() {
 
 <style scoped lang="scss">
 .editor-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
-/* ========== Hero ========== */
-.editor-hero {
-  background: var(--color-checkin-gradient);
-  border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-8) var(--space-6) var(--space-7);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  color: #fff;
+/* ========== 顶栏 ========== */
+.editor-header {
+  padding: var(--space-5) var(--space-6) var(--space-3);
 }
 
-.editor-hero__icon {
-  width: 96rpx;
-  height: 96rpx;
-  line-height: 96rpx;
-  text-align: center;
-  font-size: 48rpx;
-  border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.2);
-  margin-bottom: var(--space-4);
-}
-
-.editor-hero__title {
+.editor-header__title {
+  color: var(--color-text-primary);
   font-size: var(--font-title);
   font-weight: var(--weight-bold);
-}
-
-.editor-hero__sub {
-  margin-top: var(--space-2);
-  font-size: var(--font-meta);
-  opacity: 0.85;
 }
 
 /* ========== 表单卡片 ========== */

@@ -66,7 +66,10 @@ const showCreate = ref(false)
 const submitting = ref(false)
 const form = ref({ name: '', description: '' })
 
-async function loadBooks() { books.value = await fetchBooks() }
+async function loadBooks() {
+  const result = await fetchBooks()
+  books.value = result.list || []
+}
 
 function enterBook(book: LedgerBook) {
   setLastLedgerBook({ id: book.id, name: book.name })
@@ -94,7 +97,7 @@ onShow(() => { loadBooks().catch((e) => uni.$feedback.error(e, undefined, 'åŠ è½
 
 <style scoped lang="scss">
 .books-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
 /* ========== Hero ========== */

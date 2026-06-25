@@ -121,7 +121,7 @@ onShow(() => { loadOnThisDay() })
 
 <style scoped lang="scss">
 .memory-page {
-  padding-bottom: var(--space-10);
+  padding-bottom: var(--bottom-padding);
 }
 
 /* ========== Hero ========== */

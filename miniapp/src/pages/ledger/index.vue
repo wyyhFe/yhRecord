@@ -780,7 +780,8 @@ async function removeEntry() {
 }
 
 async function loadBooks() {
-  books.value = await fetchBooks()
+  const result = await fetchBooks()
+  books.value = result.list || []
   if (selectedBookId.value) {
     const target = books.value.find((item) => item.id === selectedBookId.value)
     if (target) {
@@ -795,12 +796,14 @@ async function loadTags() {
 }
 
 async function loadMonthEntries() {
-  entries.value = await fetchMonthLedger(currentYear.value, currentMonth.value, selectedBookId.value)
+  const result = await fetchMonthLedger(currentYear.value, currentMonth.value, selectedBookId.value)
+  entries.value = result.list || []
 }
 
 async function loadYearStats() {
   // 年视图改成一次性拉全年明细，避免前端按 1~12 月连续触发 12 次接口请求。
-  const yearEntries = await fetchYearLedger(currentYear.value, selectedBookId.value)
+  const result = await fetchYearLedger(currentYear.value, selectedBookId.value)
+  const yearEntries = result.list || []
   const monthMap = new Map<number, LedgerEntry[]>()
   for (const entry of yearEntries) {
     // 把全年明细按月份分桶，后面图表会直接消费这个月度聚合结果。
@@ -866,7 +869,7 @@ onShow(() => {
 
 <style scoped lang="scss">
 .ledger-page {
-  padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--bottom-padding) + env(safe-area-inset-bottom));
 }
 
 /* ========== Hero ========== */
