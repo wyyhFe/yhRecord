@@ -27,37 +27,36 @@
 
       <view v-if="tags.length" class="tags-grid">
         <view v-for="item in tags" :key="item.id" class="tag-chip tag-chip--user">
-          <text class="tag-chip__color" :style="{ background: item.color || 'var(--color-checkin)' }" />
+          <text v-if="item.icon" class="tag-chip__icon">{{ item.icon }}</text>
+          <text v-else class="tag-chip__color" :style="{ background: 'var(--color-checkin)' }" />
           <text class="tag-chip__name">{{ item.name }}</text>
           <text class="tag-chip__delete" @click.stop="removeTag(item.id)">×</text>
         </view>
       </view>
       <view v-else class="tags-empty">
-        <text class="tags-empty__text">还没有标签，从下方模板添加吧</text>
+        <text class="tags-empty__text">{{ isCheckin ? '还没有标签，点击下方按钮新增' : '还没有标签，从下方模板添加吧' }}</text>
       </view>
     </view>
 
     <!-- 系统模板 -->
-    <view class="tags-card">
+    <view v-if="templates.length" class="tags-card">
       <view class="tags-card__header">
         <text class="tags-card__title">系统模板</text>
         <text class="tags-card__badge">{{ templates.length }}</text>
       </view>
 
-      <view v-if="templates.length" class="tags-grid">
+      <view class="tags-grid">
         <view
           v-for="item in templates"
           :key="item.id"
           class="tag-chip tag-chip--template"
           @click="useTemplate(item.id)"
         >
-          <text class="tag-chip__color" :style="{ background: item.color || 'var(--color-text-muted)' }" />
+          <text v-if="item.icon" class="tag-chip__icon">{{ item.icon }}</text>
+          <text v-else class="tag-chip__color" :style="{ background: 'var(--color-text-muted)' }" />
           <text class="tag-chip__name">{{ item.name }}</text>
           <text class="tag-chip__add">+</text>
         </view>
-      </view>
-      <view v-else class="tags-empty">
-        <text class="tags-empty__text">暂无可用模板</text>
       </view>
     </view>
 
@@ -66,7 +65,7 @@
       <u-button
         shape="circle"
         type="primary"
-        :color="isLedger ? 'var(--color-ledger-gradient)' : 'var(--color-diary-gradient)'"
+        :color="isCheckin ? 'var(--color-checkin-gradient)' : isLedger ? 'var(--color-ledger-gradient)' : 'var(--color-diary-gradient)'"
         @click="createCustomTag"
       >
         ＋ 新增自定义标签
@@ -88,6 +87,7 @@ import {
   type TagItem,
   type TagModuleType
 } from '@/api/tag'
+import { fetchCheckinTags, createCheckinTag, deleteCheckinTag } from '@/api/checkin'
 import type { Id } from '@/types/domain'
 
 const templates = ref<TagItem[]>([])
@@ -102,28 +102,45 @@ const ledgerTypeOptions = [
   { label: '收入', value: 'INCOME' as LedgerTagType }
 ]
 
-const pageTitle = computed(() => (isLedger.value ? '记账标签' : '日记标签'))
-const pageDesc = computed(() =>
-  isLedger.value
+const isCheckin = computed(() => moduleType.value === 'CHECKIN')
+
+const pageTitle = computed(() => {
+  if (isCheckin.value) return '打卡标签'
+  return isLedger.value ? '记账标签' : '日记标签'
+})
+const pageDesc = computed(() => {
+  if (isCheckin.value) return '管理打卡标签，打卡时快速选择'
+  return isLedger.value
     ? '按支出和收入分别管理，记账时快速选择'
     : '管理日记标签，记录生活分类'
-)
+})
 
 function currentLedgerType() {
   return isLedger.value ? ledgerType.value : undefined
 }
 
 async function loadData() {
-  const [templateList, tagList] = await Promise.all([
-    fetchTagTemplates(moduleType.value, currentLedgerType()),
-    fetchUserTags(moduleType.value, currentLedgerType())
-  ])
-  templates.value = templateList
-  tags.value = tagList
+  if (isCheckin.value) {
+    const list = await fetchCheckinTags()
+    tags.value = list.filter((t) => !t.isSystem) as unknown as TagItem[]
+    templates.value = list.filter((t) => t.isSystem) as unknown as TagItem[]
+  } else {
+    const [templateList, tagList] = await Promise.all([
+      fetchTagTemplates(moduleType.value, currentLedgerType()),
+      fetchUserTags(moduleType.value, currentLedgerType())
+    ])
+    templates.value = templateList
+    tags.value = tagList
+  }
 }
 
 async function useTemplate(templateId: Id) {
-  await createTagFromTemplate(templateId, moduleType.value)
+  if (isCheckin.value) {
+    const tmpl = templates.value.find((t) => t.id === templateId)
+    await createCheckinTag({ name: tmpl!.name, icon: tmpl!.icon })
+  } else {
+    await createTagFromTemplate(templateId, moduleType.value)
+  }
   uni.$feedback.success('已添加')
   await loadData()
 }
@@ -133,17 +150,21 @@ async function createCustomTag() {
     title: '新增标签',
     content: '请输入标签名称',
     editable: true,
-    placeholderText: isLedger.value ? '例如：餐饮、工资' : '例如：旅行、生活'
+    placeholderText: isCheckin.value ? '例如：运动、读书' : isLedger.value ? '例如：餐饮、工资' : '例如：旅行、生活'
   })
 
   const name = result.content?.trim()
   if (!result.confirm || !name) return
 
-  await createTag({
-    name,
-    moduleType: moduleType.value,
-    ledgerType: currentLedgerType()
-  })
+  if (isCheckin.value) {
+    await createCheckinTag({ name })
+  } else {
+    await createTag({
+      name,
+      moduleType: moduleType.value,
+      ledgerType: currentLedgerType()
+    })
+  }
   uni.$feedback.success('标签已创建')
   await loadData()
 }
@@ -155,7 +176,11 @@ async function removeTag(id: Id) {
   })
   if (!result.confirm) return
 
-  await deleteTag(id)
+  if (isCheckin.value) {
+    await deleteCheckinTag(id)
+  } else {
+    await deleteTag(id)
+  }
   uni.$feedback.success('已删除')
   await loadData()
 }
@@ -169,6 +194,8 @@ watch(ledgerType, () => {
 onLoad((query) => {
   if (query?.moduleType === 'LEDGER') {
     moduleType.value = 'LEDGER'
+  } else if (query?.moduleType === 'CHECKIN') {
+    moduleType.value = 'CHECKIN'
   }
   if (query?.ledgerType === 'INCOME') {
     ledgerType.value = 'INCOME'
@@ -291,6 +318,12 @@ onLoad((query) => {
   width: 16rpx;
   height: 16rpx;
   border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.tag-chip__icon {
+  font-size: 28rpx;
+  line-height: 1;
   flex-shrink: 0;
 }
 

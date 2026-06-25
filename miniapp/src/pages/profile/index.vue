@@ -28,31 +28,6 @@
       </view>
     </view>
 
-    <!-- 快捷操作 -->
-    <view class="profile-card">
-      <view class="profile-card__header">
-        <text class="profile-card__title">快捷操作</text>
-      </view>
-      <view class="profile-shortcuts">
-        <view class="profile-shortcut" hover-class="profile-shortcut--pressed" @click="goEditProfile">
-          <text class="profile-shortcut__icon">✏️</text>
-          <text class="profile-shortcut__label">编辑资料</text>
-        </view>
-        <view class="profile-shortcut" hover-class="profile-shortcut--pressed" @click="goDiaryEditor">
-          <text class="profile-shortcut__icon">📝</text>
-          <text class="profile-shortcut__label">写日记</text>
-        </view>
-        <view class="profile-shortcut" hover-class="profile-shortcut--pressed" @click="goMemorial">
-          <text class="profile-shortcut__icon">📅</text>
-          <text class="profile-shortcut__label">纪念日</text>
-        </view>
-        <view class="profile-shortcut" hover-class="profile-shortcut--pressed" @click="goRecycle">
-          <text class="profile-shortcut__icon">🗑️</text>
-          <text class="profile-shortcut__label">回收站</text>
-        </view>
-      </view>
-    </view>
-
     <!-- 设置菜单 -->
     <view class="profile-card">
       <view class="profile-card__header">
@@ -96,24 +71,30 @@ const menuItems = [
   { key: 'profile', icon: '👤', title: '编辑个人信息', description: '昵称、头像、生日、签名' },
   { key: 'reminder', icon: '🔔', title: '提醒设置', description: '订阅消息和公众号提醒' },
   { key: 'memorial', icon: '📅', title: '纪念日管理', description: '重要日期和提醒配置' },
-  { key: 'tag', icon: '🏷️', title: '标签管理', description: '日记和记账标签' },
+  { key: 'tag', icon: '🏷️', title: '标签管理', description: '日记、记账和打卡标签' },
   { key: 'recycle', icon: '🗑️', title: '回收站', description: '已删除内容可恢复' }
 ]
-
-function goEditProfile() { uni.navigateTo({ url: '/pages/profile/edit' }) }
-function goDiaryEditor() { uni.navigateTo({ url: '/pages/diary/editor' }) }
-function goMemorial() { uni.navigateTo({ url: '/pages/memorialPage/index' }) }
-function goRecycle() { uni.navigateTo({ url: '/pages/profile/recycle/index' }) }
 
 function handleSelect(key: string) {
   const routes: Record<string, string> = {
     profile: '/pages/profile/edit',
     reminder: '/pages/profile/reminder',
     memorial: '/pages/memorialPage/index',
-    tag: '/pages/profile/tags/index',
     recycle: '/pages/profile/recycle/index'
   }
-  if (routes[key]) uni.navigateTo({ url: routes[key] })
+  if (routes[key]) {
+    uni.navigateTo({ url: routes[key] })
+    return
+  }
+  if (key === 'tag') {
+    uni.showActionSheet({
+      itemList: ['📝 日记标签', '💰 记账标签', '✅ 打卡标签'],
+      success: (res) => {
+        const type = ['DIARY', 'LEDGER', 'CHECKIN'][res.tapIndex]
+        uni.navigateTo({ url: `/pages/profile/tags/index?moduleType=${type}` })
+      }
+    })
+  }
 }
 
 onMounted(() => {
@@ -224,34 +205,6 @@ onMounted(() => {
   color: var(--color-text-primary);
   font-size: var(--font-section);
   font-weight: var(--weight-bold);
-}
-
-/* ========== 快捷操作 ========== */
-.profile-shortcuts {
-  display: flex;
-  justify-content: space-around;
-}
-
-.profile-shortcut {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  transition: all var(--motion-fast) var(--ease-standard);
-}
-
-.profile-shortcut--pressed {
-  transform: scale(0.92);
-}
-
-.profile-shortcut__icon {
-  font-size: 44rpx;
-}
-
-.profile-shortcut__label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-tiny);
 }
 
 /* ========== 菜单列表 ========== */
