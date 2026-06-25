@@ -21,7 +21,7 @@ const modules = [
     <!-- Module cards -->
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
       <NuxtLink v-for="m in modules" :key="m.path" :to="m.path"
-        class="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
+        class="backdrop-blur-sm rounded-xl p-5 transition-all hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:shadow-md hover:-translate-y-0.5">
         <span class="text-3xl">{{ m.icon }}</span>
         <h3 class="font-semibold text-gray-800 dark:text-gray-100 mt-3">{{ m.label }}</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ m.desc }}</p>
@@ -29,7 +29,7 @@ const modules = [
     </div>
 
     <!-- Recent placeholder -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center text-gray-400 dark:text-gray-500">
+    <div class="backdrop-blur-sm rounded-xl p-8 text-center text-gray-400 dark:text-gray-500 transition-colors hover:bg-primary-50 dark:hover:bg-primary-900/20">
       最近日记 — 登录后显示
     </div>
   </div>
