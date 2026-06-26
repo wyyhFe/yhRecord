@@ -79,6 +79,9 @@
       </view>
     </view>
   </view>
+
+  <!-- 全局登录弹窗 -->
+  <LoginSheet v-model="showLogin" @success="handleLoginSuccess" />
 </template>
 
 <script setup lang="ts">
@@ -89,9 +92,11 @@ import { fetchCalendarSummaryRecent } from '@/api/calendar'
 import type { DaySummary } from '@/types/domain'
 import { tokenStorage } from '@/utils/storage'
 import { getLastLedgerBook } from '@/utils/ledger-book'
+import LoginSheet from '@/components/business/login-sheet'
 
 const greeting = useGreeting()
 const calendarItems = ref<DaySummary[]>([])
+const showLogin = ref(false)
 
 const overviewColors = [
   'var(--color-primary-gradient)',
@@ -228,7 +233,14 @@ function handleQuickAction(key: string, path: string) {
   uni.navigateTo({ url: path })
 }
 
-onLoad(() => {
+function handleLoginSuccess() {
+  loadSummary()
+}
+
+onLoad((query) => {
+  if (query?.showLogin === '1') {
+    showLogin.value = true
+  }
   loadSummary()
 })
 </script>

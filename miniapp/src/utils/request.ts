@@ -55,7 +55,7 @@ let refreshingPromise: Promise<void> | null = null
  */
 function redirectToHome() {
   tokenStorage.clearAll()
-  uni.reLaunch({ url: '/pages/home/index' })
+  uni.reLaunch({ url: '/pages/home/index?showLogin=1' })
 }
 
 /**
