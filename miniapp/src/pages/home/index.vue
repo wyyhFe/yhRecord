@@ -279,7 +279,6 @@ function goCheckinList() {
   uni.navigateTo({ url: '/pages/checkin/index' })
 }
 
-onLoad(() => {
 function handleLoginSuccess() {
   loadSummary()
 }
