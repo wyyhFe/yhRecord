@@ -3,6 +3,7 @@ package com.record.modules.user.service;
 import com.record.common.enums.LoginType;
 import com.record.modules.user.model.dto.UserProfileUpdateRequest;
 import com.record.modules.user.model.entity.User;
+import com.record.modules.user.model.vo.PublicUserVO;
 import com.record.modules.user.model.vo.UserProfileVO;
 
 public interface UserService {
@@ -22,4 +23,9 @@ public interface UserService {
     UserProfileVO getCurrentProfile(Long userId);
 
     UserProfileVO updateProfile(Long userId, UserProfileUpdateRequest request);
+
+    /**
+     * 获取指定用户的公开资料（供他人主页展示，不含敏感信息）。
+     */
+    PublicUserVO getPublicProfile(Long userId);
 }

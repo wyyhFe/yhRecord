@@ -69,3 +69,41 @@ export function deleteDiary(id: Id) {
     method: 'DELETE'
   })
 }
+
+/**
+ * 日记大厅：分页查询所有用户的公开日记。
+ */
+export function fetchDiaryHall(params?: {
+  current?: number
+  size?: number
+}) {
+  const query = `current=${params?.current ?? 1}&size=${params?.size ?? 10}`
+  return request<Pagination<DiaryItem>>({
+    url: `/diaries/hall?${query}`,
+    method: 'GET'
+  })
+}
+
+/**
+ * 查询指定用户的公开日记列表。
+ */
+export function fetchUserPublicDiaries(userId: Id, params?: {
+  current?: number
+  size?: number
+}) {
+  const query = `current=${params?.current ?? 1}&size=${params?.size ?? 10}`
+  return request<Pagination<DiaryItem>>({
+    url: `/diaries/public/${userId}?${query}`,
+    method: 'GET'
+  })
+}
+
+/**
+ * 查看公开日记详情。
+ */
+export function fetchPublicDiaryDetail(id: Id) {
+  return request<DiaryItem>({
+    url: `/diaries/public-detail/${id}`,
+    method: 'GET'
+  })
+}

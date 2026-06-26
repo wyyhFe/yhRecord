@@ -23,10 +23,13 @@ async function bootstrapSession() {
 }
 
 onLaunch(() => {
+  // 隐藏原生 tabBar，使用自定义 TabBar 组件替代
+  uni.hideTabBar({ animation: false })
   bootstrapSession().catch(() => undefined)
 })
 
 onShow(() => {
+  uni.hideTabBar({ animation: false })
   bootstrapSession().catch(() => undefined)
   ensureEntryAuth()
 })

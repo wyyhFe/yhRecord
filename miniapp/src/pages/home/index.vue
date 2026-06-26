@@ -35,6 +35,40 @@
       </view>
     </view>
 
+    <!-- 1.5 功能入口卡片 -->
+    <view class="home-entries">
+      <view
+        class="home-entries__card home-entries__card--diary"
+        hover-class="home-entries__card--pressed"
+        :hover-stay-time="120"
+        @click="goDiaryList"
+      >
+        <view class="home-entries__icon">
+          <text class="home-entries__icon-text">📖</text>
+        </view>
+        <view class="home-entries__info">
+          <text class="home-entries__title">日记本</text>
+          <text class="home-entries__desc">记录每一天的故事</text>
+        </view>
+        <text class="home-entries__arrow">›</text>
+      </view>
+      <view
+        class="home-entries__card home-entries__card--checkin"
+        hover-class="home-entries__card--pressed"
+        :hover-stay-time="120"
+        @click="goCheckinList"
+      >
+        <view class="home-entries__icon">
+          <text class="home-entries__icon-text">✓</text>
+        </view>
+        <view class="home-entries__info">
+          <text class="home-entries__title">打卡</text>
+          <text class="home-entries__desc">坚持每天的好习惯</text>
+        </view>
+        <text class="home-entries__arrow">›</text>
+      </view>
+    </view>
+
     <!-- 2. 近七天时间轴 -->
     <view class="home-card">
       <view class="home-card__row">
@@ -78,6 +112,9 @@
         </view>
       </view>
     </view>
+
+    <!-- 自定义 TabBar -->
+    <TabBar current="home" />
   </view>
 
   <!-- 全局登录弹窗 -->
@@ -86,13 +123,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGreeting } from '@/composables/useGreeting'
 import { fetchCalendarSummaryRecent } from '@/api/calendar'
 import type { DaySummary } from '@/types/domain'
 import { tokenStorage } from '@/utils/storage'
 import { getLastLedgerBook } from '@/utils/ledger-book'
 import LoginSheet from '@/components/business/login-sheet'
+import TabBar from '@/components/business/tab-bar/index.vue'
 
 const greeting = useGreeting()
 const calendarItems = ref<DaySummary[]>([])
@@ -233,6 +271,15 @@ function handleQuickAction(key: string, path: string) {
   uni.navigateTo({ url: path })
 }
 
+function goDiaryList() {
+  uni.navigateTo({ url: '/pages/diary/index' })
+}
+
+function goCheckinList() {
+  uni.navigateTo({ url: '/pages/checkin/index' })
+}
+
+onLoad(() => {
 function handleLoginSuccess() {
   loadSummary()
 }
@@ -243,6 +290,10 @@ onLoad((query) => {
   }
   loadSummary()
 })
+
+onShow(() => {
+  uni.hideTabBar({ animation: false })
+})
 </script>
 
 <style scoped lang="scss">
@@ -252,7 +303,7 @@ onLoad((query) => {
  * ========================================================= */
 
 .home-page {
-  padding-bottom: var(--bottom-padding);
+  padding-bottom: var(--bottom-padding-with-tabbar);
 }
 
 /* ---------- 1. Hero 渐变头部 ---------- */
@@ -359,6 +410,85 @@ onLoad((query) => {
   color: var(--color-text-primary);
   font-size: var(--font-caption);
   font-weight: var(--weight-medium);
+}
+
+/* ---------- 1.5 功能入口卡片 ---------- */
+.home-entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: 0 var(--space-4);
+}
+
+.home-entries__card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.home-entries__card--diary {
+  background: var(--color-surface);
+}
+
+.home-entries__card--checkin {
+  background: var(--color-surface);
+}
+
+.home-entries__card--pressed {
+  transform: scale(0.97);
+  box-shadow: var(--shadow-press);
+}
+
+.home-entries__icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: var(--radius-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.home-entries__card--diary .home-entries__icon {
+  background: var(--color-diary-soft);
+}
+
+.home-entries__card--checkin .home-entries__icon {
+  background: var(--color-checkin-soft);
+}
+
+.home-entries__icon-text {
+  font-size: 36rpx;
+  line-height: 1;
+}
+
+.home-entries__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.home-entries__title {
+  color: var(--color-text-primary);
+  font-size: var(--font-section);
+  font-weight: var(--weight-bold);
+}
+
+.home-entries__desc {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
+}
+
+.home-entries__arrow {
+  color: var(--color-text-muted);
+  font-size: var(--font-title);
+  font-weight: var(--weight-regular);
 }
 
 /* ---------- 3. 通用卡片 ---------- */

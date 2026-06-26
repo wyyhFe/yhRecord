@@ -12,6 +12,7 @@ export interface UserProfile {
   signature?: string
   birthday?: string
   diaryCount: number
+  createdAt?: string
 }
 
 /**
@@ -27,10 +28,25 @@ export interface UserProfileUpdatePayload {
 }
 
 /**
+ * 其他用户的公开资料（不含敏感信息）。
+ */
+export interface PublicUserProfile {
+  id: Id
+  nickname: string
+  avatarPath?: string
+  signature?: string
+  createdAt?: string
+  publicDiaryCount: number
+}
+
+/**
  * 日记列表页和详情页复用的数据结构。
  */
 export interface DiaryItem {
   id: Id
+  authorId?: Id
+  authorNickname?: string
+  authorAvatar?: string
   title: string
   content: string
   recordDate: string

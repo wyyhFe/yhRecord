@@ -18,8 +18,8 @@
       </view>
       <view class="profile-stats__divider" />
       <view class="profile-stats__item">
-        <text class="profile-stats__value">{{ profile?.birthday || '--' }}</text>
-        <text class="profile-stats__label">生日</text>
+        <text class="profile-stats__value">{{ joinDate }}</text>
+        <text class="profile-stats__label">加入</text>
       </view>
       <view class="profile-stats__divider" />
       <view class="profile-stats__item">
@@ -46,12 +46,17 @@
         </view>
       </view>
     </view>
+
+    <!-- 自定义 TabBar -->
+    <TabBar current="profile" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
+import TabBar from '@/components/business/tab-bar/index.vue'
 
 const appStore = useAppStore()
 const profile = computed(() => appStore.profile)
@@ -65,6 +70,12 @@ const genderLabel = computed(() => {
   if (profile.value?.gender === 'MALE') return '男'
   if (profile.value?.gender === 'FEMALE') return '女'
   return '未设置'
+})
+
+const joinDate = computed(() => {
+  if (!profile.value?.createdAt) return '--'
+  const d = new Date(profile.value.createdAt)
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`
 })
 
 const menuItems = [
@@ -100,11 +111,15 @@ function handleSelect(key: string) {
 onMounted(() => {
   appStore.loadProfile().catch(() => undefined)
 })
+
+onShow(() => {
+  uni.hideTabBar({ animation: false })
+})
 </script>
 
 <style scoped lang="scss">
 .profile-page {
-  padding-bottom: var(--bottom-padding);
+  padding-bottom: var(--bottom-padding-with-tabbar);
 }
 
 /* ========== 用户信息 ========== */

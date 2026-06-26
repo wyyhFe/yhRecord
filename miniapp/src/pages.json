@@ -22,12 +22,8 @@
         "text": "首页"
       },
       {
-        "pagePath": "pages/diary/index",
-        "text": "日记"
-      },
-      {
-        "pagePath": "pages/checkin/index",
-        "text": "打卡"
+        "pagePath": "pages/discover/index",
+        "text": "发现"
       },
       {
         "pagePath": "pages/profile/index",
@@ -109,6 +105,19 @@
       }
     },
     {
+      "path": "pages/discover/index",
+      "style": {
+        "navigationBarTitleText": "日记大厅",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/discover/user-profile",
+      "style": {
+        "navigationBarTitleText": "主页"
+      }
+    },
+    {
       "path": "pages/profile/index",
       "style": {
         "navigationBarTitleText": "个人中心"
@@ -136,6 +145,13 @@
       "path": "pages/profile/tags/index",
       "style": {
         "navigationBarTitleText": "标签管理"
+      }
+    },
+    {
+      "path": "pages/auth/login",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
       }
     }
   ]

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.enums.ResourceType;
 import com.record.common.enums.VisibilityType;
 import com.record.common.exception.DiaryException;
+import com.record.common.context.UserContext;
 import com.record.common.util.AuthUtil;
 import com.record.common.util.PageQuery;
 import com.record.common.cache.DictionaryCacheService;
@@ -245,9 +246,118 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
+    public Page<DiaryVO> hall(PageQuery pageQuery) {
+        LambdaQueryWrapper<Diary> wrapper = new LambdaQueryWrapper<Diary>()
+                .isNull(Diary::getDeletedAt)
+                .eq(Diary::getVisibility, VisibilityType.PUBLIC)
+                .orderByDesc(Diary::getCreatedAt);
+        Page<Diary> page = diaryMapper.selectPage(pageQuery.toPage(), wrapper);
+
+        List<Diary> diaryList = page.getRecords();
+        if (diaryList.isEmpty()) {
+            return new Page<>(pageQuery.getCurrent(), pageQuery.getSize(), 0);
+        }
+
+        List<Long> diaryIds = diaryList.stream().map(Diary::getId).toList();
+
+        Map<Long, List<String>> mediaMap = diaryMediaMapper.selectList(
+                        new LambdaQueryWrapper<DiaryMedia>()
+                                .in(DiaryMedia::getDiaryId, diaryIds)
+                                .orderByAsc(DiaryMedia::getSortOrder))
+                .stream()
+                .collect(Collectors.groupingBy(
+                        DiaryMedia::getDiaryId,
+                        Collectors.mapping(DiaryMedia::getFilePath, Collectors.toList())
+                ));
+
+        Map<Long, List<Long>> tagMap = diaryTagRelMapper.selectList(
+                        new LambdaQueryWrapper<DiaryTagRel>()
+                                .in(DiaryTagRel::getDiaryId, diaryIds))
+                .stream()
+                .collect(Collectors.groupingBy(
+                        DiaryTagRel::getDiaryId,
+                        Collectors.mapping(DiaryTagRel::getTagId, Collectors.toList())
+                ));
+
+        List<DiaryVO> records = diaryList.stream()
+                .map(item -> buildVO(item, mediaMap.getOrDefault(item.getId(), List.of()),
+                        tagMap.getOrDefault(item.getId(), List.of())))
+                .toList();
+
+        Page<DiaryVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        result.setRecords(records);
+        return result;
+    }
+
+    @Override
+    public Page<DiaryVO> publicListByUser(Long userId, PageQuery pageQuery) {
+        LambdaQueryWrapper<Diary> wrapper = new LambdaQueryWrapper<Diary>()
+                .isNull(Diary::getDeletedAt)
+                .eq(Diary::getUserId, userId)
+                .eq(Diary::getVisibility, VisibilityType.PUBLIC)
+                .orderByDesc(Diary::getRecordDate);
+        Page<Diary> page = diaryMapper.selectPage(pageQuery.toPage(), wrapper);
+
+        List<Diary> diaryList = page.getRecords();
+        if (diaryList.isEmpty()) {
+            return new Page<>(pageQuery.getCurrent(), pageQuery.getSize(), 0);
+        }
+
+        List<Long> diaryIds = diaryList.stream().map(Diary::getId).toList();
+
+        Map<Long, List<String>> mediaMap = diaryMediaMapper.selectList(
+                        new LambdaQueryWrapper<DiaryMedia>()
+                                .in(DiaryMedia::getDiaryId, diaryIds)
+                                .orderByAsc(DiaryMedia::getSortOrder))
+                .stream()
+                .collect(Collectors.groupingBy(
+                        DiaryMedia::getDiaryId,
+                        Collectors.mapping(DiaryMedia::getFilePath, Collectors.toList())
+                ));
+
+        Map<Long, List<Long>> tagMap = diaryTagRelMapper.selectList(
+                        new LambdaQueryWrapper<DiaryTagRel>()
+                                .in(DiaryTagRel::getDiaryId, diaryIds))
+                .stream()
+                .collect(Collectors.groupingBy(
+                        DiaryTagRel::getDiaryId,
+                        Collectors.mapping(DiaryTagRel::getTagId, Collectors.toList())
+                ));
+
+        List<DiaryVO> records = diaryList.stream()
+                .map(item -> buildVO(item, mediaMap.getOrDefault(item.getId(), List.of()),
+                        tagMap.getOrDefault(item.getId(), List.of())))
+                .toList();
+
+        Page<DiaryVO> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        result.setRecords(records);
+        return result;
+    }
+
+    @Override
+    public DiaryVO publicDetail(Long diaryId) {
+        Diary diary = diaryMapper.selectById(diaryId);
+        if (diary == null || diary.getDeletedAt() != null) {
+            throw new DiaryException("日记不存在");
+        }
+        if (diary.getVisibility() != VisibilityType.PUBLIC) {
+            throw new DiaryException("该日记不是公开日记，无法查看");
+        }
+        return buildVO(diary, dictionaryCache.getUserById(diary.getUserId()));
+    }
+
+    @Override
+    public long countPublicByUser(Long userId) {
+        return diaryMapper.selectCount(new LambdaQueryWrapper<Diary>()
+                .eq(Diary::getUserId, userId)
+                .eq(Diary::getVisibility, VisibilityType.PUBLIC)
+                .isNull(Diary::getDeletedAt));
+    }
+
+    @Override
     @Transactional
     public void toggleLike(Long userId, Long diaryId) {
-        Diary diary = requireOwnedDiary(userId, diaryId, false);
+        Diary diary = requireAccessibleDiary(diaryId);
         DiaryLike existed = diaryLikeMapper.selectOne(new LambdaQueryWrapper<DiaryLike>()
                 .eq(DiaryLike::getDiaryId, diaryId)
                 .eq(DiaryLike::getUserId, userId));
@@ -270,7 +380,7 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     @Transactional
     public void comment(Long userId, Long diaryId, DiaryCommentRequest request) {
-        Diary diary = requireOwnedDiary(userId, diaryId, false);
+        Diary diary = requireAccessibleDiary(diaryId);
         Long parentId = request.getParentId();
         if (parentId != null) {
             DiaryComment parentComment = diaryCommentMapper.selectById(parentId);
@@ -292,7 +402,7 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public List<DiaryCommentVO> comments(Long userId, Long diaryId) {
-        requireOwnedDiary(userId, diaryId, false);
+        requireAccessibleDiary(diaryId);
         return diaryCommentMapper.selectList(new LambdaQueryWrapper<DiaryComment>()
                         .eq(DiaryComment::getDiaryId, diaryId)
                         .orderByAsc(DiaryComment::getCreatedAt)
@@ -407,6 +517,25 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     /**
+     * 校验日记是否可被当前用户访问（自己的日记或公开日记）。
+     * 用于点赞、评论等互动操作，允许对公开日记进行互动。
+     */
+    private Diary requireAccessibleDiary(Long diaryId) {
+        Diary diary = diaryMapper.selectById(diaryId);
+        if (diary == null || diary.getDeletedAt() != null) {
+            throw new DiaryException("日记不存在");
+        }
+        if (AuthUtil.isAdmin()) {
+            return diary;
+        }
+        Long currentUserId = UserContext.getUserId();
+        if (!diary.getUserId().equals(currentUserId) && diary.getVisibility() != VisibilityType.PUBLIC) {
+            throw new DiaryException("日记不存在或无权限访问");
+        }
+        return diary;
+    }
+
+    /**
      * 组装前端需要的日记详情对象（批量模式，接收预加载的 media/tag 数据）。
      * 用于 list() 分页查询，避免逐条查询 N+1。
      */
@@ -414,6 +543,9 @@ public class DiaryServiceImpl implements DiaryService {
         User user = dictionaryCache.getUserById(diary.getUserId());
         return DiaryVO.builder()
                 .id(diary.getId())
+                .authorId(diary.getUserId())
+                .authorNickname(user != null ? user.getNickname() : null)
+                .authorAvatar(user != null ? user.getAvatarPath() : null)
                 .title(diary.getTitle())
                 .content(diary.getContent())
                 .recordDate(diary.getRecordDate())
@@ -455,6 +587,9 @@ public class DiaryServiceImpl implements DiaryService {
 
         return DiaryVO.builder()
                 .id(diary.getId())
+                .authorId(diary.getUserId())
+                .authorNickname(user != null ? user.getNickname() : null)
+                .authorAvatar(user != null ? user.getAvatarPath() : null)
                 .title(diary.getTitle())
                 .content(diary.getContent())
                 .recordDate(diary.getRecordDate())

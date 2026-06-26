@@ -5,13 +5,13 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://123.207.210.150:3306/life_record?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
     username: root
-    password: ${DB_PASSWORD:wyh20040118}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
-      host: 123.207.210.150
+      host: ${REDIS_HOST:123.207.210.150}
       port: 6379
-      password: wyh20040118
+      password: ${REDIS_PASSWORD}
       database: 0
       timeout: 10s
   ai:

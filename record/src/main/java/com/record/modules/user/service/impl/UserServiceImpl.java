@@ -12,6 +12,7 @@ import com.record.modules.user.mapper.UserMapper;
 import com.record.modules.user.model.dto.UserProfileUpdateRequest;
 import com.record.modules.user.model.entity.User;
 import com.record.modules.user.model.entity.UserIdentity;
+import com.record.modules.user.model.vo.PublicUserVO;
 import com.record.modules.user.model.vo.UserProfileVO;
 import com.record.modules.user.service.UserService;
 import org.slf4j.Logger;
@@ -130,6 +131,22 @@ public class UserServiceImpl implements UserService {
         return toVO(userMapper.selectById(userId));
     }
 
+    @Override
+    public PublicUserVO getPublicProfile(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null || user.getStatus() != CommonStatus.ENABLED) {
+            throw new BusinessException(ErrorCode.NOT_FOUND, "用户不存在");
+        }
+        return PublicUserVO.builder()
+                .id(user.getId())
+                .nickname(user.getNickname())
+                .avatarPath(user.getAvatarPath())
+                .signature(user.getSignature())
+                .createdAt(user.getCreatedAt())
+                .publicDiaryCount(diaryService.countPublicByUser(userId))
+                .build();
+    }
+
     private String defaultNickname(LoginType provider) {
         return switch (provider) {
             case WECHAT -> "微信用户";
@@ -150,6 +167,7 @@ public class UserServiceImpl implements UserService {
                 .birthday(user.getBirthday())
                 .signature(user.getSignature())
                 .diaryCount(diaryService.countByUser(user.getId()))
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }

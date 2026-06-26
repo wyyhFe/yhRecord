@@ -19,6 +19,8 @@ spring:
     name: record
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  config:
+    import: optional:classpath:application-local.yaml
   jackson:
     default-property-inclusion: non_null
     date-format: yyyy-MM-dd HH:mm:ss
@@ -70,23 +72,23 @@ app:
     # 用法：把你自己的 userId 填进来，应用启动会自动 INSERT sys_user_role；已是 admin 的会跳过
     bootstrap-admin-user-ids: 2062899819403370498
   wechat:
-    app-id: ${WECHAT_APP_ID:wxc881594b9650474f}
-    app-secret: ${WECHAT_APP_SECRET:dc5e4819af366f49a71214eda8b28015}
+    app-id: ${WECHAT_APP_ID}
+    app-secret: ${WECHAT_APP_SECRET}
     code2session-url: https://api.weixin.qq.com/sns/jscode2session
   oauth:
     frontend-callback-url: ${OAUTH_FRONTEND_CALLBACK_URL:http://localhost:8848/#/auth/callback}
     frontend-bind-result-url: ${OAUTH_FRONTEND_BIND_RESULT_URL:http://localhost:8848/#/account/identities}
     github:
-      client-id: ${GITHUB_CLIENT_ID:Ov23lipiiNRBF3Tjpl5A}
-      client-secret: ${GITHUB_CLIENT_SECRET:bc305877a6a9ddf01f724a00dcd8cfbc4bc20737}
+      client-id: ${GITHUB_CLIENT_ID}
+      client-secret: ${GITHUB_CLIENT_SECRET}
       redirect-uri: ${GITHUB_REDIRECT_URI:http://localhost:8080/auth/github/callback}
     google:
-      client-id: ${GOOGLE_CLIENT_ID:483959084584-rdqn4mnhaidbu3l37qqt6tdb08lm3jjd.apps.googleusercontent.com}
-      client-secret: ${GOOGLE_CLIENT_SECRET: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}
+      client-id: ${GOOGLE_CLIENT_ID}
+      client-secret: ${GOOGLE_CLIENT_SECRET}
       redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8080/auth/google/callback}
   map:
     provider: tencent
-    api-key: ${TENCENT_MAP_API_KEY:DWUBZ-T4VKJ-7XCFD-XLNNS-SLNVF-JKBFJ}
+    api-key: ${TENCENT_MAP_API_KEY}
     reverse-geocode-url: https://apis.map.qq.com/ws/geocoder/v1/
   file:
     max-size-mb: 50
@@ -138,8 +140,8 @@ app:
         remark-field: thing4
         name-field: thing5
     official-account:
-      app-id: ${OA_APP_ID:wxe0b2c126bb08961c}
-      app-secret: ${OA_APP_SECRET:7c7db12875ab6c4eafabf87d66bf6dd8}
+      app-id: ${OA_APP_ID}
+      app-secret: ${OA_APP_SECRET}
       token-url: https://api.weixin.qq.com/cgi-bin/token
       send-url: https://api.weixin.qq.com/cgi-bin/message/template/send
       diary-template-id:
@@ -196,7 +198,7 @@ app:
       embedding-dimension: 1536
 
 alioss:
-  endpoint: ${oss-cn-hangzhou.aliyuncs.com}
-  bucket-name: ${wyhosskey}
+  endpoint: ${ALIOSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
+  bucket-name: ${ALIOSS_BUCKET:wyhosskey}
   access-key-id: ${ALIOSS_ACCESS_KEY_ID}
   access-key-secret: ${ALIOSS_ACCESS_KEY_SECRET}
