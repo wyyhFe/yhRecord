@@ -314,7 +314,7 @@ watch(
     </transition>
 
     <!-- 编辑器 / 预览区 -->
-    <div class="editor-wrapper">
+    <div class="editor-wrapper" :class="{ 'is-split': viewMode === 'split' }">
       <!-- 编辑模式：只显示编辑器 -->
       <MarkdownEditor
         v-if="viewMode === 'edit'"
@@ -511,6 +511,11 @@ watch(
 }
 
 /* ===== 分屏模式 ===== */
+.is-split {
+  max-width: 100%;
+  width: calc(100% - 64px);
+}
+
 .split-container {
   display: flex;
   height: 100%;
