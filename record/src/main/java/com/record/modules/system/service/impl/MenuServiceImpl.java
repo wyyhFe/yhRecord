@@ -29,15 +29,23 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
-    public List<AsyncRouteVO> getAsyncRoutesByUserId(Long userId) {
-        // 获取用户的角色列表
-        List<String> userRoles = roleService.getRoleNamesByUserId(userId);
+    public List<AsyncRouteVO> getAsyncRoutesByUserId(Long userId, String platform) {
+        // 获取用户的角色列表；未登录时默认视为 editor（C 端可浏览内容）
+        List<String> userRoles;
+        if (userId == null) {
+            userRoles = List.of("editor");
+        } else {
+            userRoles = roleService.getRoleNamesByUserId(userId);
+        }
 
-        // 查询所有启用的非按钮类型菜单，按 id 排序
+        // 查询所有启用的非按钮类型菜单
         LambdaQueryWrapper<Menu> query = new LambdaQueryWrapper<Menu>()
                 .eq(Menu::getStatus, CommonStatus.ENABLED)
-                .ne(Menu::getMenuType, "BUTTON")
-                .orderByAsc(Menu::getId);
+                .ne(Menu::getMenuType, "BUTTON");
+        // 按 platform 过滤：ADMIN / WEB / ALL
+        if (platform != null) {
+            query.and(w -> w.eq(Menu::getPlatform, platform).or().eq(Menu::getPlatform, "ALL"));
+        }
         List<Menu> menus = menuMapper.selectList(query);
 
         // 根据 meta.roles 字段过滤菜单
@@ -146,6 +154,7 @@ public class MenuServiceImpl implements MenuService {
     private List<AsyncRouteVO> buildRouteTree(List<Menu> menus, Long parentId) {
         return menus.stream()
                 .filter(m -> Objects.equals(m.getParentId(), parentId))
+                .sorted(Comparator.comparingInt(Menu::getRank))
                 .map(m -> {
                     AsyncRouteVO.AsyncRouteVOBuilder builder = AsyncRouteVO.builder()
                             .path(m.getPath())

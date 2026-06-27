@@ -238,11 +238,17 @@ public class DiaryServiceImpl implements DiaryService {
         List<Map<String, Object>> rows = diaryMapper.countByDateRange(userId, start, end);
         Map<LocalDate, Long> result = new HashMap<>();
         for (Map<String, Object> row : rows) {
-            LocalDate date = (LocalDate) row.get("date");
+            LocalDate date = toLocalDate(row.get("date"));
             Long cnt = ((Number) row.get("cnt")).longValue();
             result.put(date, cnt);
         }
         return result;
+    }
+
+    private static LocalDate toLocalDate(Object value) {
+        if (value instanceof java.sql.Date sd) return sd.toLocalDate();
+        if (value instanceof LocalDate ld) return ld;
+        throw new IllegalArgumentException("Cannot convert to LocalDate: " + value);
     }
 
     @Override

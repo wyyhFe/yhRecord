@@ -28,9 +28,7 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
   ],
 
-  css: [
-    resolve('./assets/scss/app.scss'),
-  ],
+  css: [resolve('./assets/scss/app.scss')],
 
   components: [
     {
@@ -66,10 +64,14 @@ export default defineNuxtConfig({
     classSuffix: '',
   },
 
-  // API proxy to Spring Boot backend
+  // API proxy to Spring Boot backend（剥离 /api 前缀，与 admin 的 Vite proxy 行为一致）
   nitro: {
     devProxy: {
-      '/api': { target: 'http://localhost:8080', changeOrigin: true },
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        prependPath: false,
+      },
     },
   },
 })

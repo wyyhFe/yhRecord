@@ -25,11 +25,12 @@ public class MenuController {
         this.menuService = menuService;
     }
 
-    @Operation(summary = "获取动态路由（PureAdmin 格式）")
+    @Operation(summary = "获取动态路由。platform 参数：ADMIN（默认）/WEB，未指定时返回 ADMIN/ALL 平台菜单")
     @GetMapping("/get-async-routes")
-    public ApiResponse<List<AsyncRouteVO>> getAsyncRoutes() {
+    public ApiResponse<List<AsyncRouteVO>> getAsyncRoutes(
+            @RequestParam(defaultValue = "ADMIN") String platform) {
         Long userId = UserContext.getUserId();
-        List<AsyncRouteVO> routes = menuService.getAsyncRoutesByUserId(userId);
+        List<AsyncRouteVO> routes = menuService.getAsyncRoutesByUserId(userId, platform);
         return ApiResponse.success(routes);
     }
 

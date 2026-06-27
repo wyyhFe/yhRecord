@@ -11,7 +11,7 @@ spring:
     redis:
       host: 123.207.210.150
       port: 6379
-      password: wyh20040118
+      password: ${REDIS_PASSWORD}
       database: 0
       timeout: 3s
   ai:

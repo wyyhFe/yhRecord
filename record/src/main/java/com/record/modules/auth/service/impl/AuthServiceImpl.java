@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -51,6 +52,8 @@ public class AuthServiceImpl implements AuthService {
     private static final String FIELD_SID = "sid";
     /** Redis Hash 字段：当前活跃 refreshToken。 */
     private static final String FIELD_REFRESH_TOKEN = "token";
+    /** Redis Hash 字段：会话过期时间戳（毫秒）。 */
+    private static final String FIELD_EXPIRE_AT = "expire_at";
 
     private final WechatAuthClient wechatAuthClient;
     private final OAuthProviderRegistry oAuthProviderRegistry;
@@ -271,17 +274,55 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private AuthTokenVO issueToken(User user) {
+        String key = RedisKeyConstants.USER_SESSION + user.getId();
+
+        // 复用未过期的旧会话，避免每次登录都 HSET 写 Redis
+        String existingSessionId = getValidSessionId(key);
+        if (existingSessionId != null) {
+            return buildExistingSessionToken(user, existingSessionId, key);
+        }
+
         String sessionId = UUID.randomUUID().toString();
-        // openid 在 OAuth 登录时可能为 null，使用空字符串兜底
         String openId = user.getOpenid() != null ? user.getOpenid() : "";
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), openId, sessionId);
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId(), openId, sessionId);
 
-        storeSession(user.getId(), sessionId, refreshToken);
+        storeSession(key, sessionId, refreshToken);
 
+        return buildTokenResponse(user, accessToken, refreshToken, sessionId);
+    }
+
+    /** 检查 Redis 中是否有未过期的有效会话，有则返回 sessionId。 */
+    private String getValidSessionId(String key) {
+        Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries(key);
+        if (entries.isEmpty()) return null;
+
+        Object expireAt = entries.get(FIELD_EXPIRE_AT);
+        if (expireAt == null) return null;
+
+        try {
+            if (System.currentTimeMillis() >= Long.parseLong(expireAt.toString())) return null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return entries.containsKey(FIELD_SID) ? entries.get(FIELD_SID).toString() : null;
+    }
+
+    /** 会话未过期，复用 sid 和 refreshToken，仅刷新 accessToken。 */
+    private AuthTokenVO buildExistingSessionToken(User user, String sessionId, String key) {
+        String openId = user.getOpenid() != null ? user.getOpenid() : "";
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), openId, sessionId);
+
+        Object cachedToken = stringRedisTemplate.opsForHash().get(key, FIELD_REFRESH_TOKEN);
+        String refreshToken = cachedToken != null ? cachedToken.toString()
+                : jwtTokenProvider.createRefreshToken(user.getId(), openId, sessionId);
+
+        return buildTokenResponse(user, accessToken, refreshToken, sessionId);
+    }
+
+    private AuthTokenVO buildTokenResponse(User user, String accessToken, String refreshToken, String sessionId) {
         List<String> roles = roleService.getRoleNamesByUserId(user.getId());
         long expiresInSeconds = appProperties.getSecurity().getJwt().getAccessTokenExpireMinutes() * 60L;
-
         return AuthTokenVO.builder()
                 .userId(user.getId())
                 .openid(user.getOpenid())
@@ -295,14 +336,18 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 会话信息写 Redis Hash；key 的 TTL = refreshTokenExpireDays，过期即整体清除。
-     * 重新登录时同一 key 直接覆盖，天然实现"单设备登录"语义，不再需要 DB 唯一索引兜底。
+     * 会话信息写 Redis Hash + 过期时间戳；key 的 TTL = refreshTokenExpireDays，过期即整体清除。
+     * 重新登录时同一 key 直接覆盖，天然实现"单设备登录"语义。
      */
-    private void storeSession(Long userId, String sessionId, String refreshToken) {
-        String key = RedisKeyConstants.USER_SESSION + userId;
-        stringRedisTemplate.opsForHash().put(key, FIELD_SID, sessionId);
-        stringRedisTemplate.opsForHash().put(key, FIELD_REFRESH_TOKEN, refreshToken);
+    private void storeSession(String key, String sessionId, String refreshToken) {
         long ttlDays = appProperties.getSecurity().getJwt().getRefreshTokenExpireDays();
+        long expireAt = System.currentTimeMillis() + ttlDays * 86400L * 1000L;
+
+        stringRedisTemplate.opsForHash().putAll(key, Map.of(
+                FIELD_SID, sessionId,
+                FIELD_REFRESH_TOKEN, refreshToken,
+                FIELD_EXPIRE_AT, String.valueOf(expireAt)
+        ));
         stringRedisTemplate.expire(key, ttlDays, TimeUnit.DAYS);
     }
 

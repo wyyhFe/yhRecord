@@ -18,7 +18,8 @@ public enum ErrorCode {
     MEMORIAL_ERROR(46010, "纪念日业务异常"),
     LOCATION_ERROR(47010, "定位业务异常"),
     FILE_ERROR(48010, "文件业务异常"),
-    KNOWLEDGE_ERROR(49010, "知识库业务异常");
+    KNOWLEDGE_ERROR(49010, "知识库业务异常"),
+    BLOG_ERROR(50010, "博客业务异常");
 
     private final int code;
     private final String message;

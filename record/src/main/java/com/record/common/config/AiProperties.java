@@ -40,6 +40,7 @@ public class AiProperties {
 
     private Chat chat = new Chat();
     private BillAnalysis billAnalysis = new BillAnalysis();
+    private Blog blog = new Blog();
     private Rag rag = new Rag();
 
     /**
@@ -91,6 +92,15 @@ public class AiProperties {
          * 账单分析系统提示词。
          */
         private String systemPrompt;
+    }
+
+    @Data
+    public static class Blog {
+        /**
+         * slug 生成 prompt。
+         * 留空则从 classpath:prompts/ai/blog/slug-generation.md 读取默认模板。
+         */
+        private String slugPrompt;
     }
 
     @Data
