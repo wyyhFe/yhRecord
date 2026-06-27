@@ -126,7 +126,18 @@ const codeLanguages = [
   { label: "XML", value: "xml", ext: ".xml" },
 ];
 
-function insertCodeBlock(lang: string) {
+function insertTable() {
+  if (!view.value) return;
+  const { from } = view.value.state.selection.main;
+  const table =
+    "\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n";
+  view.value.dispatch({ changes: { from, insert: table } });
+  focus();
+}
+
+function insertTaskItem() {
+  insertAtLineStart("- [ ] ");
+}
   if (!view.value) return;
   const { from, to } = view.value.state.selection.main;
   const selected = view.value.state.sliceDoc(from, to);
@@ -192,10 +203,12 @@ const toolbarItems = ref<ToolbarItem[]>([
   { label: "", tooltip: "", divider: true, action: () => {} },
   { label: "`", tooltip: "行内代码", action: () => insertAround("`", "`") },
   { label: "```", tooltip: "代码块", type: "codeBlock", onSelect: insertCodeBlock },
+  { label: "⊞", tooltip: "表格", action: insertTable },
   { label: "", tooltip: "", divider: true, action: () => {} },
   { label: "❝", tooltip: "引用", action: () => insertAtLineStart("> ") },
   { label: "•", tooltip: "无序列表", action: () => insertAtLineStart("- ") },
   { label: "1.", tooltip: "有序列表", action: () => insertAtLineStart("1. ") },
+  { label: "☑", tooltip: "任务列表", action: insertTaskItem },
   { label: "", tooltip: "", divider: true, action: () => {} },
   { label: "—", tooltip: "分割线", action: () => insertSnippet("\n---\n") },
 ]);
