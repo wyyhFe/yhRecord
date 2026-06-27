@@ -2,16 +2,54 @@
   <div class="markdown-editor">
     <!-- 工具栏 -->
     <div class="editor-toolbar" v-if="!readOnly">
-      <button
-        v-for="item in toolbarItems"
-        :key="item.label"
-        :title="item.tooltip"
-        :class="{ divider: item.divider }"
-        @click="item.action"
-      >
-        <span v-if="item.html" v-html="item.html"></span>
-        <span v-else>{{ item.label }}</span>
-      </button>
+      <template v-for="item in toolbarItems" :key="item.label">
+        <!-- 代码块按钮：带语言选择 popover -->
+        <el-popover
+          v-if="item.type === 'codeBlock'"
+          trigger="click"
+          placement="bottom-start"
+          :width="320"
+          :show-arrow="false"
+          :offset="4"
+        >
+          <template #reference>
+            <button :title="item.tooltip" class="toolbar-btn">
+              <span v-if="item.html" v-html="item.html"></span>
+              <span v-else>{{ item.label }}</span>
+            </button>
+          </template>
+          <div class="code-lang-grid">
+            <div class="code-lang-title">选择代码语言</div>
+            <button
+              v-for="lang in codeLanguages"
+              :key="lang.value"
+              class="code-lang-item"
+              @click="item.onSelect(lang.value)"
+            >
+              <span class="code-lang-name">{{ lang.label }}</span>
+              <span class="code-lang-ext">{{ lang.ext }}</span>
+            </button>
+            <div class="code-lang-custom">
+              <input
+                v-model="customLang"
+                placeholder="输入其他语言..."
+                class="code-lang-input"
+                @keyup.enter="item.onSelect(customLang)"
+              />
+            </div>
+          </div>
+        </el-popover>
+        <!-- 普通按钮 -->
+        <button
+          v-else
+          :title="item.tooltip"
+          :class="{ divider: item.divider }"
+          @click="item.action"
+        >
+          <span v-if="item.html" v-html="item.html"></span>
+          <span v-else>{{ item.label }}</span>
+        </button>
+      </template>
     </div>
     <!-- 编辑器容器 -->
     <div class="cm-editor-wrapper" ref="containerRef"></div>
@@ -62,7 +100,39 @@ interface ToolbarItem {
   tooltip: string;
   html?: string;
   divider?: boolean;
-  action: () => void;
+  type?: string;
+  action?: () => void;
+  onSelect?: (lang: string) => void;
+}
+
+const customLang = ref("");
+
+const codeLanguages = [
+  { label: "Plain Text", value: "text", ext: ".txt" },
+  { label: "JavaScript", value: "javascript", ext: ".js" },
+  { label: "TypeScript", value: "typescript", ext: ".ts" },
+  { label: "Python", value: "python", ext: ".py" },
+  { label: "Java", value: "java", ext: ".java" },
+  { label: "Go", value: "go", ext: ".go" },
+  { label: "Rust", value: "rust", ext: ".rs" },
+  { label: "C/C++", value: "cpp", ext: ".cpp" },
+  { label: "SQL", value: "sql", ext: ".sql" },
+  { label: "JSON", value: "json", ext: ".json" },
+  { label: "YAML", value: "yaml", ext: ".yml" },
+  { label: "HTML", value: "html", ext: ".html" },
+  { label: "CSS", value: "css", ext: ".css" },
+  { label: "Shell", value: "bash", ext: ".sh" },
+  { label: "Docker", value: "docker", ext: ".dockerfile" },
+  { label: "XML", value: "xml", ext: ".xml" },
+];
+
+function insertCodeBlock(lang: string) {
+  if (!view.value) return;
+  const { from, to } = view.value.state.selection.main;
+  const selected = view.value.state.sliceDoc(from, to);
+  const snippet = "\n```" + lang + "\n" + (selected || "") + "\n```\n";
+  view.value.dispatch({ changes: { from, to, insert: snippet } });
+  focus();
 }
 
 function insertAround(before: string, after: string = before) {
@@ -121,14 +191,7 @@ const toolbarItems = ref<ToolbarItem[]>([
   { label: "🖼", tooltip: "图片", action: () => insertSnippet("![alt](url)", 2) },
   { label: "", tooltip: "", divider: true, action: () => {} },
   { label: "`", tooltip: "行内代码", action: () => insertAround("`", "`") },
-  { label: "```", tooltip: "代码块", action: () => {
-    if (!view.value) return;
-    const { from, to } = view.value.state.selection.main;
-    const selected = view.value.state.sliceDoc(from, to);
-    const snippet = "\n```\n" + (selected || "") + "\n```\n";
-    view.value.dispatch({ changes: { from, to, insert: snippet } });
-    focus();
-  }},
+  { label: "```", tooltip: "代码块", type: "codeBlock", onSelect: insertCodeBlock },
   { label: "", tooltip: "", divider: true, action: () => {} },
   { label: "❝", tooltip: "引用", action: () => insertAtLineStart("> ") },
   { label: "•", tooltip: "无序列表", action: () => insertAtLineStart("- ") },
@@ -295,5 +358,89 @@ defineExpose({
 
 .cm-editor-wrapper :deep(.cm-scroller::-webkit-scrollbar-thumb:hover) {
   background: #909399;
+}
+
+/* ===== 工具栏按钮（替代原有 button 样式）===== */
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #606266;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.toolbar-btn:hover {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+/* ===== 代码语言选择 ===== */
+.code-lang-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.code-lang-title {
+  font-size: 12px;
+  color: #909399;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.code-lang-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #303133;
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.code-lang-item:hover {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.code-lang-ext {
+  font-size: 11px;
+  color: #909399;
+}
+
+.code-lang-custom {
+  padding: 6px 8px 2px;
+  border-top: 1px solid #ebeef5;
+  margin-top: 4px;
+}
+
+.code-lang-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.code-lang-input:focus {
+  border-color: #409eff;
 }
 </style>

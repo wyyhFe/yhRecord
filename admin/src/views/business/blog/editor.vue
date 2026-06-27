@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from "vue";
+import { ref, onMounted, onBeforeUnmount, nextTick, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message } from "@/utils/message";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
@@ -9,11 +9,15 @@ import {
   updateBlog,
   type BlogPostRequest
 } from "@/api/blog";
-import Vditor from "vditor";
-import "vditor/dist/index.css";
+import { uploadFile } from "@/api/upload";
+import MarkdownEditor from "@/components/markdown-editor/MarkdownEditor.vue";
+import MarkdownPreview from "@/components/markdown-editor/MarkdownPreview.vue";
+import { useMarkdownIt } from "@/composables/markdown-editor";
 
 import ArrowLeft from "~icons/ep/arrow-left";
 import Setting from "~icons/ep/setting";
+import View from "~icons/ep/view";
+import EditPen from "~icons/ep/edit-pen";
 
 defineOptions({ name: "BlogEditor" });
 
@@ -22,10 +26,15 @@ const router = useRouter();
 
 const isEdit = ref(false);
 const saving = ref(false);
-const vditor = ref<Vditor | null>(null);
 const showMeta = ref(false);
-const wordCount = ref(0);
-let resizeObserver: ResizeObserver | null = null;
+// "edit" | "split" | "preview"
+const viewMode = ref<"edit" | "split" | "preview">("edit");
+const editorRef = ref<InstanceType<typeof MarkdownEditor> | null>(null);
+
+// 自动展开元信息（编辑模式时）
+if (route.query.id) {
+  showMeta.value = true;
+}
 
 const form = ref<BlogPostRequest>({
   title: "",
@@ -40,10 +49,11 @@ const form = ref<BlogPostRequest>({
 
 const tagInput = ref("");
 
-// 自动展开元信息（编辑模式或有内容时）
-if (route.query.id) {
-  showMeta.value = true;
-}
+// 字数统计
+const wordCount = computed(() => form.value.markdownContent.length);
+
+// markdown-it 用于保存时生成 HTML
+const { render } = useMarkdownIt();
 
 // 加载已有文章
 async function loadPost() {
@@ -73,94 +83,17 @@ async function loadPost() {
   }
 }
 
-// 初始化 Vditor
-async function initVditor() {
-  await nextTick();
-
-  const editorEl = document.getElementById("vditor-container");
-  if (!editorEl) return;
-
-  const wrapper = editorEl.parentElement;
-  if (!wrapper) return;
-
-  // 用 ResizeObserver 等待容器获得真实高度后再初始化
-  resizeObserver = new ResizeObserver((entries) => {
-    const h = entries[0]?.contentRect?.height || 0;
-    if (h <= 0) return;
-
-    // 拿到高度后立即初始化，只执行一次
-    resizeObserver?.disconnect();
-    resizeObserver = null;
-
-    createVditor(editorEl, h);
-  });
-
-  resizeObserver.observe(wrapper);
-
-  // 兜底：500ms 后如果还没初始化，用 fallback 高度
-  setTimeout(() => {
-    if (!vditor.value && resizeObserver) {
-      resizeObserver.disconnect();
-      resizeObserver = null;
-      const h = wrapper.clientHeight || 600;
-      createVditor(editorEl, h);
-    }
-  }, 500);
-}
-
-function createVditor(editorEl: HTMLElement, h: number) {
-  if (vditor.value) return; // 防止重复初始化
-
+// 图片上传
+async function handleUploadImage(file: File): Promise<string> {
   try {
-    const inst = new Vditor(editorEl.id, {
-      height: h,
-      mode: "ir",
-      placeholder: "开始写作...",
-      cdn: "",
-      cache: { enable: false },
-      counter: {
-        enable: true,
-        after(length: number) {
-          wordCount.value = length;
-        }
-      },
-      preview: {
-        markdown: { autoSpace: true },
-        hljs: { style: "github" }
-      },
-      toolbar: [
-        "headings",
-        "bold",
-        "italic",
-        "strike",
-        "|",
-        "line",
-        "quote",
-        "list",
-        "ordered-list",
-        "check",
-        "code",
-        "inline-code",
-        "|",
-        "upload",
-        "link",
-        "table",
-        "|",
-        "undo",
-        "redo",
-        "|",
-        "fullscreen",
-        "outline"
-      ],
-      after: () => {
-        if (isEdit.value && form.value.markdownContent) {
-          inst.setValue(form.value.markdownContent);
-        }
-      }
-    });
-    vditor.value = inst;
-  } catch (e) {
-    console.error("Vditor 初始化失败:", e);
+    const res = await uploadFile(file);
+    if (res.code === 0 && res.data?.url) {
+      return res.data.url;
+    }
+    throw new Error("上传失败");
+  } catch {
+    message("图片上传失败", { type: "error" });
+    throw new Error("图片上传失败");
   }
 }
 
@@ -185,8 +118,8 @@ async function handleSave(status: string) {
   saving.value = true;
   try {
     form.value.status = status;
-    form.value.markdownContent = vditor.value?.getValue() || "";
-    form.value.htmlContent = vditor.value?.getHTML() || "";
+    // markdownContent 通过 v-model 已同步
+    form.value.htmlContent = render(form.value.markdownContent);
 
     if (!form.value.title.trim()) {
       message("请输入标题", { type: "warning" });
@@ -221,24 +154,36 @@ function toggleMeta() {
   showMeta.value = !showMeta.value;
 }
 
+function toggleViewMode() {
+  const modes: Array<"edit" | "split" | "preview"> = ["edit", "split", "preview"];
+  const idx = modes.indexOf(viewMode.value);
+  viewMode.value = modes[(idx + 1) % modes.length];
+}
+
+// 快捷键 Ctrl+S 保存草稿
+function handleKeydown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+    e.preventDefault();
+    handleSave("DRAFT");
+  }
+}
+
 onMounted(async () => {
   await loadPost();
-  await initVditor();
+  document.addEventListener("keydown", handleKeydown);
 });
 
 onBeforeUnmount(() => {
-  if (resizeObserver) {
-    resizeObserver.disconnect();
-    resizeObserver = null;
-  }
-  try {
-    if (vditor.value && (vditor.value as any).vditor) {
-      vditor.value.destroy();
-    }
-  } catch {
-    // Vditor 内部状态已清理，忽略
-  }
+  document.removeEventListener("keydown", handleKeydown);
 });
+
+// 监听 markdownContent 变化（用于字数统计和自动保存标记等）
+watch(
+  () => form.value.markdownContent,
+  () => {
+    // 可以在这里做自动保存草稿等
+  }
+);
 </script>
 
 <template>
@@ -259,6 +204,20 @@ onBeforeUnmount(() => {
         </span>
       </div>
       <div class="flex items-center gap-2">
+        <!-- 视图模式切换 -->
+        <el-button
+          text
+          :icon="useRenderIcon(
+            viewMode === 'edit' ? View :
+            viewMode === 'split' ? Setting : EditPen
+          )"
+          class="!text-gray-400 hover:!text-gray-600"
+          @click="toggleViewMode"
+          :title="viewMode === 'edit' ? '切换为分屏' : viewMode === 'split' ? '切换为预览' : '切换为编辑'"
+        >
+          {{ viewMode === 'edit' ? '分屏' : viewMode === 'split' ? '预览' : '编辑' }}
+        </el-button>
+        <el-divider direction="vertical" />
         <el-button
           text
           :icon="useRenderIcon(Setting)"
@@ -354,9 +313,40 @@ onBeforeUnmount(() => {
       </div>
     </transition>
 
-    <!-- 编辑器 —— 占据所有剩余空间 -->
+    <!-- 编辑器 / 预览区 -->
     <div class="editor-wrapper">
-      <div id="vditor-container" class="vditor-root" />
+      <!-- 编辑模式：只显示编辑器 -->
+      <MarkdownEditor
+        v-if="viewMode === 'edit'"
+        ref="editorRef"
+        v-model="form.markdownContent"
+        placeholder="开始写作..."
+        :read-only="false"
+        :on-upload-image="handleUploadImage"
+      />
+      <!-- 分屏模式：左编辑 + 右预览 -->
+      <template v-else-if="viewMode === 'split'">
+        <div class="split-container">
+          <div class="split-editor">
+            <MarkdownEditor
+              ref="editorRef"
+              v-model="form.markdownContent"
+              placeholder="开始写作..."
+              :read-only="false"
+              :on-upload-image="handleUploadImage"
+            />
+          </div>
+          <div class="split-divider"></div>
+          <div class="split-preview">
+            <MarkdownPreview :content="form.markdownContent" />
+          </div>
+        </div>
+      </template>
+      <!-- 预览模式：只显示预览 -->
+      <MarkdownPreview
+        v-else
+        :content="form.markdownContent"
+      />
     </div>
 
     <!-- 底部状态栏 -->
@@ -491,11 +481,10 @@ onBeforeUnmount(() => {
   max-height: 180px;
 }
 
-/* ===== Editor —— 核心写作区 ===== */
+/* ===== Editor Wrapper ===== */
 .editor-wrapper {
   flex: 1;
   min-height: 0;
-  position: relative;
   margin: 12px 32px 0;
   max-width: 960px;
   width: calc(100% - 64px);
@@ -504,104 +493,7 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   border: 1px solid #ebeef5;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-/* Vditor 容器绝对定位，撑满 editor-wrapper */
-.vditor-root {
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
   overflow: hidden;
-}
-
-/* Vditor 顶层不做任何高度覆盖，让 Vditor 原生管理 */
-:deep(.vditor) {
-  border: none !important;
-  border-radius: 8px;
-}
-
-:deep(.vditor-toolbar) {
-  background: #fafbfc !important;
-  border-bottom: 1px solid #f0f0f0 !important;
-  border-radius: 8px 8px 0 0;
-  padding: 0 8px;
-}
-
-:deep(.vditor-toolbar__item) {
-  margin: 0 2px;
-}
-
-:deep(.vditor-toolbar__item svg) {
-  fill: #606266;
-}
-
-:deep(.vditor-toolbar__item:hover svg) {
-  fill: #409eff;
-}
-
-/* 写作区内容内边距 — 类似 grtblog 的 padding-bottom: 50vh 思路 */
-:deep(.vditor-ir) {
-  padding: 20px 28px !important;
-}
-
-:deep(.vditor-content) {
-  padding: 20px 28px;
-}
-
-:deep(.vditor-ir pre.vditor-reset) {
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
-  font-size: 14px;
-  line-height: 1.6;
-  background: #f6f8fa;
-  border-radius: 6px;
-  padding: 16px 20px;
-}
-
-:deep(.vditor-reset) {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #2c3e50;
-}
-
-:deep(.vditor-reset h1) {
-  font-size: 24px;
-  font-weight: 700;
-  margin: 24px 0 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #eee;
-}
-
-:deep(.vditor-reset h2) {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 20px 0 10px;
-}
-
-:deep(.vditor-reset h3) {
-  font-size: 17px;
-  font-weight: 600;
-  margin: 16px 0 8px;
-}
-
-:deep(.vditor-reset p) {
-  margin: 8px 0;
-}
-
-:deep(.vditor-reset blockquote) {
-  border-left: 3px solid #409eff;
-  padding: 8px 16px;
-  margin: 12px 0;
-  background: #f0f7ff;
-  border-radius: 0 6px 6px 0;
-  color: #606266;
-}
-
-:deep(.vditor-reset ul) {
-  padding-left: 24px;
-}
-
-:deep(.vditor-reset a) {
-  color: #409eff;
 }
 
 /* ===== Footer ===== */
@@ -616,5 +508,45 @@ onBeforeUnmount(() => {
   color: #909399;
   background: #fff;
   border-top: 1px solid #f0f0f0;
+}
+
+/* ===== 分屏模式 ===== */
+.split-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.split-editor {
+  flex: 1;
+  min-width: 0;
+  border-right: 1px solid #ebeef5;
+}
+
+.split-editor :deep(.markdown-editor) {
+  border: none;
+  border-radius: 0;
+}
+
+.split-editor :deep(.cm-editor-wrapper) {
+  height: 100%;
+}
+
+.split-divider {
+  width: 4px;
+  background: #f0f2f5;
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.split-divider:hover {
+  background: #409eff;
+}
+
+.split-preview {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
 }
 </style>
