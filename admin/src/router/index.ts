@@ -126,6 +126,8 @@ const whiteList = ["/login", "/auth/callback"];
 const { VITE_HIDE_HOME } = import.meta.env;
 
 router.beforeEach((to: ToRouteType, _from) => {
+  console.log("[router.beforeEach]", "to:", to.path, "from:", _from?.path, "userInfo:", !!storageLocal().getItem<DataInfo<number>>(userKey));
+
   to.meta.loaded = loadedPaths.has(to.path);
 
   if (!to.meta.loaded) {
@@ -152,11 +154,16 @@ router.beforeEach((to: ToRouteType, _from) => {
   }
   /** 如果已经登录并存在登录信息后不能跳转到路由白名单，而是继续保持在当前页面 */
   function toCorrectRoute() {
-    return whiteList.includes(to.fullPath) ? _from.fullPath : undefined;
+    // _from 在某些边缘情况下可能没有 fullPath
+    if (whiteList.includes(to.fullPath) && _from?.fullPath) {
+      return _from.fullPath;
+    }
+    return undefined;
   }
   if (Cookies.get(multipleTabsKey) && userInfo) {
     // 无权限跳转403页面
     if (to.meta?.roles && !isOneOfArray(to.meta?.roles, userInfo?.roles)) {
+      console.log("[router.beforeEach] 无权限，跳 403");
       return { path: "/error/403" };
     }
     // 开启隐藏首页后在浏览器地址栏手动输入首页welcome路由则跳转到404页面
@@ -178,24 +185,29 @@ router.beforeEach((to: ToRouteType, _from) => {
         usePermissionStoreHook().wholeMenus.length === 0 &&
         to.path !== "/login"
       ) {
-        initRouter().then((router: Router) => {
+        console.log("[router.beforeEach] 首次进入，调用 initRouter(), to.path=", to.path);
+        // ✅ 关键修复：必须 return Promise，路由守卫才会等待
+        return initRouter().then((router: Router) => {
+          console.log("[router.beforeEach] initRouter 完成，重新跳转:", to.fullPath);
           if (!useMultiTagsStoreHook().getMultiTagsCache) {
             const { path } = to;
             const route = findRouteByPath(
               path,
               router.options.routes[0].children
             );
-            getTopMenu(true);
-            // query、params模式路由传参数的标签页不在此处处理
+            const topMenu = getTopMenu(true);
             if (route && route.meta?.title) {
               if (isAllEmpty(route.parentId) && route.meta?.backstage) {
-                // 此处为动态顶级路由（目录）
-                const { path, name, meta } = route.children[0];
-                useMultiTagsStoreHook().handleTags("push", {
-                  path,
-                  name,
-                  meta
-                });
+                // 目录类型：取第一个子路由作为标签页
+                const firstChild = route.children?.[0];
+                if (firstChild) {
+                  const { path, name, meta } = firstChild;
+                  useMultiTagsStoreHook().handleTags("push", {
+                    path,
+                    name,
+                    meta
+                  });
+                }
               } else {
                 const { path, name, meta } = route;
                 useMultiTagsStoreHook().handleTags("push", {
@@ -206,18 +218,22 @@ router.beforeEach((to: ToRouteType, _from) => {
               }
             }
           }
-          // 确保动态路由完全加入路由列表并且不影响静态路由（注意：动态路由刷新时router.beforeEach可能会触发两次，第一次触发动态路由还未完全添加，第二次动态路由才完全添加到路由列表，如果需要在router.beforeEach做一些判断可以在to.name存在的条件下去判断，这样就只会触发一次）
-          if (isAllEmpty(to.name)) router.push(to.fullPath);
+          // 重新触发一次导航，让新注册的路由生效
+          return to.fullPath;
         });
       }
+      console.log("[router.beforeEach] 菜单已加载，放行:", to.path);
       return toCorrectRoute();
     }
   } else {
+    // 未登录
+    console.log("[router.beforeEach] 未登录，to.path=", to.path);
     if (to.path !== "/login") {
       if (whiteList.indexOf(to.path) !== -1) {
         return true;
       } else {
         removeToken();
+        console.log("[router.beforeEach] 重定向到 /login");
         return { path: "/login" };
       }
     } else {

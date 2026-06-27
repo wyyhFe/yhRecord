@@ -38,3 +38,13 @@
 - 浏览计数：`biz_blog_view` IP+userId 去重（24h 窗口）
 - 公开 API：`/blog/public/**`（permitAll）
 - Admin API：`/blog/posts/**`（需认证）
+
+## Markdown 编辑器架构 (CodeMirror 6)
+- 编辑器从 Vditor 迁移到 CM6，架构分两层：
+  - **核心逻辑层** `composables/markdown-editor/` — 框架无关，可复用
+  - **Vue 组件层** `components/markdown-editor/` — Vue 3 封装
+- admin 和 web 端共享同一套 composable（复制或 symlink）
+- 渲染使用 markdown-it + highlight.js（非编辑器内置渲染）
+- 图片上传通过 `onUploadImage` 回调由父组件注入（编辑器不关心上传实现）
+- 深色/浅色主题通过 theme.ts 管理，不依赖外部 CSS 变量
+- 文件上传 API: `admin/src/api/upload.ts`，需后端实现 `/files/upload` endpoint

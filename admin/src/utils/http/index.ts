@@ -38,8 +38,8 @@ class PureHttp {
     this.httpInterceptorsResponse();
   }
 
-  /** `token`过期后，暂存待执行的请求 */
-  private static requests = [];
+  /** `token`过期后，暂存待执行的请求（存储 resolve/reject 以便失败时 reject） */
+  private static requests: Array<{ resolve: (value: any) => void; reject: (error: any) => void }> = [];
 
   /** 防止重复刷新`token` */
   private static isRefreshing = false;
@@ -52,11 +52,8 @@ class PureHttp {
 
   /** 重连原始请求 */
   private static retryOriginalRequest(config: PureHttpRequestConfig) {
-    return new Promise(resolve => {
-      PureHttp.requests.push((token: string) => {
-        config.headers["Authorization"] = formatToken(token);
-        resolve(config);
-      });
+    return new Promise((resolve, reject) => {
+      PureHttp.requests.push({ resolve, reject, config });
     });
   }
 
@@ -90,11 +87,18 @@ class PureHttp {
                       .handRefreshToken({ refreshToken: data.refreshToken })
                       .then(res => {
                         const token = res.data.accessToken;
-                        config.headers["Authorization"] = formatToken(token);
-                        PureHttp.requests.forEach(cb => cb(token));
+                        // ✅ 用新 token 重新发送所有 pending 请求
+                        PureHttp.requests.forEach(({ resolve, config }) => {
+                          config.headers["Authorization"] = formatToken(token);
+                          resolve(config);
+                        });
                         PureHttp.requests = [];
                       })
                       .catch(_err => {
+                        // ✅ 关键修复：刷新失败时也 reject 所有 pending 请求，不卡死
+                        PureHttp.requests.forEach(({ reject }) => {
+                          reject(new Error("token refresh failed"));
+                        });
                         PureHttp.requests = [];
                         useUserStoreHook().logOut();
                         message(transformI18n($t("login.pureLoginExpired")), {

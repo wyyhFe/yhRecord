@@ -53,6 +53,14 @@
     </div>
     <!-- 编辑器容器 -->
     <div class="cm-editor-wrapper" ref="containerRef"></div>
+
+    <!-- 浮动格式菜单（选中文字时出现） -->
+    <EditorFloatingMenu
+      :visible="floatingMenu.isVisible.value"
+      :pos="floatingMenu.menuPos.value"
+      :active-formats="floatingMenu.activeFormats.value"
+      @command="floatingMenu.executeCommand"
+    />
   </div>
 </template>
 
@@ -66,6 +74,8 @@ import {
 } from "vue";
 import { useCodeMirror } from "@/composables/markdown-editor";
 import type { MarkdownEditorConfig } from "@/composables/markdown-editor";
+import { useFloatingMenu } from "@/composables/markdown-editor/use-floating-menu";
+import EditorFloatingMenu from "./EditorFloatingMenu.vue";
 
 // ========== Props ==========
 const props = withDefaults(
@@ -92,7 +102,10 @@ const emit = defineEmits<{
 
 // ========== CM6 实例 ==========
 const containerRef = ref<HTMLDivElement | null>(null);
-const { view, init, destroy, getValue, setValue, focus } = useCodeMirror();
+const { view, init, destroy, getValue, setValue, focus, onViewUpdate } = useCodeMirror();
+
+// 浮动菜单（选中文本时出现）
+const floatingMenu = useFloatingMenu({ view, onViewUpdate });
 
 // ========== 工具栏配置 ==========
 interface ToolbarItem {
@@ -126,26 +139,6 @@ const codeLanguages = [
   { label: "XML", value: "xml", ext: ".xml" },
 ];
 
-function insertTable() {
-  if (!view.value) return;
-  const { from } = view.value.state.selection.main;
-  const table =
-    "\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n";
-  view.value.dispatch({ changes: { from, insert: table } });
-  focus();
-}
-
-function insertTaskItem() {
-  insertAtLineStart("- [ ] ");
-}
-  if (!view.value) return;
-  const { from, to } = view.value.state.selection.main;
-  const selected = view.value.state.sliceDoc(from, to);
-  const snippet = "\n```" + lang + "\n" + (selected || "") + "\n```\n";
-  view.value.dispatch({ changes: { from, to, insert: snippet } });
-  focus();
-}
-
 function insertAround(before: string, after: string = before) {
   if (!view.value) return;
   const { from, to } = view.value.state.selection.main;
@@ -176,6 +169,28 @@ function insertSnippet(snippet: string, cursorOffset?: number) {
     const pos = from + cursorOffset;
     view.value.dispatch({ selection: { anchor: pos, head: pos } });
   }
+  focus();
+}
+
+function insertTable() {
+  if (!view.value) return;
+  const { from } = view.value.state.selection.main;
+  const table =
+    "\n| 列1 | 列2 | 列3 |\n| --- | --- | --- |\n| 内容 | 内容 | 内容 |\n";
+  view.value.dispatch({ changes: { from, insert: table } });
+  focus();
+}
+
+function insertTaskItem() {
+  insertAtLineStart("- [ ] ");
+}
+
+function insertCodeBlock(lang: string) {
+  if (!view.value) return;
+  const { from, to } = view.value.state.selection.main;
+  const selected = view.value.state.sliceDoc(from, to);
+  const snippet = "\n```" + lang + "\n" + (selected || "") + "\n```\n";
+  view.value.dispatch({ changes: { from, to, insert: snippet } });
   focus();
 }
 
@@ -455,5 +470,17 @@ defineExpose({
 
 .code-lang-input:focus {
   border-color: #409eff;
+}
+</style>
+
+<!-- Slash 空行提示（非 scoped） -->
+<style>
+.cm-slash-hint-line::before {
+  content: "输入 / 查看可用命令";
+  color: #c0c4cc;
+  font-size: 13px;
+  font-style: italic;
+  pointer-events: none;
+  user-select: none;
 }
 </style>

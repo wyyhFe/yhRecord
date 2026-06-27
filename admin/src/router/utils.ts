@@ -16,6 +16,7 @@ import {
   storageLocal,
   isIncludeAllChildren
 } from "@pureadmin/utils";
+import { getToken, removeToken } from "@/utils/auth";
 import { getConfig } from "@/config";
 import { buildHierarchyTree } from "@/utils/tree";
 import { userKey, type DataInfo } from "@/utils/auth";
@@ -214,40 +215,82 @@ function handleAsyncRoutes(routeList) {
   addPathMatch();
 }
 
+/** 用超时包装 Promise，防止请求挂起导致路由守卫卡死 */
+function withTimeout<T>(promise: Promise<T>, ms = 3000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), ms)
+    )
+  ]);
+}
+
 /** 初始化路由（`new Promise` 写法防止在异步请求中造成无限循环）*/
 function initRouter() {
+  console.log("[initRouter] 开始初始化动态路由");
+
+  // ✅ 关键修复：发请求前先检查 token 是否过期，过期直接清掉重定向
+  const tokenData = getToken();
+  if (tokenData) {
+    const now = new Date().getTime();
+    const expires = Number(tokenData.expires);
+    if (!isNaN(expires) && expires - now <= 0) {
+      console.warn("[initRouter] Token 已过期，清除并重定向到登录页");
+      removeToken();
+      // 让路由守卫继续，下一轮会检测到未登录并跳登录页
+      return Promise.resolve(router);
+    }
+  }
+
   if (getConfig()?.CachingAsyncRoutes) {
     // 开启动态路由缓存本地localStorage
     const key = "async-routes";
     const asyncRouteList = storageLocal().getItem(key) as any;
     if (asyncRouteList && asyncRouteList?.length > 0) {
+      console.log("[initRouter] 使用缓存路由，共", asyncRouteList.length, "条");
       return new Promise(resolve => {
         handleAsyncRoutes(asyncRouteList);
         resolve(router);
       });
     } else {
+      console.log("[initRouter] 从后端获取动态路由");
       return new Promise(resolve => {
-        getAsyncRoutes().then(({ code, data }) => {
-          if (code === 0) {
-            handleAsyncRoutes(cloneDeep(data));
-            storageLocal().setItem(key, data);
+        withTimeout(getAsyncRoutes(), 5000)
+          .then(({ code, data }) => {
+            if (code === 0) {
+              handleAsyncRoutes(cloneDeep(data));
+              storageLocal().setItem(key, data);
+              console.log("[initRouter] 动态路由注册完成，共", data.length, "条");
+            } else {
+              console.warn("[initRouter] 后端返回错误 code:", code);
+            }
             resolve(router);
-          } else {
+          })
+          .catch(err => {
+            console.warn("[initRouter] 获取动态路由失败（已跳过）:", err.message || err);
+            // 清除可能已失效的缓存
+            storageLocal().removeItem(key);
             resolve(router);
-          }
-        });
+          });
       });
     }
   } else {
+    console.log("[initRouter] 从后端获取动态路由（未开启缓存）");
     return new Promise(resolve => {
-      getAsyncRoutes().then(({ code, data }) => {
-        if (code === 0) {
-          handleAsyncRoutes(cloneDeep(data));
+      withTimeout(getAsyncRoutes(), 5000)
+        .then(({ code, data }) => {
+          if (code === 0) {
+            handleAsyncRoutes(cloneDeep(data));
+            console.log("[initRouter] 动态路由注册完成，共", data.length, "条");
+          } else {
+            console.warn("[initRouter] 后端返回错误 code:", code);
+          }
           resolve(router);
-        } else {
+        })
+        .catch(err => {
+          console.warn("[initRouter] 获取动态路由失败（已跳过）:", err.message || err);
           resolve(router);
-        }
-      });
+        });
     });
   }
 }
@@ -431,11 +474,21 @@ function handleTopMenu(route) {
 }
 
 /** 获取所有菜单中的第一个菜单（顶级菜单）*/
-function getTopMenu(tag = false): menuType {
-  const topMenu = handleTopMenu(
-    usePermissionStoreHook().wholeMenus[0]?.children[0]
-  );
-  tag && useMultiTagsStoreHook().handleTags("push", topMenu);
+function getTopMenu(tag = false): menuType | undefined {
+  const wholeMenus = usePermissionStoreHook().wholeMenus;
+  // 防御：菜单还未加载时不推送标签页
+  if (!wholeMenus || wholeMenus.length === 0) {
+    return undefined;
+  }
+  const firstTop = wholeMenus[0];
+  if (!firstTop || !firstTop.children || firstTop.children.length === 0) {
+    return undefined;
+  }
+  const topMenu = handleTopMenu(firstTop.children[0]);
+  // 防御：handleTopMenu 可能返回 undefined
+  if (topMenu && tag) {
+    useMultiTagsStoreHook().handleTags("push", topMenu);
+  }
   return topMenu;
 }
 
