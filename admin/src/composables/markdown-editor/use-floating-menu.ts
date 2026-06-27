@@ -1,7 +1,7 @@
 import { ref, type Ref } from "vue";
 import type { UpdateHook } from "../use-codemirror";
 import type { EditorView, ViewUpdate } from "@codemirror/view";
-import { getActiveStyles, toggleFormat, type FormatType } from "./ast";
+import { getActiveStyles, toggleFormat, type FormatType } from "./utils/ast";
 
 /**
  * 浮动菜单上下文
