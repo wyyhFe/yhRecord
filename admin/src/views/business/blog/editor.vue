@@ -28,7 +28,7 @@ const isEdit = ref(false);
 const saving = ref(false);
 const showMeta = ref(false);
 // "edit" | "split" | "preview"
-const viewMode = ref<"edit" | "split" | "preview">("edit");
+const viewMode = ref<"edit" | "split" | "preview">("split");
 const editorRef = ref<InstanceType<typeof MarkdownEditor> | null>(null);
 
 // 自动展开元信息（编辑模式时）
