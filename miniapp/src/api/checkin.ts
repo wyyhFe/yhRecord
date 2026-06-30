@@ -1,6 +1,6 @@
 import { request } from '@/utils/request'
 import type { Pagination } from '@/types/api'
-import type { CheckinTag, CheckinTask, HeatmapData, Id, Medal } from '@/types/domain'
+import type { CheckinDayDetail, CheckinTag, CheckinTask, HeatmapData, Id, Medal } from '@/types/domain'
 
 /**
  * 获取当前用户的打卡任务列表。
@@ -22,6 +22,16 @@ export function deleteCheckinTask(taskId: Id) {
 /**
  * 打卡附件项。
  */
+/**
+ * 编辑打卡记录请求体。
+ */
+export interface CheckinUpdatePayload {
+  remark?: string
+  mood?: string
+  tagIds?: number[]
+  mediaList?: CheckinMediaItem[]
+}
+
 export interface CheckinMediaItem {
   mediaType: string
   filePath: string
@@ -43,11 +53,32 @@ export function submitCheckin(
 }
 
 /**
- * 查询某一天的打卡记录。
+ * 编辑已打卡记录的备注/心情/标签/附件。
+ */
+export function updateCheckinRecord(recordId: Id, data: CheckinUpdatePayload) {
+  return request<void>({
+    url: `/checkin/records/update/${recordId}`,
+    method: 'PUT',
+    data
+  })
+}
+
+/**
+ * 查询某一天的打卡记录（旧版，按任务分组）。
  */
 export function fetchCheckinDayDetail(date: string) {
   return request<CheckinTask[]>({
     url: `/checkin/day-detail?date=${encodeURIComponent(date)}`,
+    method: 'GET'
+  })
+}
+
+/**
+ * 查询某日打卡时间线详情（总次数 + 按时间排序的记录列表）。
+ */
+export function fetchCheckinDayTimeline(date: string) {
+  return request<CheckinDayDetail>({
+    url: `/checkin/day/timeline?date=${encodeURIComponent(date)}`,
     method: 'GET'
   })
 }

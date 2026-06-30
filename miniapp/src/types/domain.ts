@@ -127,6 +127,33 @@ export interface CheckinTask {
 }
 
 /**
+ * 打卡时间线详情（新接口）。
+ */
+export interface CheckinDayDetail {
+  date: string
+  totalCount: number
+  taskCount: number
+  records: CheckinRecordItem[]
+}
+
+/**
+ * 时间线单条打卡记录。
+ */
+export interface CheckinRecordItem {
+  id: Id
+  taskId: number
+  taskName: string
+  taskDescription?: string
+  checkedAt: string
+  remark?: string
+  mood?: string
+  mediaPaths?: string[]
+  tagNames?: string[]
+  tagIds?: number[]
+  isMend?: boolean
+}
+
+/**
  * 打卡标签。
  */
 export interface CheckinTag {
