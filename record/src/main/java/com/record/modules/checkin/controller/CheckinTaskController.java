@@ -5,10 +5,12 @@ import com.record.common.model.ApiResponse;
 import com.record.common.model.PageResult;
 import com.record.common.util.PageQuery;
 import com.record.modules.checkin.model.dto.CheckinRequest;
+import com.record.modules.checkin.model.dto.CheckinUpdateRequest;
 import com.record.modules.checkin.model.dto.CreateCheckinTagRequest;
 import com.record.modules.checkin.model.dto.CreateCheckinTaskRequest;
 import com.record.modules.checkin.model.dto.MendCheckinRequest;
 import com.record.modules.checkin.model.entity.CheckinTag;
+import com.record.modules.checkin.model.vo.CheckinDayDetailVO;
 import com.record.modules.checkin.model.vo.CheckinRecordVO;
 import com.record.modules.checkin.model.vo.CheckinTaskVO;
 import com.record.modules.checkin.model.vo.HeatmapVO;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -70,6 +73,13 @@ public class CheckinTaskController {
         return ApiResponse.success();
     }
 
+    @Operation(summary = "编辑已打卡记录的备注/心情/标签/附件")
+    @PutMapping("/records/update/{recordId}")
+    public ApiResponse<Void> updateRecord(@PathVariable Long recordId, @RequestBody CheckinUpdateRequest request) {
+        checkinService.updateRecord(UserContext.getUserId(), recordId, request);
+        return ApiResponse.success();
+    }
+
     @Operation(summary = "按日期查询打卡")
     @GetMapping("/calendar")
     public ApiResponse<List<CheckinTaskVO>> calendar(@RequestParam LocalDate date) {
@@ -80,6 +90,12 @@ public class CheckinTaskController {
     @GetMapping("/day-detail")
     public ApiResponse<List<CheckinTaskVO>> dayDetail(@RequestParam LocalDate date) {
         return ApiResponse.success(checkinService.listByDate(UserContext.getUserId(), date));
+    }
+
+    @Operation(summary = "查询某日打卡时间线详情（含打卡总次数、按时间排序的记录）")
+    @GetMapping("/day/timeline")
+    public ApiResponse<CheckinDayDetailVO> dayTimeline(@RequestParam LocalDate date) {
+        return ApiResponse.success(checkinService.getDayTimeline(UserContext.getUserId(), date));
     }
 
     @Operation(summary = "获取热力图数据")

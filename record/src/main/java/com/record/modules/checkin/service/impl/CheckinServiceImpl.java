@@ -13,6 +13,7 @@ import com.record.modules.checkin.mapper.CheckinTagMapper;
 import com.record.modules.checkin.mapper.CheckinTaskMapper;
 import com.record.modules.checkin.model.dto.CheckinMediaDTO;
 import com.record.modules.checkin.model.dto.CheckinRequest;
+import com.record.modules.checkin.model.dto.CheckinUpdateRequest;
 import com.record.modules.checkin.model.dto.CreateCheckinTagRequest;
 import com.record.modules.checkin.model.dto.CreateCheckinTaskRequest;
 import com.record.modules.checkin.model.dto.MendCheckinRequest;
@@ -21,6 +22,7 @@ import com.record.modules.checkin.model.entity.CheckinRecord;
 import com.record.modules.checkin.model.entity.CheckinRecordTag;
 import com.record.modules.checkin.model.entity.CheckinTag;
 import com.record.modules.checkin.model.entity.CheckinTask;
+import com.record.modules.checkin.model.vo.CheckinDayDetailVO;
 import com.record.modules.checkin.model.vo.CheckinRecordVO;
 import com.record.modules.checkin.model.vo.CheckinTaskVO;
 import com.record.modules.checkin.model.vo.HeatmapDayVO;
@@ -156,6 +158,54 @@ public class CheckinServiceImpl implements CheckinService {
     }
 
     @Override
+    @Transactional
+    public void updateRecord(Long userId, Long recordId, CheckinUpdateRequest request) {
+        CheckinRecord record = checkinRecordMapper.selectById(recordId);
+        if (record == null) {
+            throw new CheckinException("打卡记录不存在");
+        }
+        if (!AuthUtil.isAdmin() && !record.getUserId().equals(userId)) {
+            throw new CheckinException("无权限编辑此记录");
+        }
+
+        // 更新备注/心情
+        if (request.getRemark() != null) {
+            record.setRemark(request.getRemark());
+        }
+        if (request.getMood() != null) {
+            record.setMood(request.getMood());
+        }
+        checkinRecordMapper.updateById(record);
+
+        // 更新标签
+        if (request.getTagIds() != null) {
+            checkinRecordTagMapper.delete(new LambdaQueryWrapper<CheckinRecordTag>()
+                    .eq(CheckinRecordTag::getRecordId, recordId));
+            for (Long tagId : request.getTagIds()) {
+                CheckinRecordTag rt = new CheckinRecordTag();
+                rt.setRecordId(recordId);
+                rt.setTagId(tagId);
+                checkinRecordTagMapper.insert(rt);
+            }
+        }
+
+        // 更新媒体
+        if (request.getMediaList() != null) {
+            checkinMediaMapper.delete(new LambdaQueryWrapper<CheckinMedia>()
+                    .eq(CheckinMedia::getRecordId, recordId));
+            for (int i = 0; i < request.getMediaList().size(); i++) {
+                CheckinMediaDTO dto = request.getMediaList().get(i);
+                CheckinMedia media = new CheckinMedia();
+                media.setRecordId(recordId);
+                media.setMediaType(dto.getMediaType());
+                media.setFilePath(dto.getFilePath());
+                media.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : i + 1);
+                checkinMediaMapper.insert(media);
+            }
+        }
+    }
+
+    @Override
     public List<CheckinTaskVO> listByDate(Long userId, LocalDate date) {
         LambdaQueryWrapper<CheckinRecord> recordWrapper = new LambdaQueryWrapper<CheckinRecord>()
                 .eq(CheckinRecord::getCheckinDate, date);
@@ -212,6 +262,84 @@ public class CheckinServiceImpl implements CheckinService {
                             .build();
                 })
                 .toList();
+    }
+
+    @Override
+    public CheckinDayDetailVO getDayTimeline(Long userId, LocalDate date) {
+        LambdaQueryWrapper<CheckinRecord> recordWrapper = new LambdaQueryWrapper<CheckinRecord>()
+                .eq(CheckinRecord::getCheckinDate, date)
+                .eq(CheckinRecord::getUserId, userId)
+                .orderByAsc(CheckinRecord::getCheckedAt);
+        List<CheckinRecord> records = checkinRecordMapper.selectList(recordWrapper);
+
+        if (records.isEmpty()) {
+            return CheckinDayDetailVO.builder()
+                    .date(date.toString())
+                    .totalCount(0)
+                    .taskCount(0)
+                    .records(List.of())
+                    .build();
+        }
+
+        // 查任务名
+        List<Long> taskIds = records.stream().map(CheckinRecord::getTaskId).distinct().toList();
+        Map<Long, CheckinTask> taskMap = checkinTaskMapper.selectBatchIds(taskIds).stream()
+                .collect(Collectors.toMap(CheckinTask::getId, t -> t, (a, b) -> a));
+
+        // 查媒体
+        List<Long> recordIds = records.stream().map(CheckinRecord::getId).toList();
+        Map<Long, List<String>> mediaMap = checkinMediaMapper.selectList(
+                        new LambdaQueryWrapper<CheckinMedia>()
+                                .in(CheckinMedia::getRecordId, recordIds)
+                                .orderByAsc(CheckinMedia::getSortOrder))
+                .stream()
+                .collect(Collectors.groupingBy(
+                        CheckinMedia::getRecordId,
+                        Collectors.mapping(CheckinMedia::getFilePath, Collectors.toList())));
+
+        // 查标签
+        List<CheckinRecordTag> recordTags = checkinRecordTagMapper.selectList(
+                new LambdaQueryWrapper<CheckinRecordTag>()
+                        .in(CheckinRecordTag::getRecordId, recordIds));
+        Set<Long> allTagIds = recordTags.stream()
+                .map(CheckinRecordTag::getTagId).collect(Collectors.toSet());
+        Map<Long, String> tagNameMap = allTagIds.isEmpty() ? Map.of() :
+                checkinTagMapper.selectBatchIds(allTagIds).stream()
+                        .collect(Collectors.toMap(CheckinTag::getId, CheckinTag::getName, (a, b) -> a));
+        Map<Long, List<String>> tagMap = recordTags.stream()
+                .collect(Collectors.groupingBy(
+                        CheckinRecordTag::getRecordId,
+                        Collectors.mapping(rt -> tagNameMap.getOrDefault(rt.getTagId(), ""), Collectors.toList())));
+        Map<Long, List<Long>> tagIdMap = recordTags.stream()
+                .collect(Collectors.groupingBy(
+                        CheckinRecordTag::getRecordId,
+                        Collectors.mapping(CheckinRecordTag::getTagId, Collectors.toList())));
+
+        List<CheckinDayDetailVO.RecordItem> items = records.stream()
+                .map(r -> {
+                    CheckinTask task = taskMap.get(r.getTaskId());
+                    return CheckinDayDetailVO.RecordItem.builder()
+                            .id(r.getId())
+                            .taskId(r.getTaskId())
+                            .taskName(task != null ? task.getName() : "")
+                            .taskDescription(task != null ? task.getDescription() : null)
+                            .checkedAt(r.getCheckedAt())
+                            .remark(r.getRemark())
+                            .mood(r.getMood())
+                            .mediaPaths(mediaMap.getOrDefault(r.getId(), List.of()))
+                            .tagNames(tagMap.getOrDefault(r.getId(), List.of()))
+                            .tagIds(tagIdMap.getOrDefault(r.getId(), List.of()))
+                            .isMend(r.getIsMend())
+                            .build();
+                })
+                .toList();
+
+        return CheckinDayDetailVO.builder()
+                .date(date.toString())
+                .totalCount(items.size())
+                .taskCount((int) taskIds.size())
+                .records(items)
+                .build();
     }
 
     @Override

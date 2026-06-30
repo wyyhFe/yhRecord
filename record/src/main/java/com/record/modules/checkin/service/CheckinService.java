@@ -3,10 +3,12 @@ package com.record.modules.checkin.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.util.PageQuery;
 import com.record.modules.checkin.model.dto.CheckinRequest;
+import com.record.modules.checkin.model.dto.CheckinUpdateRequest;
 import com.record.modules.checkin.model.dto.CreateCheckinTagRequest;
 import com.record.modules.checkin.model.dto.CreateCheckinTaskRequest;
 import com.record.modules.checkin.model.dto.MendCheckinRequest;
 import com.record.modules.checkin.model.entity.CheckinTag;
+import com.record.modules.checkin.model.vo.CheckinDayDetailVO;
 import com.record.modules.checkin.model.vo.CheckinRecordVO;
 import com.record.modules.checkin.model.vo.CheckinTaskVO;
 import com.record.modules.checkin.model.vo.HeatmapVO;
@@ -33,7 +35,17 @@ public interface CheckinService {
 
     void checkin(Long userId, Long taskId, CheckinRequest request);
 
+    /**
+     * 编辑已打卡记录的备注/心情/标签/附件。
+     */
+    void updateRecord(Long userId, Long recordId, CheckinUpdateRequest request);
+
     List<CheckinTaskVO> listByDate(Long userId, LocalDate date);
+
+    /**
+     * 获取某日打卡时间线详情（含总次数、按时间排序的记录列表）。
+     */
+    CheckinDayDetailVO getDayTimeline(Long userId, LocalDate date);
 
     Map<LocalDate, Long> countByDateRange(Long userId, LocalDate start, LocalDate end);
 
