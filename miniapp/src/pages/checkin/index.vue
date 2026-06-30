@@ -548,7 +548,7 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 12rpx rgba(155, 126, 200, 0.3);
+  box-shadow: 0 4rpx 12rpx var(--color-checkin-shadow);
 }
 
 .checkin-header__ring-text {
@@ -695,7 +695,7 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(155, 126, 200, 0.4);
+  box-shadow: 0 8rpx 24rpx var(--color-checkin-shadow-strong);
   z-index: 52;
   transition: transform 0.3s ease;
 }
@@ -769,7 +769,7 @@ onShow(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 16rpx rgba(155, 126, 200, 0.3);
+  box-shadow: 0 4rpx 16rpx var(--color-checkin-shadow);
 }
 
 .fab__sub-emoji {

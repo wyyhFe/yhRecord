@@ -24,9 +24,11 @@ page {
   --color-ledger: #5BAE7C;
   --color-ledger-soft: rgba(91, 174, 124, 0.12);
   --color-ledger-gradient: linear-gradient(135deg, #5BAE7C 0%, #7DC99A 100%);
-  --color-checkin: #9B7EC8;
-  --color-checkin-soft: rgba(155, 126, 200, 0.12);
-  --color-checkin-gradient: linear-gradient(135deg, #9B7EC8 0%, #B49AD8 100%);
+  --color-checkin: #E8827A;
+  --color-checkin-soft: rgba(232, 130, 122, 0.12);
+  --color-checkin-gradient: linear-gradient(135deg, #E8827A 0%, #F0A09A 100%);
+  --color-checkin-shadow: rgba(232, 130, 122, 0.3);
+  --color-checkin-shadow-strong: rgba(232, 130, 122, 0.4);
   --color-memory: #D4956B;
   --color-memory-soft: rgba(212, 149, 107, 0.12);
   --color-memory-gradient: linear-gradient(135deg, #D4956B 0%, #E4B08A 100%);

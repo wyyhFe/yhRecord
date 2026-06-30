@@ -216,12 +216,12 @@ function nextMonth() {
 }
 
 .heatmap__cell--1 {
-  background: rgba(155, 126, 200, 0.20);
+  background: rgba(232, 130, 122, 0.18);
   .heatmap__cell-num { color: var(--color-text-secondary); }
 }
 
 .heatmap__cell--2 {
-  background: rgba(155, 126, 200, 0.45);
+  background: rgba(232, 130, 122, 0.45);
   .heatmap__cell-num { color: #fff; }
 }
 
@@ -255,7 +255,7 @@ function nextMonth() {
 }
 
 .heatmap__legend-cell--0 { background: var(--color-surface-soft); }
-.heatmap__legend-cell--1 { background: rgba(155, 126, 200, 0.20); }
-.heatmap__legend-cell--2 { background: rgba(155, 126, 200, 0.45); }
+.heatmap__legend-cell--1 { background: rgba(232, 130, 122, 0.18); }
+.heatmap__legend-cell--2 { background: rgba(232, 130, 122, 0.45); }
 .heatmap__legend-cell--3 { background: var(--color-checkin); }
 </style>
