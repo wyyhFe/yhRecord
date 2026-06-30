@@ -1,5 +1,6 @@
 import { request } from '@/utils/request'
 import type { Pagination } from '@/types/api'
+import type { Pagination } from '@/types/api'
 import type { DiaryComment, DiaryItem, Id } from '@/types/domain'
 import type { CreateDiaryPayload } from '@/types/diary'
 
@@ -132,11 +133,21 @@ export function addComment(diaryId: Id, data: { content: string; parentId?: Id }
 }
 
 /**
- * 查询评论列表。
+ * 查询评论列表（分页）。
  */
-export function fetchComments(diaryId: Id) {
-  return request<DiaryComment[]>({
-    url: `/diaries/${diaryId}/comments`,
+export function fetchComments(diaryId: Id, page: number = 1, size: number = 10) {
+  return request<Pagination<DiaryComment>>({
+    url: `/diaries/${diaryId}/comments?page=${page}&size=${size}`,
     method: 'GET'
+  })
+}
+
+/**
+ * 删除自己的评论。
+ */
+export function deleteComment(commentId: Id) {
+  return request<void>({
+    url: `/diaries/comments/${commentId}`,
+    method: 'DELETE'
   })
 }

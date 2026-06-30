@@ -2,17 +2,20 @@ package com.record.modules.diary.controller;
 
 import com.record.common.context.UserContext;
 import com.record.common.model.ApiResponse;
+import com.record.common.model.PageResult;
 import com.record.modules.diary.model.dto.DiaryCommentRequest;
 import com.record.modules.diary.model.vo.DiaryCommentVO;
 import com.record.modules.diary.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -51,7 +54,16 @@ public class DiaryInteractController {
 
     @Operation(summary = "评论列表")
     @GetMapping("/{id}/comments")
-    public ApiResponse<List<DiaryCommentVO>> comments(@PathVariable Long id) {
-        return ApiResponse.success(diaryService.comments(UserContext.getUserId(), id));
+    public ApiResponse<PageResult<DiaryCommentVO>> comments(@PathVariable Long id,
+                                                           @RequestParam(defaultValue = "1") int page,
+                                                           @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.success(diaryService.comments(UserContext.getUserId(), id, page, size));
+    }
+
+    @Operation(summary = "删除评论")
+    @DeleteMapping("/comments/{commentId}")
+    public ApiResponse<Void> deleteComment(@PathVariable Long commentId) {
+        diaryService.deleteComment(UserContext.getUserId(), commentId);
+        return ApiResponse.success();
     }
 }

@@ -76,6 +76,9 @@ public class Diary extends BaseEntity {
     @Schema(description = "评论数", example = "2")
     private Integer commentCount;
 
+    @Schema(description = "浏览次数", example = "42")
+    private Integer viewCount;
+
     @Schema(description = "软删除时间", example = "2026-03-21T22:00:00")
     private LocalDateTime deletedAt;
 }

@@ -9,6 +9,7 @@ import com.record.common.context.UserContext;
 import com.record.common.util.AuthUtil;
 import com.record.common.util.PageQuery;
 import com.record.common.cache.DictionaryCacheService;
+import com.record.common.model.PageResult;
 import com.record.modules.diary.mapper.DiaryCommentMapper;
 import com.record.modules.diary.mapper.DiaryLikeMapper;
 import com.record.modules.diary.mapper.DiaryMapper;
@@ -29,6 +30,7 @@ import com.record.modules.diary.model.vo.DiaryVO;
 import com.record.modules.diary.service.DiaryService;
 import com.record.modules.location.service.LocationService;
 import com.record.modules.recycle.service.RecycleBinService;
+import com.record.modules.user.mapper.UserMapper;
 import com.record.modules.user.model.entity.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +58,7 @@ public class DiaryServiceImpl implements DiaryService {
     private final DictionaryCacheService dictionaryCache;
     private final RecycleBinService recycleBinService;
     private final LocationService locationService;
+    private final UserMapper userMapper;
 
     public DiaryServiceImpl(DiaryMapper diaryMapper,
                             DiaryMediaMapper diaryMediaMapper,
@@ -64,7 +67,8 @@ public class DiaryServiceImpl implements DiaryService {
                             DiaryLikeMapper diaryLikeMapper,
                             DictionaryCacheService dictionaryCache,
                             RecycleBinService recycleBinService,
-                            LocationService locationService) {
+                            LocationService locationService,
+                            UserMapper userMapper) {
         this.diaryMapper = diaryMapper;
         this.diaryMediaMapper = diaryMediaMapper;
         this.diaryTagRelMapper = diaryTagRelMapper;
@@ -73,6 +77,7 @@ public class DiaryServiceImpl implements DiaryService {
         this.dictionaryCache = dictionaryCache;
         this.recycleBinService = recycleBinService;
         this.locationService = locationService;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -154,7 +159,9 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public DiaryVO detail(Long userId, Long diaryId) {
-        return buildVO(requireOwnedDiary(userId, diaryId, false), dictionaryCache.getUserById(userId));
+        Diary diary = requireOwnedDiary(userId, diaryId, false);
+        incrementViewCount(diary);
+        return buildVO(diary, dictionaryCache.getUserById(userId));
     }
 
     @Override
@@ -349,6 +356,7 @@ public class DiaryServiceImpl implements DiaryService {
         if (diary.getVisibility() != VisibilityType.PUBLIC) {
             throw new DiaryException("该日记不是公开日记，无法查看");
         }
+        incrementViewCount(diary);
         return buildVO(diary, dictionaryCache.getUserById(diary.getUserId()));
     }
 
@@ -407,22 +415,72 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
-    public List<DiaryCommentVO> comments(Long userId, Long diaryId) {
+    @Transactional
+    public void deleteComment(Long userId, Long commentId) {
+        DiaryComment comment = diaryCommentMapper.selectById(commentId);
+        if (comment == null) {
+            throw new DiaryException("评论不存在");
+        }
+        if (!comment.getUserId().equals(userId)) {
+            throw new DiaryException("只能删除自己的评论");
+        }
+        diaryCommentMapper.deleteById(commentId);
+        // 更新日记评论计数
+        Diary diary = diaryMapper.selectById(comment.getDiaryId());
+        if (diary != null) {
+            int count = diary.getCommentCount() == null ? 0 : diary.getCommentCount();
+            diary.setCommentCount(Math.max(count - 1, 0));
+            diaryMapper.updateById(diary);
+        }
+    }
+
+    @Override
+    public PageResult<DiaryCommentVO> comments(Long userId, Long diaryId, int page, int size) {
         requireAccessibleDiary(diaryId);
-        return diaryCommentMapper.selectList(new LambdaQueryWrapper<DiaryComment>()
+        Page<DiaryComment> pageResult = diaryCommentMapper.selectPage(
+                new Page<>(page, size),
+                new LambdaQueryWrapper<DiaryComment>()
                         .eq(DiaryComment::getDiaryId, diaryId)
                         .orderByAsc(DiaryComment::getCreatedAt)
-                        .orderByAsc(DiaryComment::getId))
-                .stream()
-                .map(item -> DiaryCommentVO.builder()
-                        .id(item.getId())
-                        .diaryId(item.getDiaryId())
-                        .userId(item.getUserId())
-                        .parentId(item.getParentId())
-                        .content(item.getContent())
-                        .createdAt(item.getCreatedAt())
-                        .build())
+                        .orderByAsc(DiaryComment::getId));
+
+        List<DiaryComment> comments = pageResult.getRecords();
+        if (comments.isEmpty()) {
+            PageResult<DiaryCommentVO> empty = new PageResult<>();
+            empty.setList(List.of());
+            empty.setTotal(pageResult.getTotal());
+            empty.setPageNum(pageResult.getCurrent());
+            empty.setPageSize(pageResult.getSize());
+            return empty;
+        }
+
+        List<Long> userIds = comments.stream().map(DiaryComment::getUserId).distinct().toList();
+        Map<Long, User> userMap = userIds.isEmpty() ? Map.of() :
+                userMapper.selectBatchIds(userIds).stream()
+                        .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
+        List<DiaryCommentVO> vos = comments.stream()
+                .map(item -> {
+                    User u = userMap.get(item.getUserId());
+                    return DiaryCommentVO.builder()
+                            .id(item.getId())
+                            .diaryId(item.getDiaryId())
+                            .userId(item.getUserId())
+                            .parentId(item.getParentId())
+                            .content(item.getContent())
+                            .nickname(u != null ? u.getNickname() : "匿名")
+                            .avatarPath(u != null ? u.getAvatarPath() : null)
+                            .createdAt(item.getCreatedAt())
+                            .build();
+                })
                 .toList();
+
+        PageResult<DiaryCommentVO> result = new PageResult<>();
+        result.setList(vos);
+        result.setTotal(pageResult.getTotal());
+        result.setPageNum(pageResult.getCurrent());
+        result.setPageSize(pageResult.getSize());
+        return result;
     }
 
     /**
@@ -545,6 +603,15 @@ public class DiaryServiceImpl implements DiaryService {
      * 组装前端需要的日记详情对象（批量模式，接收预加载的 media/tag 数据）。
      * 用于 list() 分页查询，避免逐条查询 N+1。
      */
+    /**
+     * 浏览次数 +1。
+     */
+    private void incrementViewCount(Diary diary) {
+        int count = diary.getViewCount() == null ? 0 : diary.getViewCount();
+        diary.setViewCount(count + 1);
+        diaryMapper.updateById(diary);
+    }
+
     private DiaryVO buildVO(Diary diary, List<String> preloadedMediaPaths, List<Long> preloadedTagIds) {
         User user = dictionaryCache.getUserById(diary.getUserId());
         return DiaryVO.builder()
@@ -568,6 +635,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .locationSourceType(diary.getLocationSourceType())
                 .likeCount(diary.getLikeCount())
                 .commentCount(diary.getCommentCount())
+                .viewCount(diary.getViewCount())
                 .mediaPaths(preloadedMediaPaths)
                 .tagIds(preloadedTagIds)
                 .ageLabel(buildAgeLabel(user, diary.getRecordDate()))
@@ -612,6 +680,7 @@ public class DiaryServiceImpl implements DiaryService {
                 .locationSourceType(diary.getLocationSourceType())
                 .likeCount(diary.getLikeCount())
                 .commentCount(diary.getCommentCount())
+                .viewCount(diary.getViewCount())
                 .mediaPaths(mediaPaths)
                 .tagIds(tagIds)
                 .ageLabel(buildAgeLabel(user, diary.getRecordDate()))

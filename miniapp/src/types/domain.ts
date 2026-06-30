@@ -53,9 +53,10 @@ export interface DiaryItem {
   weather?: string
   mood?: string
   visibility: 'PRIVATE' | 'SHARED' | 'PUBLIC'
-  likeCount: number
-  commentCount: number
-  mediaPaths: string[]
+    likeCount: number
+    commentCount: number
+    viewCount?: number
+    mediaPaths: string[]
   ageLabel?: string
   locationName?: string
   address?: string
@@ -135,6 +136,8 @@ export interface DiaryComment {
   userId: Id
   parentId?: Id
   content: string
+  nickname?: string
+  avatarPath?: string
   createdAt: string
 }
 

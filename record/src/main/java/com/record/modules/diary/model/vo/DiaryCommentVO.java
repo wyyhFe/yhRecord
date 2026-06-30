@@ -35,6 +35,12 @@ public class DiaryCommentVO {
     @Schema(description = "评论内容", example = "今天的记录很有意思")
     private String content;
 
+    @Schema(description = "评论用户昵称", example = "张三")
+    private String nickname;
+
+    @Schema(description = "评论用户头像", example = "avatar/xxx.jpg")
+    private String avatarPath;
+
     @Schema(description = "评论时间", example = "2026-03-21T21:10:00")
     private LocalDateTime createdAt;
 }

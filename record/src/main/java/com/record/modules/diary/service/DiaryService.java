@@ -3,6 +3,7 @@ package com.record.modules.diary.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.enums.VisibilityType;
 import com.record.common.util.PageQuery;
+import com.record.common.model.PageResult;
 import com.record.modules.diary.model.dto.CreateDiaryRequest;
 import com.record.modules.diary.model.dto.DiaryCommentRequest;
 import com.record.modules.diary.model.dto.UpdateDiaryRequest;
@@ -37,7 +38,15 @@ public interface DiaryService {
 
     void comment(Long userId, Long diaryId, DiaryCommentRequest request);
 
-    List<DiaryCommentVO> comments(Long userId, Long diaryId);
+    /**
+     * 删除评论。仅评论作者可删除。
+     */
+    void deleteComment(Long userId, Long commentId);
+
+    /**
+     * 分页查询评论列表。
+     */
+    PageResult<DiaryCommentVO> comments(Long userId, Long diaryId, int page, int size);
 
     /**
      * 按日期范围批量统计每天的日记数量。

@@ -81,6 +81,9 @@ public class DiaryVO {
     @Schema(description = "评论数", example = "2")
     private Integer commentCount;
 
+    @Schema(description = "浏览次数", example = "42")
+    private Integer viewCount;
+
     @Schema(description = "年龄文案", example = "记于22岁1个月10天")
     private String ageLabel;
 
