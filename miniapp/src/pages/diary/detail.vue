@@ -110,9 +110,8 @@
             <view v-for="reply in repliesOf(top.id)" :key="reply.id" class="cmt-item cmt-item--reply">
               <view class="cmt-item__meta">
                 <text class="cmt-item__name">{{ authorName(reply) }}</text>
-                <text class="cmt-item__dot">·</text>
-                <text class="cmt-item__time">{{ formatTime(reply.createdAt) }}</text>
                 <text class="cmt-item__at">回复 @{{ authorName(top) }}</text>
+                <text class="cmt-item__time">{{ formatTime(reply.createdAt) }}</text>
               </view>
               <text class="cmt-item__text">{{ reply.content }}</text>
               <view class="cmt-item__bar">
