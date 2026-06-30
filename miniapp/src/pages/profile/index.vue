@@ -2,6 +2,9 @@
   <view class="page-shell-safe profile-page">
     <!-- 用户信息区 -->
     <view class="profile-user">
+      <view class="profile-user__poster-btn" hover-class="profile-user__poster-btn--pressed" @tap="posterRef?.generate()">
+        <text class="profile-user__poster-icon">🖼️</text>
+      </view>
       <view class="profile-user__avatar">
         <image v-if="profile?.avatarPath" :src="profile.avatarPath" mode="aspectFill" class="profile-user__avatar-img" />
         <text v-else class="profile-user__avatar-text">{{ avatarText }}</text>
@@ -34,7 +37,7 @@
         <text class="profile-card__title">设置</text>
       </view>
       <view class="profile-menu">
-        <view v-for="item in menuItems" :key="item.key" class="profile-menu__item" hover-class="profile-menu__item--pressed" @tap="handleSelect(item.key)">
+        <view v-for="item in menuItems" :key="item.key" class="profile-menu__item" hover-class="profile-menu__item--pressed" @tap="item.key === 'poster' ? posterRef?.generate() : handleSelect(item.key)">
           <view class="profile-menu__left">
             <text class="profile-menu__icon">{{ item.icon }}</text>
             <view class="profile-menu__info">
@@ -47,19 +50,28 @@
       </view>
     </view>
 
+    <!-- 海报生成器 -->
+    <PosterGenerator ref="posterRef" :avatar-text="avatarText" :nickname="profile?.nickname || ''" :signature="profile?.signature || ''" :diary-count="profile?.diaryCount ?? 0" :created-at="profile?.createdAt" />
+
     <!-- 自定义 TabBar -->
     <TabBar current="profile" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { computed, onMounted, ref } from 'vue'
+import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
 import TabBar from '@/components/business/tab-bar/index.vue'
+import PosterGenerator from './modules/poster-generator/index.vue'
+
+onShareAppMessage(() => ({ title: '个人中心' }))
+onShareTimeline(() => ({ title: '个人中心' }))
 
 const appStore = useAppStore()
 const profile = computed(() => appStore.profile)
+
+const posterRef = ref<InstanceType<typeof PosterGenerator>>()
 
 const avatarText = computed(() => {
   const name = profile.value?.nickname?.trim()
@@ -127,7 +139,32 @@ onShow(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--space-8) var(--space-6) var(--space-5);
+  padding: var(--space-5) var(--space-6) var(--space-5);
+  position: relative;
+}
+
+.profile-user__poster-btn {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-6);
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.profile-user__poster-btn--pressed {
+  transform: scale(0.85);
+  opacity: 0.6;
+}
+
+.profile-user__poster-icon {
+  font-size: 32rpx;
+  line-height: 1;
 }
 
 .profile-user__avatar {
