@@ -25,7 +25,7 @@ REM ============================================
 
 set "SERVER_IP=123.207.210.150"
 set "SERVER_USER=root"
-set "SSH_KEY=C:\Users\Administrator\Desktop\lifeRecord-deploy\record.pem"
+set "SSH_KEY=D:\1\life-record\lifeRecord-deploy\record.pem"
 
 set "COMPOSE_DIR=/www/wwwroot/myproject"
 set "REMOTE_BUILD_DIR=%COMPOSE_DIR%"

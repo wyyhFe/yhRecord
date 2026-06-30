@@ -25,6 +25,10 @@ WORKDIR /app
 ARG JAR_FILE=recordJar/record-0.0.1-SNAPSHOT.jar
 COPY ${JAR_FILE} app.jar
 
+# 日志目录（logback-spring.xml 的 ${LOG_PATH:-./logs} 从这里读）
+# 宿主机挂载 -v /var/java/lifeRecord/logs:/app/logs 持久化
+ENV LOG_PATH=/app/logs
+
 # 运行时 JVM 参数,部署时可通过 -e JAVA_OPTS=... 覆盖
 ENV JAVA_OPTS="-Xms512m -Xmx1024m -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8 -XX:+UseG1GC -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs"
 ENV SPRING_PROFILES_ACTIVE=prod
