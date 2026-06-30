@@ -1,7 +1,7 @@
 package com.record.modules.follow.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.record.common.exception.BusinessException;
+import com.record.common.exception.FollowException;
 import com.record.modules.follow.mapper.UserFollowMapper;
 import com.record.modules.follow.model.entity.UserFollow;
 import com.record.modules.follow.model.vo.FollowUserVO;
@@ -31,17 +31,17 @@ public class FollowServiceImpl implements FollowService {
     @Transactional
     public void follow(Long userId, Long targetUserId) {
         if (userId.equals(targetUserId)) {
-            throw new BusinessException("不能关注自己");
+            throw new FollowException("不能关注自己");
         }
         User target = userMapper.selectById(targetUserId);
         if (target == null) {
-            throw new BusinessException("用户不存在");
+            throw new FollowException("用户不存在");
         }
         Long count = userFollowMapper.selectCount(new LambdaQueryWrapper<UserFollow>()
                 .eq(UserFollow::getFollowerId, userId)
                 .eq(UserFollow::getFollowingId, targetUserId));
         if (count > 0) {
-            throw new BusinessException("已关注该用户");
+            throw new FollowException("已关注该用户");
         }
         UserFollow follow = new UserFollow();
         follow.setFollowerId(userId);
