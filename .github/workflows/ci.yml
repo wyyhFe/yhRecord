@@ -64,14 +64,17 @@ jobs:
         with:
           node-version: "20"
 
+      - name: 安装 pnpm
+        run: npm install -g pnpm
+
       - name: 安装依赖
         working-directory: miniapp
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: 类型检查
         working-directory: miniapp
-        run: npm run type-check
+        run: pnpm run type-check
 
       - name: 构建
         working-directory: miniapp
-        run: npm run build:mp-weixin
+        run: pnpm run build:mp-weixin
