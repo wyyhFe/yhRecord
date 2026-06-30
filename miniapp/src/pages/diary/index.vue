@@ -135,8 +135,11 @@ import LoadMore from '@/components/business/load-more/index.vue'
 import { fetchDiaryList } from '@/api/diary'
 import { OSS_BASE_URL } from '@/config/app'
 import type { DiaryItem, Id } from '@/types/domain'
+import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
 
+onShareAppMessage(() => ({ title: '我的日记' }))
+onShareTimeline(() => ({ title: '我的日记' }))
 const MONTH_SHORT = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 
 const tabItems = [

@@ -320,7 +320,10 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onLoad, onShow } from '@dcloudio/uni-app'
+
+onShareAppMessage(() => ({ title: '我的账本' }))
+onShareTimeline(() => ({ title: '我的账本' }))
 import LedgerYearCharts from '@/components/business/ledger-year-charts/index.vue'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import { API_BASE_URL, OSS_BASE_URL } from '@/config/app'

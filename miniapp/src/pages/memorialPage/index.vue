@@ -107,7 +107,10 @@
 <script setup lang="ts">
 import EmptyStateCard from '@/components/business/empty-state-card'
 import { computed, reactive, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
+
+onShareAppMessage(() => ({ title: '纪念日' }))
+onShareTimeline(() => ({ title: '纪念日' }))
 
 import {
   createMemorialDay,

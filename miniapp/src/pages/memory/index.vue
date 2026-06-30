@@ -79,7 +79,10 @@
 
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onLoad, onShow } from '@dcloudio/uni-app'
+
+onShareAppMessage(() => ({ title: '那年今日' }))
+onShareTimeline(() => ({ title: '那年今日' }))
 import EmptyStateCard from '@/components/business/empty-state-card'
 import { fetchOnThisDay } from '@/api/calendar'
 import type { CalendarDayDetail, Id } from '@/types/domain'

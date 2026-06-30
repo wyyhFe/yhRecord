@@ -204,7 +204,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
+
+onShareAppMessage(() => ({ title: '今日打卡' }))
+onShareTimeline(() => ({ title: '今日打卡' }))
 
 import PhotoPicker, { type SelectedPhoto } from '@/components/business/photo-picker/index.vue'
 import HeatmapCalendar from '@/components/business/heatmap-calendar/index.vue'

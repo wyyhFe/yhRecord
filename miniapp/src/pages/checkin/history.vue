@@ -232,7 +232,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onLoad } from '@dcloudio/uni-app'
+
+onShareAppMessage(() => ({ title: '打卡记录' }))
+onShareTimeline(() => ({ title: '打卡记录' }))
 import EmptyStateCard from '@/components/business/empty-state-card'
 import MoodPicker from '@/components/business/mood-picker/index.vue'
 import PhotoPicker from '@/components/business/photo-picker/index.vue'

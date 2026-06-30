@@ -124,8 +124,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { useGreeting } from '@/composables/useGreeting'
 import { fetchCalendarSummaryRecent, fetchYearlyDiaryCount } from '@/api/calendar'
+
+onShareAppMessage(() => ({ title: '把今天，认真留下来' }))
+onShareTimeline(() => ({ title: '把今天，认真留下来' }))
 import type { DaySummary } from '@/types/domain'
 import { tokenStorage } from '@/utils/storage'
 import { getLastLedgerBook } from '@/utils/ledger-book'

@@ -119,7 +119,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { onReachBottom, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onReachBottom, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
+
+onShareAppMessage(() => ({ title: '发现' }))
+onShareTimeline(() => ({ title: '发现' }))
 import EmptyStateCard from '@/components/business/empty-state-card'
 import LoadMore from '@/components/business/load-more/index.vue'
 import TabBar from '@/components/business/tab-bar/index.vue'

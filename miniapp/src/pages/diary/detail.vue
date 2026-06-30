@@ -157,8 +157,11 @@
 
 <script setup lang="ts">
 import { computed, ref, type ComputedRef } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onLoad } from '@dcloudio/uni-app'
 import { deleteDiary, fetchDiaryDetail, fetchPublicDiaryDetail, toggleLike, addComment, fetchComments } from '@/api/diary'
+
+onShareAppMessage(() => ({ title: '日记详情' }))
+onShareTimeline(() => ({ title: '日记详情' }))
 import { OSS_BASE_URL } from '@/config/app'
 import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
 import type { DiaryComment, DiaryItem } from '@/types/domain'
