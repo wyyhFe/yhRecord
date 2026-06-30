@@ -11,6 +11,16 @@ export interface CalendarSummaryResult {
 }
 
 /**
+ * 获取今年有日记记录的天数。
+ */
+export function fetchYearlyDiaryCount() {
+  return request<number>({
+    url: '/calendar/yearly-diary-count',
+    method: 'GET'
+  })
+}
+
+/**
  * 获取最近 N 天的日历摘要（后端按日期范围直接返回，高效）。
  * 首页「近七天」时间轴专用。
  */

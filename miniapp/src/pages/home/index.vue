@@ -125,7 +125,7 @@
 import { computed, ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
 import { useGreeting } from '@/composables/useGreeting'
-import { fetchCalendarSummaryRecent } from '@/api/calendar'
+import { fetchCalendarSummaryRecent, fetchYearlyDiaryCount } from '@/api/calendar'
 import type { DaySummary } from '@/types/domain'
 import { tokenStorage } from '@/utils/storage'
 import { getLastLedgerBook } from '@/utils/ledger-book'
@@ -134,6 +134,7 @@ import TabBar from '@/components/business/tab-bar/index.vue'
 
 const greeting = useGreeting()
 const calendarItems = ref<DaySummary[]>([])
+const recordedCount = ref(0)
 const showLogin = ref(false)
 
 const overviewColors = [
@@ -194,10 +195,6 @@ const metrics = computed(() => {
   ]
 })
 
-const recordedCount = computed(
-  () => calendarItems.value.filter((item) => item.hasDiary).length
-)
-
 const WEEK_LABEL = ['日', '一', '二', '三', '四', '五', '六']
 const WEEK_EN = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 const MONTH_EN = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
@@ -246,10 +243,14 @@ async function loadSummary() {
   }
 
   try {
-    const res = await fetchCalendarSummaryRecent(7)
+    const [res, yearCount] = await Promise.all([
+      fetchCalendarSummaryRecent(7),
+      fetchYearlyDiaryCount()
+    ])
     // 按日期升序排列，确保时间轴从左到右是过去→今天
     const sorted = [...res.days].sort((a, b) => a.date.localeCompare(b.date))
     calendarItems.value = sorted
+    recordedCount.value = yearCount
   } catch {
     buildFallbackSummary()
   }
