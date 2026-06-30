@@ -123,18 +123,17 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onLoad, onShow } from '@dcloudio/uni-app'
-import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
+import { onLoad, onPullDownRefresh, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { useGreeting } from '@/composables/useGreeting'
 import { fetchCalendarSummaryRecent, fetchYearlyDiaryCount } from '@/api/calendar'
-
-onShareAppMessage(() => ({ title: '把今天，认真留下来' }))
-onShareTimeline(() => ({ title: '把今天，认真留下来' }))
 import type { DaySummary } from '@/types/domain'
 import { tokenStorage } from '@/utils/storage'
 import { getLastLedgerBook } from '@/utils/ledger-book'
 import LoginSheet from '@/components/business/login-sheet'
 import TabBar from '@/components/business/tab-bar/index.vue'
+
+onShareAppMessage(() => ({ title: '把今天，认真留下来' }))
+onShareTimeline(() => ({ title: '把今天，认真留下来' }))
 
 const greeting = useGreeting()
 const calendarItems = ref<DaySummary[]>([])
@@ -297,6 +296,11 @@ onLoad((query) => {
 
 onShow(() => {
   uni.hideTabBar({ animation: false })
+  loadSummary()
+})
+
+onPullDownRefresh(() => {
+  loadSummary().finally(() => uni.stopPullDownRefresh())
 })
 </script>
 

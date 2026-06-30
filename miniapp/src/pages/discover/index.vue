@@ -120,15 +120,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onShareAppMessage, onShareTimeline, onReachBottom, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
-
-onShareAppMessage(() => ({ title: '发现' }))
-onShareTimeline(() => ({ title: '发现' }))
 import EmptyStateCard from '@/components/business/empty-state-card'
 import LoadMore from '@/components/business/load-more/index.vue'
 import TabBar from '@/components/business/tab-bar/index.vue'
 import { fetchDiaryHall } from '@/api/diary'
 import { OSS_BASE_URL } from '@/config/app'
 import type { DiaryItem, Id } from '@/types/domain'
+
+onShareAppMessage(() => ({ title: '发现' }))
+onShareTimeline(() => ({ title: '发现' }))
 
 const list = ref<DiaryItem[]>([])
 const loading = ref(false)
@@ -199,9 +199,7 @@ function goUserProfile(userId?: Id) {
 
 onShow(() => {
   uni.hideTabBar({ animation: false })
-  if (list.value.length === 0) {
-    loadDiaries(true)
-  }
+  loadDiaries(true)
 })
 
 onReachBottom(() => {

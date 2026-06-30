@@ -232,10 +232,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShareAppMessage, onShareTimeline, onLoad } from '@dcloudio/uni-app'
-
-onShareAppMessage(() => ({ title: '打卡记录' }))
-onShareTimeline(() => ({ title: '打卡记录' }))
+import { onShareAppMessage, onShareTimeline, onShow, onLoad, onPullDownRefresh } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import MoodPicker from '@/components/business/mood-picker/index.vue'
 import PhotoPicker from '@/components/business/photo-picker/index.vue'
@@ -246,6 +243,9 @@ import { fetchCheckinDayTimeline, fetchCheckinTasks, fetchCheckinTags, fetchMend
 import { uploadImageToOss } from '@/utils/upload'
 import { OSS_BASE_URL } from '@/config/app'
 import type { CheckinDayDetail, CheckinRecordItem, CheckinTag, CheckinTask } from '@/types/domain'
+
+onShareAppMessage(() => ({ title: '打卡记录' }))
+onShareTimeline(() => ({ title: '打卡记录' }))
 
 const loading = ref(false)
 const detail = ref<CheckinDayDetail | null>(null)
@@ -467,6 +467,14 @@ onLoad((query) => {
     date.value = query.date
   }
   loadHistory()
+})
+
+onShow(() => {
+  loadHistory()
+})
+
+onPullDownRefresh(() => {
+  loadHistory().finally(() => uni.stopPullDownRefresh())
 })
 </script>
 

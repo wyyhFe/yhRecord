@@ -14,9 +14,9 @@ export interface MemorialDayPayload {
 /**
  * 获取纪念日列表。
  */
-export function fetchMemorialDays() {
+export function fetchMemorialDays(page: number = 1, size: number = 20) {
   return request<Pagination<MemorialDay>>({
-    url: '/memorial-days/list',
+    url: `/memorial-days/list?current=${page}&size=${size}`,
     method: 'GET'
   })
 }

@@ -128,7 +128,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { onReachBottom, onShow } from '@dcloudio/uni-app'
+import { onReachBottom, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import FilterTabs from '@/components/business/filter-tabs'
 import LoadMore from '@/components/business/load-more/index.vue'
@@ -238,6 +238,10 @@ watch(
 )
 
 onShow(() => { loadDiaries(true) })
+
+onPullDownRefresh(() => {
+  loadDiaries(true).finally(() => uni.stopPullDownRefresh())
+})
 
 onReachBottom(() => {
   loadMore()

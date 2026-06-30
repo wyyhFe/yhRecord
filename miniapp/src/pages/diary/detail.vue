@@ -10,7 +10,20 @@
       <text class="detail-meta__item">📅 {{ detail.recordDate }}</text>
       <text v-if="detail.weather" class="detail-meta__item">{{ resolveDiaryWeatherLabel(detail.weather) }}</text>
       <text v-if="detail.mood" class="detail-meta__item">{{ resolveDiaryMoodLabel(detail.mood) }}</text>
-      <text v-if="detail.ageLabel" class="detail-meta__item detail-meta__item--muted">{{ detail.ageLabel }}</text>
+      <text v-if="!isPublicView && detail.ageLabel" class="detail-meta__item detail-meta__item--muted">{{ detail.ageLabel }}</text>
+      <text v-if="detail.viewCount" class="detail-meta__item detail-meta__item--muted">👁️ {{ detail.viewCount }}</text>
+    </view>
+
+    <!-- 公开日记作者信息（顶部） -->
+    <view v-if="isPublicView && detail?.authorId" class="detail-author" @tap="goUserProfile">
+      <view class="detail-author__avatar">
+        <image v-if="detail?.authorAvatar" :src="resolveImage(detail.authorAvatar)" mode="aspectFill" class="detail-author__avatar-img" />
+        <text v-else class="detail-author__avatar-text">{{ (detail?.authorNickname || '?').charAt(0) }}</text>
+      </view>
+      <view class="detail-author__info">
+        <text class="detail-author__name">{{ detail?.authorNickname || '匿名用户' }}</text>
+        <text class="detail-author__hint">查看主页 ›</text>
+      </view>
     </view>
 
     <!-- 正文卡片 -->
@@ -37,8 +50,8 @@
       />
     </view>
 
-    <!-- 位置 + 可见范围 -->
-    <view v-if="detail" class="detail-info">
+    <!-- 位置 + 可见范围（仅自己可见时显示） -->
+    <view v-if="detail && !isPublicView" class="detail-info">
       <view v-if="detail.address" class="detail-info__row">
         <text class="detail-info__label">📍</text>
         <text class="detail-info__value">{{ detail.address }}</text>
@@ -61,12 +74,15 @@
         <text class="detail-like__count">{{ likeCount }}</text>
       </view>
       <view class="detail-like__sep">·</view>
-      <text class="detail-like__label">{{ likeCount }} 人赞 · {{ commentList.length }} 条评论</text>
+      <text class="detail-like__label">{{ likeCount }} 人赞 · {{ detail?.commentCount || 0 }} 条评论</text>
     </view>
 
-    <!-- 评论区 -->
+    <!-- ============================================================
+         评论功能（暂时隐藏，待上线后启用）
+         后端、API、组件均已就绪，取消下方注释即可恢复。
+         ============================================================ -->
+    <!--
     <view v-if="detail" class="cmt">
-      <!-- 输入区 -->
       <view class="cmt-input">
         <view class="cmt-input__row">
           <input
@@ -89,42 +105,53 @@
         </view>
       </view>
 
-      <!-- 评论列表 -->
-      <view v-if="topLevelComments.length" class="cmt-list">
-        <view v-for="top in topLevelComments" :key="top.id" class="cmt-group">
-          <!-- 一级评论 -->
+      <view v-if="displayedComments.length" class="cmt-list">
+        <view v-for="top in displayedComments" :key="top.id" class="cmt-group">
           <view class="cmt-item">
             <view class="cmt-item__meta">
-              <text class="cmt-item__name">{{ authorName(top) }}</text>
-              <text class="cmt-item__dot">·</text>
+              <image v-if="top.avatarPath" :src="resolveImage(top.avatarPath)" mode="aspectFill" class="cmt-item__avatar" />
+              <text v-else class="cmt-item__avatar-placeholder">{{ (top.nickname || '?').charAt(0) }}</text>
+              <text class="cmt-item__name">{{ top.nickname || '匿名' }}</text>
+              <text class="cmt-item__at" />
               <text class="cmt-item__time">{{ formatTime(top.createdAt) }}</text>
             </view>
             <text class="cmt-item__text">{{ top.content }}</text>
             <view class="cmt-item__bar">
               <text class="cmt-item__action" @tap="setReply(top)">回复</text>
+              <text v-if="top.userId === currentUserId" class="cmt-item__action cmt-item__action--danger" @tap="removeComment(top.id)">删除</text>
             </view>
           </view>
 
-          <!-- 回复 -->
           <view v-if="repliesOf(top.id).length" class="cmt-replies">
             <view v-for="reply in repliesOf(top.id)" :key="reply.id" class="cmt-item cmt-item--reply">
               <view class="cmt-item__meta">
-                <text class="cmt-item__name">{{ authorName(reply) }}</text>
+                <image v-if="reply.avatarPath" :src="resolveImage(reply.avatarPath)" mode="aspectFill" class="cmt-item__avatar" />
+                <text v-else class="cmt-item__avatar-placeholder">{{ (reply.nickname || '?').charAt(0) }}</text>
+                <text class="cmt-item__name">{{ reply.nickname || '匿名' }}</text>
                 <text class="cmt-item__at">回复 @{{ authorName(top) }}</text>
                 <text class="cmt-item__time">{{ formatTime(reply.createdAt) }}</text>
               </view>
               <text class="cmt-item__text">{{ reply.content }}</text>
               <view class="cmt-item__bar">
                 <text class="cmt-item__action" @tap="setReply(top)">回复</text>
+                <text v-if="reply.userId === currentUserId" class="cmt-item__action cmt-item__action--danger" @tap="removeComment(reply.id)">删除</text>
               </view>
             </view>
           </view>
         </view>
+        <view v-if="loadingComments" class="cmt-load-more">
+          <text class="cmt-load-more__text">加载中...</text>
+        </view>
+        <view v-else-if="hasMoreComments" class="cmt-load-more" @tap="loadMoreComments">
+          <text class="cmt-load-more__text">加载更多评论</text>
+        </view>
+        <LoadMore v-else-if="commentTotal > COMMENT_PAGE_SIZE" state="noMore" />
       </view>
       <view v-else class="cmt-empty">
         <text class="cmt-empty__text">快来写第一条评论吧</text>
       </view>
     </view>
+    -->
 
     <!-- 操作按钮 -->
     <view v-if="!isPublicView" class="detail-actions">
@@ -136,35 +163,29 @@
       </view>
     </view>
 
-    <!-- 公开日记作者信息 -->
-    <view v-if="isPublicView && detail?.authorId" class="detail-author" @tap="goUserProfile">
-      <view class="detail-author__avatar">
-        <image
-          v-if="detail?.authorAvatar"
-          :src="resolveImage(detail.authorAvatar)"
-          mode="aspectFill"
-          class="detail-author__avatar-img"
-        />
-        <text v-else class="detail-author__avatar-text">{{ (detail?.authorNickname || '?').charAt(0) }}</text>
-      </view>
-      <view class="detail-author__info">
-        <text class="detail-author__name">{{ detail?.authorNickname || '匿名用户' }}</text>
-        <text class="detail-author__hint">查看主页 ›</text>
-      </view>
-    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, type ComputedRef } from 'vue'
-import { onShareAppMessage, onShareTimeline, onLoad } from '@dcloudio/uni-app'
-import { deleteDiary, fetchDiaryDetail, fetchPublicDiaryDetail, toggleLike, addComment, fetchComments } from '@/api/diary'
+import { onReachBottom, onShareAppMessage, onShareTimeline, onLoad } from '@dcloudio/uni-app'
+import { deleteDiary, fetchDiaryDetail, fetchPublicDiaryDetail, toggleLike, addComment, fetchComments, deleteComment } from '@/api/diary'
+import { OSS_BASE_URL } from '@/config/app'
+import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
+import { useAppStore } from '@/stores/app'
+import LoadMore from '@/components/business/load-more/index.vue'
+import type { DiaryComment, DiaryItem } from '@/types/domain'
 
 onShareAppMessage(() => ({ title: '日记详情' }))
 onShareTimeline(() => ({ title: '日记详情' }))
-import { OSS_BASE_URL } from '@/config/app'
-import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
-import type { DiaryComment, DiaryItem } from '@/types/domain'
+
+const appStore = useAppStore()
+const currentUserId = computed(() => appStore.profile?.id || '')
+
+function resolveImage(path: string) {
+  if (!path) return ''
+  return path.startsWith('http') ? path : `${OSS_BASE_URL}/${path}`
+}
 
 const detail = ref<DiaryItem | null>(null)
 const diaryId = ref('')
@@ -174,6 +195,11 @@ const isPublicView = ref(false)
 const liked = ref(false)
 const likeCount = ref(0)
 
+// ============================================================
+// 评论功能（暂时隐藏）
+// 取消模板中 <!-- 评论区 --> 的注释后，同时取消下方代码注释即可恢复。
+// ============================================================
+/*
 // 评论
 const commentList = ref<DiaryComment[]>([])
 const commentText = ref('')
@@ -181,72 +207,27 @@ const replyTarget = ref<string | null>(null)
 const replyParentId = ref<string | undefined>(undefined)
 const submitting = ref(false)
 
-// 一级评论（无 parentId）
+const COMMENT_PAGE_SIZE = 10
+const commentPage = ref(1)
+const commentTotal = ref(0)
+const loadingComments = ref(false)
+
 const topLevelComments: ComputedRef<DiaryComment[]> = computed(() =>
   commentList.value.filter((c) => !c.parentId)
 )
+const displayedComments = computed(() =>
+  topLevelComments.value.slice(0, commentPage.value * COMMENT_PAGE_SIZE)
+)
+const hasMoreComments = computed(() =>
+  commentList.value.length < commentTotal.value
+)
 
-// 某条评论的回复
 function repliesOf(parentId: string): DiaryComment[] {
   return commentList.value.filter((c) => c.parentId === parentId)
 }
 
-// 评论者显示名
 function authorName(comment: DiaryComment): string {
-  return comment.userId === '0' ? '匿名' : `用户 ${comment.userId.slice(-4)}`
-}
-
-const visibilityText = computed(() => {
-  const v = detail.value?.visibility
-  if (v === 'PUBLIC') return '公开'
-  if (v === 'SHARED') return '仅分享可见'
-  return '仅自己可见'
-})
-
-function resolveImage(path: string) {
-  return path.startsWith('http') ? path : `${OSS_BASE_URL}/${path}`
-}
-
-function previewImage(idx: number) {
-  if (!detail.value?.mediaPaths?.length) return
-  const urls = detail.value.mediaPaths.map((p) => resolveImage(p))
-  uni.previewImage({ urls, current: idx })
-}
-
-function goEdit() {
-  if (!diaryId.value) return
-  uni.navigateTo({ url: `/pages/diary/editor?id=${diaryId.value}` })
-}
-
-function formatTime(iso: string) {
-  const d = new Date(iso)
-  const now = new Date()
-  const diff = now.getTime() - d.getTime()
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
-  return `${d.getMonth() + 1}月${d.getDate()}日`
-}
-
-async function loadComments() {
-  if (!diaryId.value) return
-  try {
-    commentList.value = await fetchComments(diaryId.value)
-  } catch {
-    commentList.value = []
-  }
-}
-
-async function handleLike() {
-  if (!diaryId.value) return
-  try {
-    await toggleLike(diaryId.value)
-    // toggle 后取反本地状态
-    liked.value = !liked.value
-    likeCount.value += liked.value ? 1 : -1
-  } catch (error) {
-    uni.$feedback.error(error, undefined, '操作失败')
-  }
+  return comment.nickname || '匿名'
 }
 
 function setReply(comment: DiaryComment) {
@@ -271,14 +252,55 @@ async function submitComment() {
     commentText.value = ''
     cancelReply()
     await loadComments()
-    // 刷新评论数
-    detail.value!.commentCount = commentList.value.length
+    if (detail.value) detail.value.commentCount = commentTotal.value
   } catch (error) {
     uni.$feedback.error(error, undefined, '评论失败')
   } finally {
     submitting.value = false
   }
 }
+
+async function loadComments(reset = false) {
+  if (!diaryId.value || loadingComments.value) return
+  if (reset) {
+    commentPage.value = 1
+    commentList.value = []
+    commentTotal.value = 0
+  }
+  loadingComments.value = true
+  try {
+    const res = await fetchComments(diaryId.value, commentPage.value, COMMENT_PAGE_SIZE)
+    if (reset) {
+      commentList.value = res.list
+    } else {
+      commentList.value = [...commentList.value, ...res.list]
+    }
+    commentTotal.value = res.total
+  } catch {
+    if (reset) commentList.value = []
+  } finally {
+    loadingComments.value = false
+  }
+}
+
+function loadMoreComments() {
+  if (!hasMoreComments.value || loadingComments.value) return
+  commentPage.value++
+  loadComments()
+}
+
+async function removeComment(commentId: string) {
+  const res = await uni.showModal({ title: '确认删除', content: '确定要删除这条评论吗？' })
+  if (!res.confirm) return
+  try {
+    await deleteComment(commentId)
+    await loadComments(true)
+    if (detail.value) detail.value.commentCount = commentTotal.value
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '删除失败')
+  }
+}
+*/
 
 async function removeDiary() {
   if (!diaryId.value) return
@@ -314,10 +336,16 @@ onLoad(async (options) => {
   isPublicView.value = options?.public === '1'
   try {
     await loadDiaryDetail()
-    await loadComments()
+    // TODO: 上线后取消注释 — 评论功能
+    // await loadComments()
   } catch (error) {
     uni.$feedback.error(error, undefined, '加载日记详情失败')
   }
+})
+
+onReachBottom(() => {
+  // TODO: 上线后取消注释 — 评论功能
+  // if (hasMoreComments.value) loadMoreComments()
 })
 </script>
 
@@ -621,6 +649,32 @@ onLoad(async (options) => {
   font-size: 18rpx;
 }
 
+.cmt-item__action--danger {
+  color: var(--color-danger);
+  margin-left: var(--space-3);
+}
+
+.cmt-item__avatar {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.cmt-item__avatar-placeholder {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-diary-soft);
+  color: var(--color-diary);
+  font-size: 18rpx;
+  font-weight: var(--weight-semibold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 /* 嵌套回复 */
 .cmt-replies {
   margin-top: var(--space-3);
@@ -637,6 +691,18 @@ onLoad(async (options) => {
 .cmt-empty__text {
   color: var(--color-text-muted);
   font-size: var(--font-tiny);
+}
+
+.cmt-load-more {
+  margin-top: var(--space-4);
+  text-align: center;
+  padding: var(--space-3) 0;
+}
+
+.cmt-load-more__text {
+  color: var(--color-diary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-medium);
 }
 
 /* 空评论 */

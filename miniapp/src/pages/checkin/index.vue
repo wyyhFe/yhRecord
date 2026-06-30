@@ -204,11 +204,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-
-onShareAppMessage(() => ({ title: '今日打卡' }))
-onShareTimeline(() => ({ title: '今日打卡' }))
-
+import { onShareAppMessage, onShareTimeline, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import PhotoPicker, { type SelectedPhoto } from '@/components/business/photo-picker/index.vue'
 import HeatmapCalendar from '@/components/business/heatmap-calendar/index.vue'
 import MoodPicker from '@/components/business/mood-picker/index.vue'
@@ -231,6 +227,9 @@ import {
 } from '@/api/checkin'
 import type { CheckinMediaItem } from '@/api/checkin'
 import type { CheckinTag, CheckinTask, HeatmapData, HeatmapDay, Id, Medal } from '@/types/domain'
+
+onShareAppMessage(() => ({ title: '今日打卡' }))
+onShareTimeline(() => ({ title: '今日打卡' }))
 
 const tasks = ref<CheckinTask[]>([])
 const loadFailed = ref(false)
@@ -509,6 +508,10 @@ async function retryCheckinPhotoUpload(index: number) {
 
 onShow(() => {
   reloadAll()
+})
+
+onPullDownRefresh(() => {
+  reloadAll().finally(() => uni.stopPullDownRefresh())
 })
 </script>
 

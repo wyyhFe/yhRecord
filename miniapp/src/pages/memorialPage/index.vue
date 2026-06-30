@@ -25,6 +25,9 @@
     </view>
     <EmptyStateCard v-else title="还没有纪念日" description="新建一条重要日期，提醒和回顾页面会自动使用" mode="history" />
 
+    <!-- 加载更多 -->
+    <LoadMore :state="loadingMore ? 'loading' : noMore ? 'noMore' : 'hidden'" />
+
     <!-- 新建按钮 -->
     <view class="memorial-action">
       <u-button shape="circle" type="primary" color="var(--color-memory-gradient)" @click="openCreatePopup">
@@ -106,12 +109,9 @@
 
 <script setup lang="ts">
 import EmptyStateCard from '@/components/business/empty-state-card'
+import LoadMore from '@/components/business/load-more/index.vue'
 import { computed, reactive, ref } from 'vue'
-import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
-
-onShareAppMessage(() => ({ title: '纪念日' }))
-onShareTimeline(() => ({ title: '纪念日' }))
-
+import { onReachBottom, onShareAppMessage, onShareTimeline, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import {
   createMemorialDay,
   deleteMemorialDay,
@@ -121,7 +121,14 @@ import {
 } from '@/api/memorial'
 import type { Id, MemorialDay } from '@/types/domain'
 
+onShareAppMessage(() => ({ title: '纪念日' }))
+onShareTimeline(() => ({ title: '纪念日' }))
+
 const items = ref<MemorialDay[]>([])
+const pageNum = ref(1)
+const total = ref(0)
+const noMore = ref(false)
+const loadingMore = ref(false)
 const showPopup = ref(false)
 const submitting = ref(false)
 const editingId = ref<Id>()
@@ -196,18 +203,27 @@ function editItem(item: MemorialDay) {
 
 function formatReminder(value: string) { return value.replace('T', ' ').slice(0, 16) }
 
-async function loadMemorialDays() {
+async function loadMemorialDays(reset = false) {
+  if (reset) { pageNum.value = 1; noMore.value = false }
+  if (loadingMore.value || noMore.value) return
+  loadingMore.value = true
   try {
-    const result = await fetchMemorialDays()
-    items.value = result.list || []
-  }
-  catch (error) { items.value = []; uni.$feedback.error(error, undefined, '加载失败') }
+    const result = await fetchMemorialDays(pageNum.value)
+    const list = result.list || []
+    if (reset) { items.value = list } else { items.value = [...items.value, ...list] }
+    total.value = result.total
+    noMore.value = items.value.length >= total.value
+    if (!noMore.value) pageNum.value++
+  } catch (error) {
+    if (reset) items.value = []
+    uni.$feedback.error(error, undefined, '加载失败')
+  } finally { loadingMore.value = false }
 }
 
 async function removeItem(id: Id) {
   const result = await uni.showModal({ title: '确认删除', content: '删除后不再参与提醒和回顾。' })
   if (!result.confirm) return
-  try { await deleteMemorialDay(id); uni.$feedback.success('已删除'); await loadMemorialDays() }
+  try { await deleteMemorialDay(id); uni.$feedback.success('已删除'); await loadMemorialDays(true) }
   catch (error) { uni.$feedback.error(error, undefined, '删除失败') }
 }
 
@@ -220,12 +236,14 @@ async function submit() {
     if (editingId.value) { await updateMemorialDay(editingId.value, payload); uni.$feedback.success('已更新') }
     else { await createMemorialDay(payload); uni.$feedback.success('已创建') }
     closePopup()
-    await loadMemorialDays()
+    await loadMemorialDays(true)
   } catch (error) { uni.$feedback.error(error, undefined, '保存失败') }
   finally { submitting.value = false }
 }
 
-onShow(() => { loadMemorialDays() })
+onShow(() => { loadMemorialDays(true) })
+onPullDownRefresh(() => { loadMemorialDays(true).finally(() => uni.stopPullDownRefresh()) })
+onReachBottom(() => { loadMemorialDays() })
 </script>
 
 <style scoped lang="scss">

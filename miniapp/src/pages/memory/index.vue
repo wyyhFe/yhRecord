@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
-import { onShareAppMessage, onShareTimeline, onLoad, onShow } from '@dcloudio/uni-app'
+import { onShareAppMessage, onShareTimeline, onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 
 onShareAppMessage(() => ({ title: '那年今日' }))
 onShareTimeline(() => ({ title: '那年今日' }))
@@ -120,6 +120,7 @@ async function loadOnThisDay() {
 
 onLoad((query) => { if (query?.date) queryDate.value = String(query.date) })
 onShow(() => { loadOnThisDay() })
+onPullDownRefresh(() => { loadOnThisDay().finally(() => uni.stopPullDownRefresh()) })
 </script>
 
 <style scoped lang="scss">

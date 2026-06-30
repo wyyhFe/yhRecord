@@ -320,10 +320,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { onShareAppMessage, onShareTimeline, onLoad, onShow } from '@dcloudio/uni-app'
-
-onShareAppMessage(() => ({ title: '我的账本' }))
-onShareTimeline(() => ({ title: '我的账本' }))
+import { onShareAppMessage, onShareTimeline, onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import LedgerYearCharts from '@/components/business/ledger-year-charts/index.vue'
 import EmptyStateCard from '@/components/business/empty-state-card'
 import { API_BASE_URL, OSS_BASE_URL } from '@/config/app'
@@ -334,6 +331,9 @@ import { fetchUserTags, type TagItem } from '@/api/tag'
 import type { Id, LedgerEntry } from '@/types/domain'
 import { getLastLedgerBook, setLastLedgerBook } from '@/utils/ledger-book'
 import { uploadImageToOss } from '@/utils/upload'
+
+onShareAppMessage(() => ({ title: '我的账本' }))
+onShareTimeline(() => ({ title: '我的账本' }))
 
 type EntryType = 'EXPENSE' | 'INCOME'
 type ViewMode = 'month' | 'year'
@@ -907,6 +907,12 @@ onShow(() => {
     .catch((error) => {
       uni.$feedback.error(error, undefined, '加载账本数据失败')
     })
+})
+
+onPullDownRefresh(() => {
+  Promise.all([loadBooks(), loadTags()])
+    .then(() => reloadByView())
+    .finally(() => uni.stopPullDownRefresh())
 })
 </script>
 

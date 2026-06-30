@@ -14,6 +14,15 @@
       <text class="up-hero__name">{{ userInfo?.nickname || '匿名用户' }}</text>
       <text v-if="userInfo?.signature" class="up-hero__sign">{{ userInfo.signature }}</text>
       <text v-else class="up-hero__sign up-hero__sign--muted">这个人还没有签名</text>
+      <view
+        v-if="!isSelf"
+        class="up-follow-btn"
+        :class="{ 'up-follow-btn--active': following }"
+        hover-class="up-follow-btn--pressed"
+        @tap="toggleFollow"
+      >
+        <text class="up-follow-btn__text">{{ following ? '已关注' : '＋ 关注' }}</text>
+      </view>
     </view>
 
     <!-- 统计信息 -->
@@ -107,10 +116,14 @@ import EmptyStateCard from '@/components/business/empty-state-card'
 import LoadMore from '@/components/business/load-more/index.vue'
 import { fetchPublicUserProfile } from '@/api/user'
 import { fetchUserPublicDiaries } from '@/api/diary'
+import { followUser, unfollowUser, fetchFollowStatus, fetchFollowCounts } from '@/api/follow'
 import { OSS_BASE_URL } from '@/config/app'
+import { useAppStore } from '@/stores/app'
 import type { PublicUserProfile, DiaryItem, Id } from '@/types/domain'
 
 const userId = ref<Id>('')
+const appStore = useAppStore()
+const currentUserId = computed(() => appStore.profile?.id || '')
 const userInfo = ref<PublicUserProfile | null>(null)
 const diaryList = ref<DiaryItem[]>([])
 const loading = ref(false)
@@ -118,6 +131,10 @@ const loadingMore = ref(false)
 const noMore = ref(false)
 const currentPage = ref(1)
 const pageSize = 10
+const following = ref(false)
+const followCounts = ref({ following: 0, followers: 0 })
+
+const isSelf = computed(() => currentUserId.value === userId.value)
 
 function resolveImage(path: string) {
   return path.startsWith('http') ? path : `${OSS_BASE_URL}/${path}`
@@ -158,6 +175,34 @@ async function loadUserInfo() {
     userInfo.value = await fetchPublicUserProfile(userId.value)
   } catch {
     // 静默处理
+  }
+}
+
+async function loadFollowData() {
+  if (!currentUserId.value || currentUserId.value === userId.value) return
+  try {
+    const [status, counts] = await Promise.all([
+      fetchFollowStatus(userId.value),
+      fetchFollowCounts(userId.value)
+    ])
+    following.value = status.following
+    followCounts.value = counts
+  } catch {
+    // 静默
+  }
+}
+
+async function toggleFollow() {
+  if (following.value) {
+    await unfollowUser(userId.value)
+    following.value = false
+    followCounts.value.followers = Math.max(0, followCounts.value.followers - 1)
+    uni.$feedback.success('已取消关注')
+  } else {
+    await followUser(userId.value)
+    following.value = true
+    followCounts.value.followers++
+    uni.$feedback.success('关注成功')
   }
 }
 
@@ -206,6 +251,7 @@ onLoad((options) => {
   if (uid) {
     userId.value = uid
     loadUserInfo()
+    loadFollowData()
     loadDiaries(true)
   }
 })
@@ -272,6 +318,32 @@ onReachBottom(() => {
 
 .up-hero__sign--muted {
   color: var(--color-text-muted);
+}
+
+/* 关注按钮 */
+.up-follow-btn {
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-8);
+  border-radius: var(--radius-full);
+  border: 2rpx solid var(--color-primary);
+  background: transparent;
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.up-follow-btn--active {
+  background: var(--color-primary-soft);
+  border-color: transparent;
+}
+
+.up-follow-btn--pressed {
+  transform: scale(0.93);
+  opacity: 0.7;
+}
+
+.up-follow-btn__text {
+  color: var(--color-primary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
 }
 
 /* ---------- 统计信息 ---------- */
