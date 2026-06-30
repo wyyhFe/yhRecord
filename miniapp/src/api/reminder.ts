@@ -40,3 +40,31 @@ export function saveReminderSettings(data: SaveReminderSettingPayload) {
     data
   })
 }
+
+/**
+ * 手动触发日记提醒。
+ */
+export function triggerDiaryReminder() {
+  return request<void>({ url: '/reminders/trigger/diary', method: 'POST' })
+}
+
+/**
+ * 手动触发每日记账提醒。
+ */
+export function triggerLedgerReminder() {
+  return request<void>({ url: '/reminders/trigger/ledger', method: 'POST' })
+}
+
+/**
+ * 手动触发记账月报提醒。
+ */
+export function triggerMonthlyReminder() {
+  return request<void>({ url: '/reminders/trigger/monthly', method: 'POST' })
+}
+
+/**
+ * 手动触发纪念日提醒。
+ */
+export function triggerMemorialReminder() {
+  return request<void>({ url: '/reminders/trigger/memorial', method: 'POST' })
+}

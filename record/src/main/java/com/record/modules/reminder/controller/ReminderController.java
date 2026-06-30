@@ -8,6 +8,7 @@ import com.record.modules.reminder.service.ReminderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,5 +38,47 @@ public class ReminderController {
     @PutMapping("/settings")
     public ApiResponse<ReminderSettingVO> save(@RequestBody ReminderSettingRequest request) {
         return ApiResponse.success(reminderService.saveSetting(UserContext.getUserId(), request));
+    }
+
+    // ==================== 手动触发提醒（供小程序用户调试/测试用） ====================
+
+    @Operation(summary = "手动触发日记提醒")
+    @PostMapping("/trigger/diary")
+    public ApiResponse<ReminderService.DispatchResult> triggerDiary() {
+        ReminderService.DispatchResult result = reminderService.dispatchDiaryReminders();
+        if (result.isAllFailed()) {
+            return ApiResponse.failure(500, "日记提醒全部发送失败: success=" + result.success() + ", failed=" + result.failed());
+        }
+        return ApiResponse.success(result);
+    }
+
+    @Operation(summary = "手动触发每日记账提醒")
+    @PostMapping("/trigger/ledger")
+    public ApiResponse<ReminderService.DispatchResult> triggerLedger() {
+        ReminderService.DispatchResult result = reminderService.dispatchDailyLedgerReminders();
+        if (result.isAllFailed()) {
+            return ApiResponse.failure(500, "记账提醒全部发送失败: success=" + result.success() + ", failed=" + result.failed());
+        }
+        return ApiResponse.success(result);
+    }
+
+    @Operation(summary = "手动触发记账月报提醒")
+    @PostMapping("/trigger/monthly")
+    public ApiResponse<ReminderService.DispatchResult> triggerMonthly() {
+        ReminderService.DispatchResult result = reminderService.dispatchMonthlyLedgerReminders();
+        if (result.isAllFailed()) {
+            return ApiResponse.failure(500, "记账月报全部发送失败: success=" + result.success() + ", failed=" + result.failed());
+        }
+        return ApiResponse.success(result);
+    }
+
+    @Operation(summary = "手动触发纪念日提醒")
+    @PostMapping("/trigger/memorial")
+    public ApiResponse<ReminderService.DispatchResult> triggerMemorial() {
+        ReminderService.DispatchResult result = reminderService.dispatchMemorialReminders();
+        if (result.isAllFailed()) {
+            return ApiResponse.failure(500, "纪念日提醒全部发送失败: success=" + result.success() + ", failed=" + result.failed());
+        }
+        return ApiResponse.success(result);
     }
 }

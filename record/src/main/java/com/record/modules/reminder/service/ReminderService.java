@@ -8,6 +8,12 @@ import com.record.modules.reminder.model.vo.ReminderSettingVO;
  */
 public interface ReminderService {
 
+    /** 推送结果汇总。 */
+    record DispatchResult(int success, int failed) {
+        public boolean isAllFailed() { return success == 0 && failed > 0; }
+        public int total() { return success + failed; }
+    }
+
     /**
      * 查询当前用户的提醒设置。
      */
@@ -21,20 +27,20 @@ public interface ReminderService {
     /**
      * 发送日记提醒。
      */
-    void dispatchDiaryReminders();
+    DispatchResult dispatchDiaryReminders();
 
     /**
      * 发送每日记账提醒。
      */
-    void dispatchDailyLedgerReminders();
+    DispatchResult dispatchDailyLedgerReminders();
 
     /**
      * 发送记账月报提醒。
      */
-    void dispatchMonthlyLedgerReminders();
+    DispatchResult dispatchMonthlyLedgerReminders();
 
     /**
      * 发送纪念日提醒。
      */
-    void dispatchMemorialReminders();
+    DispatchResult dispatchMemorialReminders();
 }

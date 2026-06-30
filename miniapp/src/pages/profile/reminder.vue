@@ -42,6 +42,62 @@
       </view>
     </view>
 
+    <!-- 手动触发测试 -->
+    <view class="reminder-card">
+      <view class="reminder-card__header">
+        <view class="reminder-card__left">
+          <text class="reminder-card__title">🧪 手动触发测试</text>
+          <text class="reminder-card__desc">立即发送提醒消息，不受定时任务限制</text>
+        </view>
+      </view>
+      <view class="reminder-trigger-grid">
+        <u-button
+          shape="circle"
+          type="primary"
+          size="mini"
+          color="var(--color-primary)"
+          :loading="triggering.diary"
+          :disabled="triggering.diary"
+          @click="triggerDiary"
+        >
+          日记提醒
+        </u-button>
+        <u-button
+          shape="circle"
+          type="primary"
+          size="mini"
+          color="var(--color-primary)"
+          :loading="triggering.ledger"
+          :disabled="triggering.ledger"
+          @click="triggerLedger"
+        >
+          记账提醒
+        </u-button>
+        <u-button
+          shape="circle"
+          type="primary"
+          size="mini"
+          color="var(--color-primary)"
+          :loading="triggering.monthly"
+          :disabled="triggering.monthly"
+          @click="triggerMonthly"
+        >
+          记账月报
+        </u-button>
+        <u-button
+          shape="circle"
+          type="primary"
+          size="mini"
+          color="var(--color-primary)"
+          :loading="triggering.memorial"
+          :disabled="triggering.memorial"
+          @click="triggerMemorial"
+        >
+          纪念日提醒
+        </u-button>
+      </view>
+    </view>
+
     <!-- 保存 -->
     <view class="reminder-submit">
       <u-button
@@ -65,13 +121,19 @@ import {
   MP_LEDGER_TEMPLATE_ID,
   MP_MEMORIAL_TEMPLATE_ID
 } from '@/config/app'
-import { fetchReminderSettings, saveReminderSettings } from '@/api/reminder'
+import { fetchReminderSettings, saveReminderSettings, triggerDiaryReminder, triggerLedgerReminder, triggerMonthlyReminder, triggerMemorialReminder } from '@/api/reminder'
 
 const submitting = ref(false)
 const form = reactive({
   diaryReminderEnabled: false,
   miniProgramReminderEnabled: false,
   officialAccountReminderEnabled: false
+})
+const triggering = reactive({
+  diary: false,
+  ledger: false,
+  monthly: false,
+  memorial: false
 })
 
 function onOfficialSwitch(event: Event) {
@@ -104,6 +166,54 @@ async function onMiniProgramSwitch(event: Event) {
     })
   } else {
     uni.$feedback.info('未授权订阅消息')
+  }
+}
+
+async function triggerDiary() {
+  triggering.diary = true
+  try {
+    await triggerDiaryReminder()
+    uni.$feedback.success('日记提醒已触发，请查看微信服务通知')
+  } catch {
+    uni.$feedback.error('触发失败，请稍后重试')
+  } finally {
+    triggering.diary = false
+  }
+}
+
+async function triggerLedger() {
+  triggering.ledger = true
+  try {
+    await triggerLedgerReminder()
+    uni.$feedback.success('记账提醒已触发，请查看微信服务通知')
+  } catch {
+    uni.$feedback.error('触发失败，请稍后重试')
+  } finally {
+    triggering.ledger = false
+  }
+}
+
+async function triggerMonthly() {
+  triggering.monthly = true
+  try {
+    await triggerMonthlyReminder()
+    uni.$feedback.success('记账月报已触发，请查看微信服务通知')
+  } catch {
+    uni.$feedback.error('触发失败，请稍后重试')
+  } finally {
+    triggering.monthly = false
+  }
+}
+
+async function triggerMemorial() {
+  triggering.memorial = true
+  try {
+    await triggerMemorialReminder()
+    uni.$feedback.success('纪念日提醒已触发，请查看微信服务通知')
+  } catch {
+    uni.$feedback.error('触发失败，请稍后重试')
+  } finally {
+    triggering.memorial = false
   }
 }
 
@@ -254,6 +364,19 @@ onMounted(() => { init() })
   color: var(--color-text-muted);
   font-size: 20rpx;
   line-height: var(--leading-relaxed);
+}
+
+/* ========== 手动触发按钮网格 ========== */
+.reminder-trigger-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.reminder-trigger-grid .u-button {
+  flex: 1;
+  min-width: 140rpx;
 }
 
 /* ========== 提交 ========== */

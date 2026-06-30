@@ -30,6 +30,8 @@ import com.record.modules.reminder.model.vo.ReminderSettingVO;
 import com.record.modules.reminder.service.ReminderService;
 import com.record.modules.user.mapper.UserMapper;
 import com.record.modules.user.model.entity.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -50,6 +52,8 @@ import java.util.Objects;
  */
 @Service
 public class ReminderServiceImpl implements ReminderService {
+
+    private static final Logger log = LoggerFactory.getLogger(ReminderServiceImpl.class);
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -105,13 +109,19 @@ public class ReminderServiceImpl implements ReminderService {
     }
 
     @Override
-    public void dispatchDiaryReminders() {
+    public DispatchResult dispatchDiaryReminders() {
         LocalDate today = LocalDate.now();
         List<ReminderSetting> settings = reminderSettingMapper.selectList(new LambdaQueryWrapper<ReminderSetting>()
                 .eq(ReminderSetting::getDiaryReminderEnabled, true));
+        log.info("dispatchDiaryReminders found {} settings with diaryReminderEnabled=true", settings.size());
+        int success = 0, failed = 0;
 
         for (ReminderSetting setting : settings) {
             if (!hasAnyChannelEnabled(setting)) {
+                log.info("dispatchDiaryReminders skip userId={}: no channel enabled (miniProgram={} officialAccount={})",
+                        setting.getUserId(),
+                        setting.getMiniProgramReminderEnabled(),
+                        setting.getOfficialAccountReminderEnabled());
                 continue;
             }
 
@@ -120,72 +130,91 @@ public class ReminderServiceImpl implements ReminderService {
                     .eq(Diary::getRecordDate, today)
                     .isNull(Diary::getDeletedAt));
             if (diaryCount > 0) {
+                log.info("dispatchDiaryReminders skip userId={}: already wrote {} diaries today",
+                        setting.getUserId(), diaryCount);
                 continue;
             }
 
             User user = userMapper.selectById(setting.getUserId());
             if (user == null) {
+                log.warn("dispatchDiaryReminders skip userId={}: user not found", setting.getUserId());
                 continue;
             }
 
-            sendDiaryReminder(setting, user, today);
+            if (sendDiaryReminder(setting, user, today)) success++; else failed++;
         }
+        return new DispatchResult(success, failed);
     }
 
     @Override
-    public void dispatchDailyLedgerReminders() {
+    public DispatchResult dispatchDailyLedgerReminders() {
         LocalDate today = LocalDate.now();
         List<ReminderSetting> settings = reminderSettingMapper.selectList(new LambdaQueryWrapper<>());
+        log.info("dispatchDailyLedgerReminders found {} settings", settings.size());
+        int success = 0, failed = 0;
 
         for (ReminderSetting setting : settings) {
             if (!hasAnyChannelEnabled(setting)) {
-                continue;
-            }
-
-            Long ledgerCount = ledgerEntryMapper.selectCount(new LambdaQueryWrapper<LedgerEntry>()
-                    .eq(LedgerEntry::getUserId, setting.getUserId())
-                    .eq(LedgerEntry::getEntryDate, today));
-            if (ledgerCount > 0) {
+                log.info("dispatchDailyLedgerReminders skip userId={}: no channel enabled", setting.getUserId());
                 continue;
             }
 
             User user = userMapper.selectById(setting.getUserId());
             if (user == null) {
+                log.warn("dispatchDailyLedgerReminders skip userId={}: user not found", setting.getUserId());
                 continue;
             }
 
-            sendDailyLedgerReminder(setting, user, today);
+            List<LedgerEntry> entries = ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
+                    .eq(LedgerEntry::getUserId, setting.getUserId())
+                    .eq(LedgerEntry::getEntryDate, today));
+            if (!entries.isEmpty()) {
+                log.info("dispatchDailyLedgerReminders skip userId={}: already has {} entries today",
+                        setting.getUserId(), entries.size());
+                continue;
+            }
+
+            if (sendDailyLedgerReminder(setting, user, today, entries)) success++; else failed++;
         }
+        return new DispatchResult(success, failed);
     }
 
     @Override
-    public void dispatchMonthlyLedgerReminders() {
+    public DispatchResult dispatchMonthlyLedgerReminders() {
         LocalDate today = LocalDate.now();
         YearMonth reportMonth = YearMonth.from(today).minusMonths(1);
         List<ReminderSetting> settings = reminderSettingMapper.selectList(new LambdaQueryWrapper<>());
+        log.info("dispatchMonthlyLedgerReminders found {} settings", settings.size());
+        int success = 0, failed = 0;
 
         for (ReminderSetting setting : settings) {
             if (!hasAnyChannelEnabled(setting)) {
+                log.info("dispatchMonthlyLedgerReminders skip userId={}: no channel enabled", setting.getUserId());
                 continue;
             }
 
             User user = userMapper.selectById(setting.getUserId());
             if (user == null) {
+                log.warn("dispatchMonthlyLedgerReminders skip userId={}: user not found", setting.getUserId());
                 continue;
             }
 
             List<LedgerBook> books = ledgerBookMapper.selectList(new LambdaQueryWrapper<LedgerBook>()
                     .eq(LedgerBook::getUserId, user.getId()));
             for (LedgerBook book : books) {
-                sendMonthlyLedgerReminder(setting, user, book, reportMonth, today);
+                log.info("dispatchMonthlyLedgerReminders send userId={} bookId={}", user.getId(), book.getId());
+                if (sendMonthlyLedgerReminder(setting, user, book, reportMonth, today)) success++; else failed++;
             }
         }
+        return new DispatchResult(success, failed);
     }
 
     @Override
-    public void dispatchMemorialReminders() {
+    public DispatchResult dispatchMemorialReminders() {
         LocalDate today = LocalDate.now();
         List<MemorialDay> items = memorialDayMapper.selectList(new LambdaQueryWrapper<>());
+        log.info("dispatchMemorialReminders found {} items", items.size());
+        int success = 0, failed = 0;
 
         for (MemorialDay item : items) {
             if (!matches(item, today)) {
@@ -194,16 +223,20 @@ public class ReminderServiceImpl implements ReminderService {
 
             ReminderSetting setting = getOrCreate(item.getUserId());
             if (!hasAnyChannelEnabled(setting)) {
+                log.info("dispatchMemorialReminders skip userId={} memorialId={}: no channel enabled",
+                        item.getUserId(), item.getId());
                 continue;
             }
 
             User user = userMapper.selectById(item.getUserId());
             if (user == null) {
+                log.warn("dispatchMemorialReminders skip userId={}: user not found", item.getUserId());
                 continue;
             }
 
-            sendMemorialReminder(setting, user, item, today);
+            if (sendMemorialReminder(setting, user, item, today)) success++; else failed++;
         }
+        return new DispatchResult(success, failed);
     }
 
     private ReminderSetting getOrCreate(Long userId) {
@@ -234,7 +267,15 @@ public class ReminderServiceImpl implements ReminderService {
     /**
      * 发送日记提醒。
      */
-    private void sendDiaryReminder(ReminderSetting setting, User user, LocalDate today) {
+    private boolean sendDiaryReminder(ReminderSetting setting, User user, LocalDate today) {
+        log.info("sendDiaryReminder userId={} miniProgramEnabled={} officialAccountEnabled={} diaryTemplateId={} openid={}",
+                user.getId(),
+                setting.getMiniProgramReminderEnabled(),
+                setting.getOfficialAccountReminderEnabled(),
+                appProperties.getReminder().getMiniProgram().getDiaryTemplateId(),
+                user.getOpenid());
+        boolean anySuccess = false;
+
         if (Boolean.TRUE.equals(setting.getMiniProgramReminderEnabled())
                 && hasTemplate(appProperties.getReminder().getMiniProgram().getDiaryTemplateId())
                 && !hasSent(user.getId(), ReminderBusinessType.DIARY_DAILY, ReminderChannel.MINI_PROGRAM, null, today)) {
@@ -248,9 +289,16 @@ public class ReminderServiceImpl implements ReminderService {
                         .data(buildMiniProgramDiaryData(today))
                         .build());
                 saveLog(user.getId(), ReminderBusinessType.DIARY_DAILY, ReminderChannel.MINI_PROGRAM, null, today, "SUCCESS", "sent");
+                anySuccess = true;
             } catch (Exception ex) {
+                log.error("sendDiaryReminder miniProgram failed userId={}", user.getId(), ex);
                 saveLog(user.getId(), ReminderBusinessType.DIARY_DAILY, ReminderChannel.MINI_PROGRAM, null, today, "FAILED", ex.getMessage());
             }
+        } else {
+            log.info("sendDiaryReminder skip miniProgram: enabled={} hasTemplate={} alreadySent={}",
+                    setting.getMiniProgramReminderEnabled(),
+                    hasTemplate(appProperties.getReminder().getMiniProgram().getDiaryTemplateId()),
+                    hasSent(user.getId(), ReminderBusinessType.DIARY_DAILY, ReminderChannel.MINI_PROGRAM, null, today));
         }
 
         if (Boolean.TRUE.equals(setting.getOfficialAccountReminderEnabled())
@@ -265,18 +313,25 @@ public class ReminderServiceImpl implements ReminderService {
                         .data(buildOfficialDiaryData(today))
                         .build());
                 saveLog(user.getId(), ReminderBusinessType.DIARY_DAILY, ReminderChannel.OFFICIAL_ACCOUNT, null, today, "SUCCESS", "sent");
+                anySuccess = true;
             } catch (Exception ex) {
+                log.error("sendDiaryReminder officialAccount failed userId={}", user.getId(), ex);
                 saveLog(user.getId(), ReminderBusinessType.DIARY_DAILY, ReminderChannel.OFFICIAL_ACCOUNT, null, today, "FAILED", ex.getMessage());
             }
         }
+        return anySuccess;
     }
 
     /**
      * 发送每日记账提醒。
      * 只有当天还没有任何流水时才发送。
      */
-    private void sendDailyLedgerReminder(ReminderSetting setting, User user, LocalDate today) {
-        LedgerDailySummary summary = calculateDailyLedgerSummary(user.getId(), today);
+    private boolean sendDailyLedgerReminder(ReminderSetting setting, User user, LocalDate today, List<LedgerEntry> entries) {
+        log.info("sendDailyLedgerReminder userId={} miniProgramEnabled={} ledgerTemplateId={} openid={}",
+                user.getId(), setting.getMiniProgramReminderEnabled(),
+                appProperties.getReminder().getMiniProgram().getLedgerTemplateId(), user.getOpenid());
+        boolean anySuccess = false;
+        LedgerDailySummary summary = calculateDailyLedgerSummary(entries);
 
         if (Boolean.TRUE.equals(setting.getMiniProgramReminderEnabled())
                 && hasTemplate(appProperties.getReminder().getMiniProgram().getLedgerTemplateId())
@@ -291,9 +346,16 @@ public class ReminderServiceImpl implements ReminderService {
                         .data(buildMiniProgramLedgerDailyData(summary, today))
                         .build());
                 saveLog(user.getId(), ReminderBusinessType.LEDGER_DAILY, ReminderChannel.MINI_PROGRAM, null, today, "SUCCESS", "sent");
+                anySuccess = true;
             } catch (Exception ex) {
+                log.error("sendDailyLedgerReminder miniProgram failed userId={}", user.getId(), ex);
                 saveLog(user.getId(), ReminderBusinessType.LEDGER_DAILY, ReminderChannel.MINI_PROGRAM, null, today, "FAILED", ex.getMessage());
             }
+        } else {
+            log.info("sendDailyLedgerReminder skip miniProgram: enabled={} hasTemplate={} alreadySent={}",
+                    setting.getMiniProgramReminderEnabled(),
+                    hasTemplate(appProperties.getReminder().getMiniProgram().getLedgerTemplateId()),
+                    hasSent(user.getId(), ReminderBusinessType.LEDGER_DAILY, ReminderChannel.MINI_PROGRAM, null, today));
         }
 
         if (Boolean.TRUE.equals(setting.getOfficialAccountReminderEnabled())
@@ -308,16 +370,23 @@ public class ReminderServiceImpl implements ReminderService {
                         .data(buildOfficialLedgerDailyData(summary, today))
                         .build());
                 saveLog(user.getId(), ReminderBusinessType.LEDGER_DAILY, ReminderChannel.OFFICIAL_ACCOUNT, null, today, "SUCCESS", "sent");
+                anySuccess = true;
             } catch (Exception ex) {
+                log.error("sendDailyLedgerReminder officialAccount failed userId={}", user.getId(), ex);
                 saveLog(user.getId(), ReminderBusinessType.LEDGER_DAILY, ReminderChannel.OFFICIAL_ACCOUNT, null, today, "FAILED", ex.getMessage());
             }
         }
+        return anySuccess;
     }
 
     /**
      * 发送记账月报提醒。
      */
-    private void sendMonthlyLedgerReminder(ReminderSetting setting, User user, LedgerBook book, YearMonth reportMonth, LocalDate today) {
+    private boolean sendMonthlyLedgerReminder(ReminderSetting setting, User user, LedgerBook book, YearMonth reportMonth, LocalDate today) {
+        log.info("sendMonthlyLedgerReminder userId={} bookId={} miniProgramEnabled={} ledgerMonthlyTemplateId={} openid={}",
+                user.getId(), book.getId(), setting.getMiniProgramReminderEnabled(),
+                appProperties.getReminder().getMiniProgram().getLedgerMonthlyTemplateId(), user.getOpenid());
+        boolean anySuccess = false;
         LedgerMonthlySummary summary = calculateMonthlyLedgerSummary(user.getId(), book.getId(), reportMonth);
 
         if (Boolean.TRUE.equals(setting.getMiniProgramReminderEnabled())
@@ -333,9 +402,16 @@ public class ReminderServiceImpl implements ReminderService {
                         .data(buildMiniProgramLedgerMonthlyData(book, summary))
                         .build());
                 saveLog(user.getId(), ReminderBusinessType.LEDGER_MONTHLY, ReminderChannel.MINI_PROGRAM, book.getId(), today, "SUCCESS", "sent");
+                anySuccess = true;
             } catch (Exception ex) {
+                log.error("sendMonthlyLedgerReminder miniProgram failed userId={}", user.getId(), ex);
                 saveLog(user.getId(), ReminderBusinessType.LEDGER_MONTHLY, ReminderChannel.MINI_PROGRAM, book.getId(), today, "FAILED", ex.getMessage());
             }
+        } else {
+            log.info("sendMonthlyLedgerReminder skip miniProgram: enabled={} hasTemplate={} alreadySent={}",
+                    setting.getMiniProgramReminderEnabled(),
+                    hasTemplate(appProperties.getReminder().getMiniProgram().getLedgerMonthlyTemplateId()),
+                    hasSent(user.getId(), ReminderBusinessType.LEDGER_MONTHLY, ReminderChannel.MINI_PROGRAM, book.getId(), today));
         }
 
         if (Boolean.TRUE.equals(setting.getOfficialAccountReminderEnabled())
@@ -350,16 +426,24 @@ public class ReminderServiceImpl implements ReminderService {
                         .data(buildOfficialLedgerMonthlyData(book, summary))
                         .build());
                 saveLog(user.getId(), ReminderBusinessType.LEDGER_MONTHLY, ReminderChannel.OFFICIAL_ACCOUNT, book.getId(), today, "SUCCESS", "sent");
+                anySuccess = true;
             } catch (Exception ex) {
+                log.error("sendMonthlyLedgerReminder officialAccount failed userId={}", user.getId(), ex);
                 saveLog(user.getId(), ReminderBusinessType.LEDGER_MONTHLY, ReminderChannel.OFFICIAL_ACCOUNT, book.getId(), today, "FAILED", ex.getMessage());
             }
         }
+        return anySuccess;
     }
 
     /**
      * 发送纪念日提醒。
      */
-    private void sendMemorialReminder(ReminderSetting setting, User user, MemorialDay item, LocalDate today) {
+    private boolean sendMemorialReminder(ReminderSetting setting, User user, MemorialDay item, LocalDate today) {
+        log.info("sendMemorialReminder userId={} memorialId={} miniProgramEnabled={} memorialTemplateId={} openid={}",
+                user.getId(), item.getId(), setting.getMiniProgramReminderEnabled(),
+                appProperties.getReminder().getMiniProgram().getMemorialTemplateId(), user.getOpenid());
+        boolean anySuccess = false;
+
         if (Boolean.TRUE.equals(setting.getMiniProgramReminderEnabled())
                 && hasTemplate(appProperties.getReminder().getMiniProgram().getMemorialTemplateId())
                 && !hasSent(user.getId(), ReminderBusinessType.MEMORIAL_DAY, ReminderChannel.MINI_PROGRAM, item.getId(), today)) {
@@ -373,9 +457,16 @@ public class ReminderServiceImpl implements ReminderService {
                         .data(buildMiniProgramMemorialData(item))
                         .build());
                 saveLog(user.getId(), ReminderBusinessType.MEMORIAL_DAY, ReminderChannel.MINI_PROGRAM, item.getId(), today, "SUCCESS", "sent");
+                anySuccess = true;
             } catch (Exception ex) {
+                log.error("sendMemorialReminder miniProgram failed userId={}", user.getId(), ex);
                 saveLog(user.getId(), ReminderBusinessType.MEMORIAL_DAY, ReminderChannel.MINI_PROGRAM, item.getId(), today, "FAILED", ex.getMessage());
             }
+        } else {
+            log.info("sendMemorialReminder skip miniProgram: enabled={} hasTemplate={} alreadySent={}",
+                    setting.getMiniProgramReminderEnabled(),
+                    hasTemplate(appProperties.getReminder().getMiniProgram().getMemorialTemplateId()),
+                    hasSent(user.getId(), ReminderBusinessType.MEMORIAL_DAY, ReminderChannel.MINI_PROGRAM, item.getId(), today));
         }
 
         if (Boolean.TRUE.equals(setting.getOfficialAccountReminderEnabled())
@@ -390,17 +481,16 @@ public class ReminderServiceImpl implements ReminderService {
                         .data(buildOfficialMemorialData(item))
                         .build());
                 saveLog(user.getId(), ReminderBusinessType.MEMORIAL_DAY, ReminderChannel.OFFICIAL_ACCOUNT, item.getId(), today, "SUCCESS", "sent");
+                anySuccess = true;
             } catch (Exception ex) {
+                log.error("sendMemorialReminder officialAccount failed userId={}", user.getId(), ex);
                 saveLog(user.getId(), ReminderBusinessType.MEMORIAL_DAY, ReminderChannel.OFFICIAL_ACCOUNT, item.getId(), today, "FAILED", ex.getMessage());
             }
         }
+        return anySuccess;
     }
 
-    private LedgerDailySummary calculateDailyLedgerSummary(Long userId, LocalDate date) {
-        List<LedgerEntry> entries = ledgerEntryMapper.selectList(new LambdaQueryWrapper<LedgerEntry>()
-                .eq(LedgerEntry::getUserId, userId)
-                .eq(LedgerEntry::getEntryDate, date));
-
+    private LedgerDailySummary calculateDailyLedgerSummary(List<LedgerEntry> entries) {
         BigDecimal income = BigDecimal.ZERO;
         BigDecimal expense = BigDecimal.ZERO;
         for (LedgerEntry entry : entries) {
