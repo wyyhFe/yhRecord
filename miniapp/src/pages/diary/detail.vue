@@ -17,7 +17,7 @@
     <view class="detail-card">
       <text class="detail-card__text">{{ detail?.content || '暂无内容' }}</text>
 
-      <!-- 标签（附在正文下方） -->
+      <!-- 标签 -->
       <view v-if="detail?.tags?.length" class="detail-card__tags">
         <view v-for="tag in detail.tags" :key="tag.id" class="detail-tag">
           <text class="detail-tag__name">{{ tag.name }}</text>
@@ -37,7 +37,7 @@
       />
     </view>
 
-    <!-- 位置 + 可见范围（合并成一行卡片） -->
+    <!-- 位置 + 可见范围 -->
     <view v-if="detail" class="detail-info">
       <view v-if="detail.address" class="detail-info__row">
         <text class="detail-info__label">📍</text>
@@ -46,6 +46,68 @@
       <view class="detail-info__row">
         <text class="detail-info__label">👁️</text>
         <text class="detail-info__value">{{ visibilityText }}</text>
+      </view>
+    </view>
+
+    <!-- 点赞栏 -->
+    <view v-if="detail" class="detail-like">
+      <view
+        class="detail-like__btn"
+        :class="{ 'detail-like__btn--active': liked }"
+        hover-class="detail-like__btn--pressed"
+        @click="handleLike"
+      >
+        <text class="detail-like__icon">{{ liked ? '❤️' : '🤍' }}</text>
+        <text class="detail-like__count">{{ likeCount }}</text>
+      </view>
+      <view class="detail-like__sep">·</view>
+      <text class="detail-like__label">{{ likeCount }} 人赞 · {{ commentList.length }} 条评论</text>
+    </view>
+
+    <!-- 评论区 -->
+    <view v-if="detail" class="detail-comments">
+      <view class="detail-comments__input-row">
+        <input
+          v-model="commentText"
+          class="detail-comments__input"
+          :placeholder="replyTarget ? `回复 ${replyTarget}：` : '写下你的评论...'"
+          :maxlength="200"
+          confirm-type="send"
+          @confirm="submitComment"
+        />
+        <view
+          class="detail-comments__send"
+          :class="{ 'detail-comments__send--disabled': !commentText.trim() }"
+          @tap="submitComment"
+        >
+          <text class="detail-comments__send-text">发送</text>
+        </view>
+      </view>
+
+      <!-- 回复提示 -->
+      <view v-if="replyTarget" class="detail-comments__replying">
+        <text class="detail-comments__replying-text">回复 {{ replyTarget }}</text>
+        <text class="detail-comments__replying-cancel" @tap="cancelReply">取消</text>
+      </view>
+
+      <!-- 评论列表 -->
+      <view v-if="commentList.length" class="detail-comments__list">
+        <view v-for="(comment, idx) in commentList" :key="comment.id" class="comment-item">
+          <view class="comment-item__head">
+            <text class="comment-item__author">{{ comment.userId === '0' ? '匿名' : `用户 ${comment.userId.slice(-4)}` }}</text>
+            <text class="comment-item__time">{{ formatTime(comment.createdAt) }}</text>
+          </view>
+          <view v-if="comment.parentId" class="comment-item__reply-tip">
+            <text class="comment-item__reply-tip-text">回复</text>
+          </view>
+          <text class="comment-item__content">{{ comment.content }}</text>
+          <view class="comment-item__actions">
+            <text class="comment-item__reply-btn" @tap="setReply(comment)">回复</text>
+          </view>
+        </view>
+      </view>
+      <view v-else class="detail-comments__empty">
+        <text class="detail-comments__empty-text">暂无评论，来说点什么吧</text>
       </view>
     </view>
 
@@ -59,7 +121,7 @@
       </view>
     </view>
 
-    <!-- 公开日记模式：显示作者信息 -->
+    <!-- 公开日记作者信息 -->
     <view v-if="isPublicView && detail?.authorId" class="detail-author" @tap="goUserProfile">
       <view class="detail-author__avatar">
         <image
@@ -81,14 +143,25 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { deleteDiary, fetchDiaryDetail, fetchPublicDiaryDetail } from '@/api/diary'
+import { deleteDiary, fetchDiaryDetail, fetchPublicDiaryDetail, toggleLike, addComment, fetchComments } from '@/api/diary'
 import { OSS_BASE_URL } from '@/config/app'
 import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
-import type { DiaryItem } from '@/types/domain'
+import type { DiaryComment, DiaryItem } from '@/types/domain'
 
 const detail = ref<DiaryItem | null>(null)
 const diaryId = ref('')
 const isPublicView = ref(false)
+
+// 点赞
+const liked = ref(false)
+const likeCount = ref(0)
+
+// 评论
+const commentList = ref<DiaryComment[]>([])
+const commentText = ref('')
+const replyTarget = ref<string | null>(null)
+const replyParentId = ref<string | undefined>(undefined)
+const submitting = ref(false)
 
 const visibilityText = computed(() => {
   const v = detail.value?.visibility
@@ -112,6 +185,68 @@ function goEdit() {
   uni.navigateTo({ url: `/pages/diary/editor?id=${diaryId.value}` })
 }
 
+function formatTime(iso: string) {
+  const d = new Date(iso)
+  const now = new Date()
+  const diff = now.getTime() - d.getTime()
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时前`
+  return `${d.getMonth() + 1}月${d.getDate()}日`
+}
+
+async function loadComments() {
+  if (!diaryId.value) return
+  try {
+    commentList.value = await fetchComments(diaryId.value)
+  } catch {
+    commentList.value = []
+  }
+}
+
+async function handleLike() {
+  if (!diaryId.value) return
+  try {
+    await toggleLike(diaryId.value)
+    // toggle 后取反本地状态
+    liked.value = !liked.value
+    likeCount.value += liked.value ? 1 : -1
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '操作失败')
+  }
+}
+
+function setReply(comment: DiaryComment) {
+  replyTarget.value = `用户 ${comment.userId.slice(-4)}`
+  replyParentId.value = comment.id
+}
+
+function cancelReply() {
+  replyTarget.value = null
+  replyParentId.value = undefined
+}
+
+async function submitComment() {
+  const text = commentText.value.trim()
+  if (!text || submitting.value || !diaryId.value) return
+  submitting.value = true
+  try {
+    await addComment(diaryId.value, {
+      content: text,
+      parentId: replyParentId.value
+    })
+    commentText.value = ''
+    cancelReply()
+    await loadComments()
+    // 刷新评论数
+    detail.value!.commentCount = commentList.value.length
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '评论失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
 async function removeDiary() {
   if (!diaryId.value) return
   const result = await uni.showModal({
@@ -131,6 +266,9 @@ async function loadDiaryDetail() {
   } else {
     detail.value = await fetchDiaryDetail(diaryId.value)
   }
+  if (detail.value) {
+    likeCount.value = detail.value.likeCount || 0
+  }
 }
 
 function goUserProfile() {
@@ -138,12 +276,15 @@ function goUserProfile() {
   uni.navigateTo({ url: `/pages/discover/user-profile?userId=${detail.value.authorId}` })
 }
 
-onLoad((options) => {
+onLoad(async (options) => {
   diaryId.value = options?.id || ''
   isPublicView.value = options?.public === '1'
-  loadDiaryDetail().catch((error) => {
+  try {
+    await loadDiaryDetail()
+    await loadComments()
+  } catch (error) {
     uni.$feedback.error(error, undefined, '加载日记详情失败')
-  })
+  }
 })
 </script>
 
@@ -265,6 +406,197 @@ onLoad((options) => {
   color: var(--color-text-secondary);
   font-size: var(--font-meta);
   line-height: 1.6;
+}
+
+/* ========== 点赞栏 ========== */
+.detail-like {
+  margin: var(--space-3) var(--space-4) 0;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.detail-like__btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.detail-like__btn--pressed {
+  transform: scale(0.9);
+  opacity: 0.7;
+}
+
+.detail-like__btn--active {
+  background: var(--color-diary-soft);
+}
+
+.detail-like__icon {
+  font-size: 28rpx;
+  line-height: 1;
+}
+
+.detail-like__count {
+  color: var(--color-text-primary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
+  min-width: 16rpx;
+  text-align: center;
+}
+
+.detail-like__sep {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta);
+}
+
+.detail-like__label {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+/* ========== 评论区 ========== */
+.detail-comments {
+  margin: var(--space-3) var(--space-4) 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-large);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+/* 评论输入行 */
+.detail-comments__input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.detail-comments__input {
+  flex: 1;
+  min-height: 68rpx;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-soft);
+  color: var(--color-text-primary);
+  font-size: var(--font-meta);
+}
+
+.detail-comments__send {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-diary-gradient);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.detail-comments__send--disabled {
+  opacity: 0.5;
+}
+
+.detail-comments__send-text {
+  color: #fff;
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
+}
+
+/* 回复提示 */
+.detail-comments__replying {
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-small);
+  background: var(--color-diary-soft);
+}
+
+.detail-comments__replying-text {
+  color: var(--color-diary);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-medium);
+  flex: 1;
+}
+
+.detail-comments__replying-cancel {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+/* 评论列表 */
+.detail-comments__list {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.comment-item {
+  padding: var(--space-3) 0;
+  border-top: 1rpx solid var(--color-divider);
+}
+
+.comment-item:first-child {
+  border-top: none;
+}
+
+.comment-item__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-1);
+}
+
+.comment-item__author {
+  color: var(--color-diary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-semibold);
+}
+
+.comment-item__time {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+.comment-item__reply-tip {
+  margin-bottom: var(--space-1);
+}
+
+.comment-item__reply-tip-text {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+.comment-item__content {
+  color: var(--color-text-primary);
+  font-size: var(--font-meta);
+  line-height: var(--leading-relaxed);
+}
+
+.comment-item__actions {
+  margin-top: var(--space-1);
+}
+
+.comment-item__reply-btn {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+/* 空评论 */
+.detail-comments__empty {
+  margin-top: var(--space-5);
+  text-align: center;
+}
+
+.detail-comments__empty-text {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
 }
 
 /* ========== 操作按钮 ========== */

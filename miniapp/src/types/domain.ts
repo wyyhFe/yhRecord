@@ -127,6 +127,18 @@ export interface CheckinTask {
 }
 
 /**
+ * 日记评论。
+ */
+export interface DiaryComment {
+  id: Id
+  diaryId: Id
+  userId: Id
+  parentId?: Id
+  content: string
+  createdAt: string
+}
+
+/**
  * 打卡时间线详情（新接口）。
  */
 export interface CheckinDayDetail {

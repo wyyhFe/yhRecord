@@ -1,6 +1,6 @@
 import { request } from '@/utils/request'
 import type { Pagination } from '@/types/api'
-import type { DiaryItem, Id } from '@/types/domain'
+import type { DiaryComment, DiaryItem, Id } from '@/types/domain'
 import type { CreateDiaryPayload } from '@/types/diary'
 
 /**
@@ -104,6 +104,39 @@ export function fetchUserPublicDiaries(userId: Id, params?: {
 export function fetchPublicDiaryDetail(id: Id) {
   return request<DiaryItem>({
     url: `/diaries/public-detail/${id}`,
+    method: 'GET'
+  })
+}
+
+// ==================== 互动接口（点赞 + 评论） ====================
+
+/**
+ * 切换点赞/取消点赞。
+ */
+export function toggleLike(diaryId: Id) {
+  return request<void>({
+    url: `/diaries/${diaryId}/like`,
+    method: 'POST'
+  })
+}
+
+/**
+ * 发表评论。
+ */
+export function addComment(diaryId: Id, data: { content: string; parentId?: Id }) {
+  return request<void>({
+    url: `/diaries/${diaryId}/comments`,
+    method: 'POST',
+    data
+  })
+}
+
+/**
+ * 查询评论列表。
+ */
+export function fetchComments(diaryId: Id) {
+  return request<DiaryComment[]>({
+    url: `/diaries/${diaryId}/comments`,
     method: 'GET'
   })
 }
