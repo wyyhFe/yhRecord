@@ -13,6 +13,11 @@ public interface CalendarService {
     CalendarDayDetailVO onThisDay(Long userId, LocalDate date);
 
     /**
+     * 获取今年有日记记录的天数。
+     */
+    long countYearlyDiaryDays(Long userId);
+
+    /**
      * 查询最近 N 天的日历摘要。
      * 后端只查需要的数据，比按月全量查询高效。
      *

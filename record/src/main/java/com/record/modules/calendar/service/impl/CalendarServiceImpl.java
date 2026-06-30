@@ -94,6 +94,13 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     @Override
+    public long countYearlyDiaryDays(Long userId) {
+        LocalDate now = LocalDate.now();
+        LocalDate startOfYear = LocalDate.of(now.getYear(), 1, 1);
+        return diaryService.countByDateRange(userId, startOfYear, now).size();
+    }
+
+    @Override
     public CalendarDayDetailVO onThisDay(Long userId, LocalDate date) {
         return dayDetail(userId, date.minusYears(1));
     }

@@ -44,6 +44,12 @@ public class CalendarController {
         return ApiResponse.success(calendarService.onThisDay(UserContext.getUserId(), date));
     }
 
+    @Operation(summary = "获取今年有日记记录的天数")
+    @GetMapping("/calendar/yearly-diary-count")
+    public ApiResponse<Long> yearlyDiaryCount() {
+        return ApiResponse.success(calendarService.countYearlyDiaryDays(UserContext.getUserId()));
+    }
+
     @Operation(summary = "查询最近 N 天日历摘要")
     @GetMapping("/calendar/summary-recent")
     public ApiResponse<CalendarSummaryVO> summaryRecent(@RequestParam(defaultValue = "7") int days) {
