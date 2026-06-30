@@ -65,49 +65,66 @@
     </view>
 
     <!-- 评论区 -->
-    <view v-if="detail" class="detail-comments">
-      <view class="detail-comments__input-row">
-        <input
-          v-model="commentText"
-          class="detail-comments__input"
-          :placeholder="replyTarget ? `回复 ${replyTarget}：` : '写下你的评论...'"
-          :maxlength="200"
-          confirm-type="send"
-          @confirm="submitComment"
-        />
-        <view
-          class="detail-comments__send"
-          :class="{ 'detail-comments__send--disabled': !commentText.trim() }"
-          @tap="submitComment"
-        >
-          <text class="detail-comments__send-text">发送</text>
+    <view v-if="detail" class="cmt">
+      <!-- 输入区 -->
+      <view class="cmt-input">
+        <view class="cmt-input__row">
+          <input
+            v-model="commentText"
+            class="cmt-input__field"
+            :placeholder="replyTarget ? `回复 @${replyTarget}` : '说点什么...'"
+            :maxlength="200"
+            confirm-type="send"
+            @confirm="submitComment"
+          />
+          <text
+            class="cmt-input__send"
+            :class="{ 'cmt-input__send--disabled': !commentText.trim() }"
+            @tap="submitComment"
+          >发送</text>
         </view>
-      </view>
-
-      <!-- 回复提示 -->
-      <view v-if="replyTarget" class="detail-comments__replying">
-        <text class="detail-comments__replying-text">回复 {{ replyTarget }}</text>
-        <text class="detail-comments__replying-cancel" @tap="cancelReply">取消</text>
+        <view v-if="replyTarget" class="cmt-input__replying">
+          <text class="cmt-input__replying-text">回复 @{{ replyTarget }}</text>
+          <text class="cmt-input__replying-cancel" @tap="cancelReply">取消</text>
+        </view>
       </view>
 
       <!-- 评论列表 -->
-      <view v-if="commentList.length" class="detail-comments__list">
-        <view v-for="(comment, idx) in commentList" :key="comment.id" class="comment-item">
-          <view class="comment-item__head">
-            <text class="comment-item__author">{{ comment.userId === '0' ? '匿名' : `用户 ${comment.userId.slice(-4)}` }}</text>
-            <text class="comment-item__time">{{ formatTime(comment.createdAt) }}</text>
+      <view v-if="topLevelComments.length" class="cmt-list">
+        <view v-for="top in topLevelComments" :key="top.id" class="cmt-group">
+          <!-- 一级评论 -->
+          <view class="cmt-item">
+            <view class="cmt-item__meta">
+              <text class="cmt-item__name">{{ authorName(top) }}</text>
+              <text class="cmt-item__dot">·</text>
+              <text class="cmt-item__time">{{ formatTime(top.createdAt) }}</text>
+            </view>
+            <text class="cmt-item__text">{{ top.content }}</text>
+            <view class="cmt-item__bar">
+              <text class="cmt-item__action" @tap="setReply(top)">回复</text>
+            </view>
           </view>
-          <view v-if="comment.parentId" class="comment-item__reply-tip">
-            <text class="comment-item__reply-tip-text">回复</text>
-          </view>
-          <text class="comment-item__content">{{ comment.content }}</text>
-          <view class="comment-item__actions">
-            <text class="comment-item__reply-btn" @tap="setReply(comment)">回复</text>
+
+          <!-- 回复 -->
+          <view v-if="repliesOf(top.id).length" class="cmt-replies">
+            <view v-for="reply in repliesOf(top.id)" :key="reply.id" class="cmt-item cmt-item--reply">
+              <view class="cmt-item__meta">
+                <text class="cmt-item__name">{{ authorName(reply) }}</text>
+                <text class="cmt-item__dot">·</text>
+                <text class="cmt-item__time">{{ formatTime(reply.createdAt) }}</text>
+              </view>
+              <text class="cmt-item__text">
+                <text class="cmt-item__at">回复 @{{ authorName(top) }}：</text>{{ reply.content }}
+              </text>
+              <view class="cmt-item__bar">
+                <text class="cmt-item__action" @tap="setReply(top)">回复</text>
+              </view>
+            </view>
           </view>
         </view>
       </view>
-      <view v-else class="detail-comments__empty">
-        <text class="detail-comments__empty-text">暂无评论，来说点什么吧</text>
+      <view v-else class="cmt-empty">
+        <text class="cmt-empty__text">快来写第一条评论吧</text>
       </view>
     </view>
 
@@ -141,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, type ComputedRef } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { deleteDiary, fetchDiaryDetail, fetchPublicDiaryDetail, toggleLike, addComment, fetchComments } from '@/api/diary'
 import { OSS_BASE_URL } from '@/config/app'
@@ -162,6 +179,21 @@ const commentText = ref('')
 const replyTarget = ref<string | null>(null)
 const replyParentId = ref<string | undefined>(undefined)
 const submitting = ref(false)
+
+// 一级评论（无 parentId）
+const topLevelComments: ComputedRef<DiaryComment[]> = computed(() =>
+  commentList.value.filter((c) => !c.parentId)
+)
+
+// 某条评论的回复
+function repliesOf(parentId: string): DiaryComment[] {
+  return commentList.value.filter((c) => c.parentId === parentId)
+}
+
+// 评论者显示名
+function authorName(comment: DiaryComment): string {
+  return comment.userId === '0' ? '匿名' : `用户 ${comment.userId.slice(-4)}`
+}
 
 const visibilityText = computed(() => {
   const v = detail.value?.visibility
@@ -217,7 +249,7 @@ async function handleLike() {
 }
 
 function setReply(comment: DiaryComment) {
-  replyTarget.value = `用户 ${comment.userId.slice(-4)}`
+  replyTarget.value = authorName(comment)
   replyParentId.value = comment.id
 }
 
@@ -462,8 +494,8 @@ onLoad(async (options) => {
   font-size: var(--font-tiny);
 }
 
-/* ========== 评论区 ========== */
-.detail-comments {
+/* ========== 评论（Bilibili 风格） ========== */
+.cmt {
   margin: var(--space-3) var(--space-4) 0;
   background: var(--color-surface);
   border-radius: var(--radius-large);
@@ -471,16 +503,16 @@ onLoad(async (options) => {
   padding: var(--space-5);
 }
 
-/* 评论输入行 */
-.detail-comments__input-row {
+/* 输入区 */
+.cmt-input__row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
-.detail-comments__input {
+.cmt-input__field {
   flex: 1;
-  min-height: 68rpx;
+  height: 64rpx;
   padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   background: var(--color-surface-soft);
@@ -488,102 +520,118 @@ onLoad(async (options) => {
   font-size: var(--font-meta);
 }
 
-.detail-comments__send {
+.cmt-input__send {
   flex-shrink: 0;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-full);
-  background: var(--color-diary-gradient);
-  transition: all var(--motion-fast) var(--ease-standard);
-}
-
-.detail-comments__send--disabled {
-  opacity: 0.5;
-}
-
-.detail-comments__send-text {
-  color: #fff;
+  color: var(--color-diary);
   font-size: var(--font-meta);
   font-weight: var(--weight-semibold);
+  transition: opacity var(--motion-fast);
 }
 
-/* 回复提示 */
-.detail-comments__replying {
+.cmt-input__send--disabled {
+  opacity: 0.35;
+}
+
+.cmt-input__replying {
   margin-top: var(--space-2);
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-small);
-  background: var(--color-diary-soft);
 }
 
-.detail-comments__replying-text {
+.cmt-input__replying-text {
   color: var(--color-diary);
   font-size: var(--font-tiny);
   font-weight: var(--weight-medium);
   flex: 1;
 }
 
-.detail-comments__replying-cancel {
+.cmt-input__replying-cancel {
   color: var(--color-text-muted);
   font-size: var(--font-tiny);
 }
 
 /* 评论列表 */
-.detail-comments__list {
+.cmt-list {
   margin-top: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
 }
 
-.comment-item {
+.cmt-group {
   padding: var(--space-3) 0;
+}
+
+.cmt-group + .cmt-group {
   border-top: 1rpx solid var(--color-divider);
 }
 
-.comment-item:first-child {
-  border-top: none;
+.cmt-item {
 }
 
-.comment-item__head {
+.cmt-item + .cmt-item--reply {
+  margin-top: var(--space-3);
+}
+
+.cmt-item__meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-1);
   margin-bottom: var(--space-1);
 }
 
-.comment-item__author {
+.cmt-item__name {
   color: var(--color-diary);
   font-size: var(--font-meta);
   font-weight: var(--weight-semibold);
 }
 
-.comment-item__time {
+.cmt-item__dot {
   color: var(--color-text-muted);
-  font-size: var(--font-tiny);
+  font-size: 18rpx;
 }
 
-.comment-item__reply-tip {
-  margin-bottom: var(--space-1);
-}
-
-.comment-item__reply-tip-text {
+.cmt-item__time {
   color: var(--color-text-muted);
-  font-size: var(--font-tiny);
+  font-size: 18rpx;
 }
 
-.comment-item__content {
+.cmt-item__text {
+  display: block;
   color: var(--color-text-primary);
   font-size: var(--font-meta);
   line-height: var(--leading-relaxed);
 }
 
-.comment-item__actions {
-  margin-top: var(--space-1);
+.cmt-item__at {
+  color: var(--color-diary);
+  font-size: var(--font-meta);
 }
 
-.comment-item__reply-btn {
+.cmt-item__bar {
+  margin-top: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.cmt-item__action {
+  color: var(--color-text-muted);
+  font-size: 18rpx;
+}
+
+/* 嵌套回复 */
+.cmt-replies {
+  margin-top: var(--space-3);
+  margin-left: var(--space-5);
+  padding-left: var(--space-4);
+  border-left: 2rpx solid var(--color-divider);
+}
+
+.cmt-empty {
+  margin-top: var(--space-5);
+  text-align: center;
+}
+
+.cmt-empty__text {
   color: var(--color-text-muted);
   font-size: var(--font-tiny);
 }
