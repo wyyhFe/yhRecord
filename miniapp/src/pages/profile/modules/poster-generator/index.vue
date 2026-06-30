@@ -187,10 +187,13 @@ async function generate() {
 
     const tempFilePath = await new Promise<string>((resolve, reject) => {
       uni.canvasToTempFilePath({
-        canvas: canvasNode, x: 0, y: 0, width: W, height: H,
+        canvas: canvasNode,
+        canvasId: 'posterCanvas',
+        x: 0, y: 0, width: W, height: H,
         destWidth: W * 2, destHeight: H * 2,
-        success: (res: any) => resolve(res.tempFilePath), fail: reject
-      })
+        success: (res: any) => resolve(res.tempFilePath),
+        fail: reject
+      } as any)
     })
 
     posterImage.value = tempFilePath

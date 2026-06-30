@@ -1,6 +1,5 @@
 import { request } from '@/utils/request'
 import type { Pagination } from '@/types/api'
-import type { Pagination } from '@/types/api'
 import type { DiaryComment, DiaryItem, Id } from '@/types/domain'
 import type { CreateDiaryPayload } from '@/types/diary'
 

@@ -187,6 +187,35 @@ function resolveImage(path: string) {
   return path.startsWith('http') ? path : `${OSS_BASE_URL}/${path}`
 }
 
+function previewImage(idx: number) {
+  if (!detail.value?.mediaPaths?.length) return
+  const urls = detail.value.mediaPaths.map((p) => resolveImage(p))
+  uni.previewImage({ urls, current: idx })
+}
+
+function goEdit() {
+  if (!diaryId.value) return
+  uni.navigateTo({ url: `/pages/diary/editor?id=${diaryId.value}` })
+}
+
+const visibilityText = computed(() => {
+  const v = detail.value?.visibility
+  if (v === 'PUBLIC') return '公开'
+  if (v === 'SHARED') return '仅分享可见'
+  return '仅自己可见'
+})
+
+async function handleLike() {
+  if (!diaryId.value) return
+  try {
+    await toggleLike(diaryId.value)
+    liked.value = !liked.value
+    likeCount.value += liked.value ? 1 : -1
+  } catch (error) {
+    uni.$feedback.error(error, undefined, '操作失败')
+  }
+}
+
 const detail = ref<DiaryItem | null>(null)
 const diaryId = ref('')
 const isPublicView = ref(false)
