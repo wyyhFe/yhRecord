@@ -14,6 +14,17 @@
       <text class="reminder-card__desc">当前统一为每天 22:00 提醒</text>
     </view>
 
+    <!-- 日记提醒开关（独立于 channel，后端按此字段过滤） -->
+    <view class="reminder-card">
+      <view class="reminder-card__header">
+        <view class="reminder-card__left">
+          <text class="reminder-card__title">📝 日记提醒</text>
+          <text class="reminder-card__desc">每晚 22:00 提醒未写日记的用户</text>
+        </view>
+        <switch :checked="form.diaryReminderEnabled" color="var(--color-primary)" @change="onDiarySwitch" />
+      </view>
+    </view>
+
     <!-- 小程序订阅消息 -->
     <view class="reminder-card">
       <view class="reminder-card__header">
@@ -24,7 +35,7 @@
         <switch :checked="form.miniProgramReminderEnabled" color="var(--color-primary)" @change="onMiniProgramSwitch" />
       </view>
       <view class="reminder-card__detail">
-        <text class="reminder-card__detail-text">包含日记、纪念日、每日记账、记账月报四个模板</text>
+        <text class="reminder-card__detail-text">开启后还会收到：每日记账提醒 (20:30) · 记账月报 (月末 21:00) · 纪念日提醒 (08:05)</text>
       </view>
       <view class="reminder-card__tip">
         <text class="reminder-card__tip-text">如需重新授权，请到微信「发现 → 小程序」进入本小程序 → 右上角 "···" → 设置 → 订阅消息 管理</text>
@@ -135,6 +146,11 @@ const triggering = reactive({
   monthly: false,
   memorial: false
 })
+
+function onDiarySwitch(event: Event) {
+  const payload = event as Event & { detail?: { value?: boolean } }
+  form.diaryReminderEnabled = Boolean(payload.detail?.value)
+}
 
 function onOfficialSwitch(event: Event) {
   const payload = event as Event & { detail?: { value?: boolean } }

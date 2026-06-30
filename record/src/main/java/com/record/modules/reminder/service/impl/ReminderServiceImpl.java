@@ -149,8 +149,10 @@ public class ReminderServiceImpl implements ReminderService {
     @Override
     public DispatchResult dispatchDailyLedgerReminders() {
         LocalDate today = LocalDate.now();
-        List<ReminderSetting> settings = reminderSettingMapper.selectList(new LambdaQueryWrapper<>());
-        log.info("dispatchDailyLedgerReminders found {} settings", settings.size());
+        List<ReminderSetting> settings = reminderSettingMapper.selectList(new LambdaQueryWrapper<ReminderSetting>()
+                .and(w -> w.eq(ReminderSetting::getMiniProgramReminderEnabled, true)
+                        .or().eq(ReminderSetting::getOfficialAccountReminderEnabled, true)));
+        log.info("dispatchDailyLedgerReminders found {} settings with channel enabled", settings.size());
         int success = 0, failed = 0;
 
         for (ReminderSetting setting : settings) {
@@ -183,8 +185,10 @@ public class ReminderServiceImpl implements ReminderService {
     public DispatchResult dispatchMonthlyLedgerReminders() {
         LocalDate today = LocalDate.now();
         YearMonth reportMonth = YearMonth.from(today).minusMonths(1);
-        List<ReminderSetting> settings = reminderSettingMapper.selectList(new LambdaQueryWrapper<>());
-        log.info("dispatchMonthlyLedgerReminders found {} settings", settings.size());
+        List<ReminderSetting> settings = reminderSettingMapper.selectList(new LambdaQueryWrapper<ReminderSetting>()
+                .and(w -> w.eq(ReminderSetting::getMiniProgramReminderEnabled, true)
+                        .or().eq(ReminderSetting::getOfficialAccountReminderEnabled, true)));
+        log.info("dispatchMonthlyLedgerReminders found {} settings with channel enabled", settings.size());
         int success = 0, failed = 0;
 
         for (ReminderSetting setting : settings) {
