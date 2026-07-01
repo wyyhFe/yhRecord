@@ -123,6 +123,9 @@
 
     <!-- 底部加载状态 -->
     <LoadMore :state="loadingMore ? 'loading' : noMore ? 'noMore' : 'hidden'" />
+
+    <!-- 自定义 TabBar -->
+    <TabBar current="diary" />
   </view>
 </template>
 
@@ -137,6 +140,7 @@ import { OSS_BASE_URL } from '@/config/app'
 import type { DiaryItem, Id } from '@/types/domain'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
+import TabBar from '@/components/business/tab-bar/index.vue'
 
 onShareAppMessage(() => ({ title: '我的日记' }))
 onShareTimeline(() => ({ title: '我的日记' }))

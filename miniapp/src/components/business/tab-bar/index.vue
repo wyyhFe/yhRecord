@@ -13,16 +13,28 @@
         <text class="app-tabbar__text">首页</text>
       </view>
 
-      <!-- 发现 -->
+      <!-- 日记 -->
       <view
-        class="app-tabbar__pill app-tabbar__pill--discover"
-        :class="{ 'app-tabbar__pill--active': current === 'discover' }"
+        class="app-tabbar__pill"
+        :class="{ 'app-tabbar__pill--active': current === 'diary' }"
         hover-class="app-tabbar__pill--pressed"
         :hover-stay-time="120"
-        @tap="goDiscover"
+        @tap="goDiary"
       >
-        <text class="app-tabbar__emoji">{{ current === 'discover' ? '🔎' : '🔍' }}</text>
-        <text class="app-tabbar__text">发现</text>
+        <text class="app-tabbar__emoji">{{ current === 'diary' ? '📖' : '📕' }}</text>
+        <text class="app-tabbar__text">日记</text>
+      </view>
+
+      <!-- 打卡 -->
+      <view
+        class="app-tabbar__pill"
+        :class="{ 'app-tabbar__pill--active': current === 'checkin' }"
+        hover-class="app-tabbar__pill--pressed"
+        :hover-stay-time="120"
+        @tap="goCheckin"
+      >
+        <text class="app-tabbar__emoji">{{ current === 'checkin' ? '✅' : '✓' }}</text>
+        <text class="app-tabbar__text">打卡</text>
       </view>
 
       <!-- 我的 -->
@@ -42,15 +54,19 @@
 
 <script setup lang="ts">
 defineProps<{
-  current: 'home' | 'discover' | 'profile'
+  current: 'home' | 'diary' | 'checkin' | 'profile'
 }>()
 
 function goHome() {
   uni.switchTab({ url: '/pages/home/index' })
 }
 
-function goDiscover() {
-  uni.switchTab({ url: '/pages/discover/index' })
+function goDiary() {
+  uni.switchTab({ url: '/pages/diary/index' })
+}
+
+function goCheckin() {
+  uni.switchTab({ url: '/pages/checkin/index' })
 }
 
 function goProfile() {
@@ -131,19 +147,5 @@ function goProfile() {
 .app-tabbar__pill--active .app-tabbar__text {
   color: var(--color-primary-strong);
   font-weight: var(--weight-semibold);
-}
-
-/* 发现选中时：暖陶色渐变填充 */
-.app-tabbar__pill--discover.app-tabbar__pill--active {
-  background: var(--color-primary-gradient);
-  box-shadow: 0 4rpx 16rpx rgba(191, 123, 94, 0.3);
-}
-
-.app-tabbar__pill--discover.app-tabbar__pill--active .app-tabbar__text {
-  color: var(--color-text-inverse);
-}
-
-.app-tabbar__pill--discover.app-tabbar__pill--active .app-tabbar__emoji {
-  filter: brightness(1.1);
 }
 </style>

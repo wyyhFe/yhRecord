@@ -200,6 +200,9 @@
       </view>
     </view>
   </view>
+
+  <!-- 自定义 TabBar -->
+  <TabBar current="checkin" />
 </template>
 
 <script setup lang="ts">
@@ -212,6 +215,7 @@ import TagPicker from '@/components/business/tag-picker/index.vue'
 import { uploadImageToOss } from '@/utils/upload'
 import { formatLatestTime } from '@/utils/format'
 import EmptyStateCard from '@/components/business/empty-state-card'
+import TabBar from '@/components/business/tab-bar/index.vue'
 import MedalUnlockPopup from '@/components/business/medal-unlock-popup/index.vue'
 import MendCheckinPopup from './modules/mend-checkin-popup/index.vue'
 import {

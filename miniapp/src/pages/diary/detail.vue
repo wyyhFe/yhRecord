@@ -362,11 +362,7 @@ function goUserProfile() {
 onLoad((options) => {
   diaryId.value = options?.id || ''
   isPublicView.value = options?.public === '1'
-  try {
-    await loadDiaryDetail()
-    // TODO: 上线后取消注释 — 评论功能
-    // await loadComments()
-  } catch (error) {
+  loadDiaryDetail().catch((error) => {
     uni.$feedback.error(error, undefined, '加载日记详情失败')
   })
 })
