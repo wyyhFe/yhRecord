@@ -130,6 +130,7 @@
                 <text class="cmt-item__name">{{ reply.nickname || '匿名' }}</text>
                 <text class="cmt-item__at">回复 @{{ authorName(top) }}</text>
                 <text class="cmt-item__time">{{ formatTime(reply.createdAt) }}</text>
+                <text class="cmt-item__at">回复 @{{ authorName(top) }}</text>
               </view>
               <text class="cmt-item__text">{{ reply.content }}</text>
               <view class="cmt-item__bar">
