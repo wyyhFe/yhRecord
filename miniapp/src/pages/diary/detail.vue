@@ -30,7 +30,7 @@
     <view class="detail-card">
       <text class="detail-card__text">{{ detail?.content || '暂无内容' }}</text>
 
-      <!-- 标签 -->
+      <!-- 标签（附在正文下方） -->
       <view v-if="detail?.tags?.length" class="detail-card__tags">
         <view v-for="tag in detail.tags" :key="tag.id" class="detail-tag">
           <text class="detail-tag__name">{{ tag.name }}</text>
@@ -352,9 +352,6 @@ async function loadDiaryDetail() {
   } else {
     detail.value = await fetchDiaryDetail(diaryId.value)
   }
-  if (detail.value) {
-    likeCount.value = detail.value.likeCount || 0
-  }
 }
 
 function goUserProfile() {
@@ -362,7 +359,7 @@ function goUserProfile() {
   uni.navigateTo({ url: `/pages/discover/user-profile?userId=${detail.value.authorId}` })
 }
 
-onLoad(async (options) => {
+onLoad((options) => {
   diaryId.value = options?.id || ''
   isPublicView.value = options?.public === '1'
   try {
@@ -371,7 +368,7 @@ onLoad(async (options) => {
     // await loadComments()
   } catch (error) {
     uni.$feedback.error(error, undefined, '加载日记详情失败')
-  }
+  })
 })
 
 onReachBottom(() => {
