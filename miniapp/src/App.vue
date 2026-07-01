@@ -10,6 +10,11 @@ import { useAppStore } from '@/stores/app'
 import { ensureSession } from '@/utils/session'
 import AppLoading from '@/components/business/app-loading/index.vue'
 import { useLoading } from '@/composables/useLoading'
+import {
+  MP_DIARY_TEMPLATE_ID,
+  MP_LEDGER_TEMPLATE_ID,
+  MP_LEDGER_MONTHLY_TEMPLATE_ID
+} from '@/config/app'
 
 const loading = useLoading()
 
@@ -22,16 +27,36 @@ async function bootstrapSession() {
   }
 }
 
+/** 每日续订：日记+每日记账+月报（最多3个模板，一次弹窗） */
+function renewDailySubscription() {
+  // #ifdef MP-WEIXIN
+  const today = new Date().toDateString()
+  if (uni.getStorageSync('last_daily_subscribe_date') === today) return
+
+  const tmplIds = [
+    MP_DIARY_TEMPLATE_ID,
+    MP_LEDGER_TEMPLATE_ID,
+    MP_LEDGER_MONTHLY_TEMPLATE_ID
+  ].filter(Boolean)
+  if (!tmplIds.length) return
+
+  uni.requestSubscribeMessage({
+    tmplIds,
+    success: () => uni.setStorageSync('last_daily_subscribe_date', today),
+    fail: () => { /* 用户拒绝或微信不弹窗，静默忽略 */ }
+  })
+  // #endif
+}
+
 onLaunch(() => {
-  // 隐藏原生 tabBar，使用自定义 TabBar 组件替代
   uni.hideTabBar({ animation: false })
   bootstrapSession().catch(() => undefined)
 })
 
 onShow(() => {
   uni.hideTabBar({ animation: false })
-  bootstrapSession().catch(() => undefined)
   ensureEntryAuth()
+  renewDailySubscription()
 })
 </script>
 

@@ -120,10 +120,30 @@ import {
   type MemorialDayPayload
 } from '@/api/memorial'
 import type { Id, MemorialDay } from '@/types/domain'
+import { MP_MEMORIAL_TEMPLATE_ID } from '@/config/app'
+
+/** 纪念日订阅续订 */
+function renewMemorialSubscription() {
+  // #ifdef MP-WEIXIN
+  if (!MP_MEMORIAL_TEMPLATE_ID) return
+  const today = new Date().toDateString()
+  if (uni.getStorageSync('last_memorial_subscribe_date') === today) return
+
+  uni.requestSubscribeMessage({
+    tmplIds: [MP_MEMORIAL_TEMPLATE_ID],
+    success: () => uni.setStorageSync('last_memorial_subscribe_date', today),
+    fail: () => {}
+  })
+  // #endif
+}
 
 onShareAppMessage(() => ({ title: '纪念日' }))
 onShareTimeline(() => ({ title: '纪念日' }))
 
+onShow(() => {
+  loadMemorialDays(true)
+  renewMemorialSubscription()
+})
 const items = ref<MemorialDay[]>([])
 const pageNum = ref(1)
 const total = ref(0)
@@ -241,7 +261,6 @@ async function submit() {
   finally { submitting.value = false }
 }
 
-onShow(() => { loadMemorialDays(true) })
 onPullDownRefresh(() => { loadMemorialDays(true).finally(() => uni.stopPullDownRefresh()) })
 onReachBottom(() => { loadMemorialDays() })
 </script>

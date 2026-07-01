@@ -657,7 +657,7 @@ public class ReminderServiceImpl implements ReminderService {
         log.setTargetId(targetId);
         log.setBusinessDate(date);
         log.setSendStatus(status);
-        log.setSendMessage(message);
+        log.setSendMessage(message != null && message.length() > 500 ? message.substring(0, 500) : message);
         log.setSentAt(LocalDateTime.now());
         reminderLogMapper.insert(log);
     }
