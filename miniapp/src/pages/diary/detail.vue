@@ -130,9 +130,10 @@
                 <text class="cmt-item__name">{{ reply.nickname || '匿名' }}</text>
                 <text class="cmt-item__at">回复 @{{ authorName(top) }}</text>
                 <text class="cmt-item__time">{{ formatTime(reply.createdAt) }}</text>
-                <text class="cmt-item__at">回复 @{{ authorName(top) }}</text>
               </view>
-              <text class="cmt-item__text">{{ reply.content }}</text>
+              <text class="cmt-item__text">
+                <text class="cmt-item__at">回复 @{{ authorName(top) }}：</text>{{ reply.content }}
+              </text>
               <view class="cmt-item__bar">
                 <text class="cmt-item__action" @tap="setReply(top)">回复</text>
                 <text v-if="reply.userId === currentUserId" class="cmt-item__action cmt-item__action--danger" @tap="removeComment(reply.id)">删除</text>
@@ -651,7 +652,6 @@ onReachBottom(() => {
 .cmt-item__time {
   color: var(--color-text-muted);
   font-size: 18rpx;
-  margin-left: auto;
 }
 
 .cmt-item__text {
@@ -663,8 +663,7 @@ onReachBottom(() => {
 
 .cmt-item__at {
   color: var(--color-diary);
-  font-size: 18rpx;
-  margin-left: var(--space-1);
+  font-size: var(--font-meta);
 }
 
 .cmt-item__bar {
