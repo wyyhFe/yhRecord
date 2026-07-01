@@ -254,6 +254,7 @@ onReachBottom(() => {
 
 <style scoped lang="scss">
 .diary-page {
+  padding-bottom: var(--bottom-padding-with-tabbar);
 }
 
 /* ========== 顶栏 ========== */

@@ -53,10 +53,6 @@
 
     <!-- 照片 -->
     <view class="editor-card">
-      <view class="editor-card__section-head">
-        <text class="editor-card__section-title">📷 照片</text>
-        <text class="editor-card__section-action" @tap="openPhotoSection">添加</text>
-      </view>
       <PhotoPicker ref="photoPickerRef" v-model="photos" @retry="retryUpload" />
     </view>
 
@@ -75,6 +71,10 @@
             </view>
           </view>
         </picker>
+        <!-- ============================================================
+             可见范围（暂时隐藏，待上线后启用）
+        ============================================================ -->
+        <!--
         <picker :range="visibilityOptions" range-key="label" @change="onVisibilityChange">
           <view class="editor-setting-row">
             <text class="editor-setting-row__label">可见范围</text>
@@ -86,6 +86,7 @@
             </view>
           </view>
         </picker>
+        -->
         <LocationPicker ref="locationPickerRef" v-model="form.location" />
       </view>
     </view>
@@ -140,7 +141,9 @@ type LocationPickerExpose = {
   pickManualLocation: () => Promise<void> | void
 }
 
-const visibilityOptions = VISIBILITY_OPTIONS.filter((item) => item.value !== 'ALL')
+// TODO: 上线后取消注释 — 可见范围
+// const visibilityOptions = VISIBILITY_OPTIONS.filter((item) => item.value !== 'ALL')
+const visibilityOptions: { label: string; value: string }[] = []
 const weatherOptions = DIARY_WEATHER_OPTIONS
 const moodOptions = DIARY_MOOD_OPTIONS
 

@@ -90,23 +90,26 @@
         <scroll-view scroll-y class="checkin-popup__scroll">
           <view class="checkin-popup__head">
             <view class="checkin-popup__title">{{ checkinTargetTask?.name || '打卡' }}</view>
-            <view class="checkin-popup__subtitle">添加心情、标签、备注和图片（可选）</view>
           </view>
 
-          <!-- 心情 -->
+          <!-- 心情 + 标签（同一个盒子） -->
           <view class="checkin-popup__card">
             <MoodPicker v-model="checkinMood" />
-          </view>
-
-          <!-- 标签行（点击弹出二级 popup） -->
-          <view class="checkin-popup__card">
-            <view class="checkin-popup__tag-row" @tap="showTagPickerPopup = true">
-              <text class="checkin-popup__tag-row-label">🏷️ 标签</text>
-              <view class="checkin-popup__tag-row-right">
-                <text class="checkin-popup__tag-row-value">
-                  {{ checkinTagIds.length ? `已选 ${checkinTagIds.length} 个` : '选择标签' }}
+            <view class="checkin-popup__tag-divider" />
+            <view class="checkin-popup__tag-bar" @tap="showTagPickerPopup = true">
+              <text class="checkin-popup__tag-bar-label">🏷️ 标签</text>
+              <view class="checkin-popup__tag-bar-right">
+                <text class="checkin-popup__tag-bar-value">
+                  {{ checkinTagIds.length ? `已选 ${checkinTagIds.length}` : '选择标签' }}
                 </text>
-                <text class="checkin-popup__tag-row-arrow">›</text>
+                <text class="checkin-popup__tag-bar-arrow">›</text>
+              </view>
+            </view>
+            <!-- 已选标签回显 -->
+            <view v-if="selectedTags.length" class="checkin-popup__pills">
+              <view v-for="tag in selectedTags" :key="tag.id" class="checkin-popup__pill">
+                <text class="checkin-popup__pill-text">{{ tag.name }}</text>
+                <text class="checkin-popup__pill-x" @tap.stop="removeTag(tag.id)">✕</text>
               </view>
             </view>
           </view>
@@ -116,7 +119,7 @@
             <textarea
               v-model="checkinRemark"
               class="checkin-popup__textarea"
-              placeholder="一句话记录今天的感受..."
+              placeholder="写句话..."
               :maxlength="50"
             />
             <view class="checkin-popup__counter" :class="{ 'is-over': checkinRemark.length > 50 }">
@@ -125,7 +128,7 @@
           </view>
 
           <!-- 图片 -->
-          <view class="checkin-popup__card">
+          <view class="checkin-popup__card checkin-popup__card--photo">
             <PhotoPicker v-model="checkinPhotos" :max-count="9" @retry="retryCheckinPhotoUpload" />
           </view>
         </scroll-view>
@@ -264,6 +267,15 @@ const fabOpen = ref(false)
 const deleteSwipeOptions = ref([
   { text: '删除', style: { background: 'var(--color-danger)', color: '#fff', fontSize: '26rpx' } }
 ])
+
+// 已选标签（回显用）
+const selectedTags = computed(() =>
+  tags.value.filter((t) => checkinTagIds.value.includes(t.id))
+)
+
+function removeTag(tagId: Id) {
+  checkinTagIds.value = checkinTagIds.value.filter((id) => id !== tagId)
+}
 
 function onSwipeDelete(index: number) {
   const task = tasks.value[index]
@@ -521,7 +533,7 @@ onPullDownRefresh(() => {
 
 <style scoped lang="scss">
 .checkin-page {
-  padding-bottom: var(--bottom-padding);
+  padding-bottom: var(--bottom-padding-with-tabbar);
 }
 
 /* ========== 顶栏 ========== */
@@ -912,116 +924,178 @@ onPullDownRefresh(() => {
 /* ========== 打卡弹窗 ========== */
 .checkin-popup {
   background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  max-height: 65vh;
+  border-radius: 28rpx 28rpx 0 0;
+  overflow: hidden;
 }
 
 .checkin-popup__scroll {
-  padding: var(--space-5);
-  max-height: 80vh;
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4) 0;
   box-sizing: border-box;
 }
 
 .checkin-popup__head {
   text-align: center;
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-2);
 }
 
 .checkin-popup__title {
   color: var(--color-text-primary);
-  font-size: var(--font-section);
+  font-size: var(--font-body);
   font-weight: var(--weight-bold);
 }
 
 .checkin-popup__subtitle {
-  margin-top: var(--space-1);
+  margin-top: 2rpx;
   color: var(--color-text-muted);
-  font-size: var(--font-tiny);
+  font-size: 16rpx;
 }
 
-/* 通用卡片 */
+/* 通用卡片 — 紧凑 */
 .checkin-popup__card {
   background: var(--color-surface);
-  border-radius: var(--radius-large);
+  border-radius: var(--radius-small);
   box-shadow: var(--shadow-card);
-  padding: var(--space-4);
-  margin-bottom: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
-/* 心情卡片 */
+/* 心情 */
 .checkin-popup__card .mood-picker {
   margin-bottom: 0;
 }
 
 .checkin-popup__card .mood-picker__label {
   display: block;
-  color: var(--color-text-secondary);
-  font-size: var(--font-meta);
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
   font-weight: var(--weight-medium);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.checkin-popup__card .mood-picker__items {
+  display: flex;
+  gap: var(--space-1);
 }
 
 .checkin-popup__card .mood-picker__item {
-  width: 66rpx;
-  height: 66rpx;
+  width: 52rpx;
+  height: 52rpx;
 }
 
 .checkin-popup__card .mood-picker__emoji {
-  font-size: 32rpx;
+  font-size: 24rpx;
 }
 
-/* 标签行 */
-.checkin-popup__tag-row {
+/* 心情 + 标签分割线 */
+.checkin-popup__tag-divider {
+  height: 1rpx;
+  background: var(--color-divider);
+  margin: var(--space-2) 0;
+}
+
+/* 标签 */
+.checkin-popup__tag-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.checkin-popup__tag-row-label {
+.checkin-popup__tag-bar-label {
   color: var(--color-text-secondary);
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   font-weight: var(--weight-medium);
 }
 
-.checkin-popup__tag-row-right {
+.checkin-popup__tag-bar-right {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
-.checkin-popup__tag-row-value {
+.checkin-popup__tag-bar-value {
   color: var(--color-checkin);
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   font-weight: var(--weight-medium);
+}
+
+.checkin-popup__tag-bar-arrow {
+  color: var(--color-text-muted);
+  font-size: 22rpx;
+}
+
+/* 已选标签药丸 */
+.checkin-popup__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6rpx;
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1rpx solid var(--color-divider);
+}
+
+.checkin-popup__pill {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 4rpx 12rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-checkin-soft);
+}
+
+.checkin-popup__pill-text {
+  color: var(--color-checkin);
+  font-size: 18rpx;
+  font-weight: var(--weight-medium);
+  line-height: 1.2;
+}
+
+.checkin-popup__pill-x {
+  color: var(--color-checkin);
+  font-size: 16rpx;
+  line-height: 1;
+  opacity: 0.5;
+  padding: 2rpx;
 }
 
 .checkin-popup__tag-row-arrow {
   color: var(--color-text-muted);
-  font-size: 28rpx;
+  font-size: 22rpx;
 }
 
-/* 备注 */
+/* 备注 — 更紧凑 */
 .checkin-popup__textarea {
   width: 100%;
-  min-height: 88rpx;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-medium);
+  min-height: 48rpx;
+  max-height: 80rpx;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-tiny);
   background: var(--color-surface-soft);
   color: var(--color-text-primary);
-  font-size: var(--font-body);
+  font-size: var(--font-meta);
   box-sizing: border-box;
 }
 
 .checkin-popup__counter {
   text-align: right;
-  margin-top: var(--space-1);
+  margin-top: 2rpx;
   color: var(--color-text-muted);
-  font-size: var(--font-tiny);
+  font-size: 12rpx;
 }
 
 .checkin-popup__counter.is-over {
   color: var(--color-danger);
 }
 
-/* PhotoPicker 在卡片内时去除自带 padding */
+/* 图片 — 紧凑行内排列 */
+.checkin-popup__card--photo {
+  padding: var(--space-1) var(--space-2);
+}
+
 .checkin-popup__card .photo-picker .section-shell {
   padding: 0;
   background: none;
@@ -1029,19 +1103,78 @@ onPullDownRefresh(() => {
   border-radius: 0;
 }
 
+/* 图片标题与描述同一行 */
+.checkin-popup__card .photo-picker .section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.checkin-popup__card .photo-picker .section-copy {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-direction: row;
+}
+
+.checkin-popup__card .photo-picker .section-copy__title {
+  color: var(--color-text-secondary);
+  font-size: var(--font-tiny);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+}
+
+.checkin-popup__card .photo-picker .section-copy__desc {
+  color: var(--color-text-muted);
+  font-size: 14rpx;
+  line-height: 1;
+}
+
+.checkin-popup__card .photo-picker .photo-picker__count {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 14rpx;
+}
+
+.checkin-popup__card .photo-picker .photo-picker__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6rpx;
+}
+
+.checkin-popup__card .photo-picker .photo-picker__card {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: var(--radius-tiny);
+}
+
+.checkin-popup__card .photo-picker .photo-picker__image {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: var(--radius-tiny);
+}
+
+.checkin-popup__card .photo-picker .photo-picker__add {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: var(--radius-tiny);
+}
+
 /* 操作按钮 */
 .checkin-popup__actions {
   display: flex;
   gap: var(--space-2);
-  padding: var(--space-3) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom));
+  padding: var(--space-3) var(--space-4);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom) + 20rpx);
 }
 
 .checkin-popup__btn {
   flex: 1;
   text-align: center;
-  padding: 18rpx 0;
+  padding: 16rpx 0;
   border-radius: var(--radius-full);
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   font-weight: var(--weight-semibold);
   transition: all var(--motion-fast) var(--ease-standard);
 }

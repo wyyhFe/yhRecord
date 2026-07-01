@@ -22,8 +22,12 @@
         "text": "首页"
       },
       {
-        "pagePath": "pages/discover/index",
-        "text": "发现"
+        "pagePath": "pages/diary/index",
+        "text": "日记"
+      },
+      {
+        "pagePath": "pages/checkin/index",
+        "text": "打卡"
       },
       {
         "pagePath": "pages/profile/index",
@@ -35,13 +39,15 @@
     {
       "path": "pages/home/index",
       "style": {
-        "navigationBarTitleText": "生活记录"
+        "navigationBarTitleText": "生活记录",
+        "enablePullDownRefresh": true
       }
     },
     {
       "path": "pages/diary/index",
       "style": {
-        "navigationBarTitleText": "日记本"
+        "navigationBarTitleText": "日记本",
+        "enablePullDownRefresh": true
       }
     },
     {
@@ -59,7 +65,8 @@
     {
       "path": "pages/ledger/index",
       "style": {
-        "navigationBarTitleText": "记账本"
+        "navigationBarTitleText": "记账本",
+        "enablePullDownRefresh": true
       }
     },
     {
@@ -70,9 +77,10 @@
     },
     {
       "path": "pages/checkin/index",
-      "style": {
-        "navigationBarTitleText": "打卡"
-      }
+        "style": {
+          "navigationBarTitleText": "打卡",
+          "enablePullDownRefresh": true
+        }
     },
     {
       "path": "pages/checkin/editor",
@@ -89,19 +97,22 @@
     {
       "path": "pages/checkin/history",
       "style": {
-        "navigationBarTitleText": "打卡历史"
+        "navigationBarTitleText": "打卡历史",
+        "enablePullDownRefresh": true
       }
     },
     {
       "path": "pages/memory/index",
       "style": {
-        "navigationBarTitleText": "回忆"
+        "navigationBarTitleText": "回忆",
+        "enablePullDownRefresh": true
       }
     },
     {
       "path": "pages/memorialPage/index",
       "style": {
-        "navigationBarTitleText": "纪念日"
+        "navigationBarTitleText": "纪念日",
+        "enablePullDownRefresh": true
       }
     },
     {
