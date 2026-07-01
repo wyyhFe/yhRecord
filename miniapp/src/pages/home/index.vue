@@ -105,6 +105,7 @@ const greeting = useGreeting()
 const calendarItems = ref<DaySummary[]>([])
 const recordedCount = ref(0)
 const showLogin = ref(false)
+let initialLoad = true
 
 const overviewColors = [
   'var(--color-primary-gradient)',
@@ -253,7 +254,8 @@ onLoad((query) => {
 })
 
 onShow(() => {
-  uni.hideTabBar({ animation: false })
+  try { uni.hideTabBar({ animation: false }) } catch {}
+  if (initialLoad) { initialLoad = false; return }
   loadSummary()
 })
 

@@ -95,9 +95,13 @@ function openActionSheet() {
     success: ({ tapIndex }) => {
       console.log('[photo-picker] choose source', tapIndex)
       if (tapIndex === 0) {
-        chooseFrom(['album']).catch(() => undefined)
+        chooseFrom(['album']).catch((err) => {
+          if (err?.errMsg !== 'chooseImage:fail cancel') console.error('[photo-picker] album failed', err)
+        })
       } else {
-        chooseFrom(['camera']).catch(() => undefined)
+        chooseFrom(['camera']).catch((err) => {
+          if (err?.errMsg !== 'chooseImage:fail cancel') console.error('[photo-picker] camera failed', err)
+        })
       }
     }
   })
