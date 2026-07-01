@@ -46,11 +46,6 @@ public class GlobalExceptionHandler {
         return ApiResponse.failure(ErrorCode.BAD_REQUEST.getCode(), "请求体格式错误");
     }
 
-    @ExceptionHandler(FollowException.class)
-    public ApiResponse<Void> handleFollow(FollowException ex) {
-        return ApiResponse.failure(ErrorCode.USER_ERROR.getCode(), ex.getMessage());
-    }
-
     @ExceptionHandler(Exception.class)
     public ApiResponse<Void> handleSystem(Exception ex) {
         log.error("未处理的系统异常", ex);

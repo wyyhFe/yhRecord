@@ -43,6 +43,18 @@ miniapp/vite.config.ts.timestamp-*.mjs
 # 本地开发密钥配置（含数据库密码、OAuth 密钥等敏感信息，不入仓）
 record/src/main/resources/application-local.yaml
 
+# OpenCode 工作目录
+scripts/.opencode/
+
+# 部署相关（含私钥）
+lifeRecord-deploy/
+
+# 运行日志
+logs/
+
+# pnpm workspace 临时文件
+miniapp/pnpm-workspace.yaml
+
 ### Claude Code 工作目录（本地工具临时文件，不入仓） ###
 **/.claude/
 
