@@ -9,6 +9,15 @@ server:
       enabled: true
       force: true
 
+springdoc:
+  api-docs:
+    path: /api/v3/api-docs
+  swagger-ui:
+    path: /api/swagger-ui
+    urls:
+      - url: /api/v3/api-docs
+        name: Life Record API
+
 logging:
   charset:
     console: UTF-8
