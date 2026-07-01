@@ -149,8 +149,8 @@
         </view>
         <LoadMore v-else-if="commentTotal > COMMENT_PAGE_SIZE" state="noMore" />
       </view>
-      <view v-else class="cmt-empty">
-        <text class="cmt-empty__text">快来写第一条评论吧</text>
+      <view v-else class="detail-comments__empty">
+        <text class="detail-comments__empty-text">暂无评论，来说点什么吧</text>
       </view>
     </view>
     -->
@@ -262,7 +262,7 @@ function authorName(comment: DiaryComment): string {
 }
 
 function setReply(comment: DiaryComment) {
-  replyTarget.value = authorName(comment)
+  replyTarget.value = `用户 ${comment.userId.slice(-4)}`
   replyParentId.value = comment.id
 }
 
@@ -554,8 +554,8 @@ onReachBottom(() => {
   font-size: var(--font-tiny);
 }
 
-/* ========== 评论（Bilibili 风格） ========== */
-.cmt {
+/* ========== 评论区 ========== */
+.detail-comments {
   margin: var(--space-3) var(--space-4) 0;
   background: var(--color-surface);
   border-radius: var(--radius-large);
@@ -563,16 +563,16 @@ onReachBottom(() => {
   padding: var(--space-5);
 }
 
-/* 输入区 */
-.cmt-input__row {
+/* 评论输入行 */
+.detail-comments__input-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
 }
 
-.cmt-input__field {
+.detail-comments__input {
   flex: 1;
-  height: 64rpx;
+  min-height: 68rpx;
   padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   background: var(--color-surface-soft);
@@ -580,97 +580,99 @@ onReachBottom(() => {
   font-size: var(--font-meta);
 }
 
-.cmt-input__send {
+.detail-comments__send {
   flex-shrink: 0;
-  color: var(--color-diary);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-diary-gradient);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.detail-comments__send--disabled {
+  opacity: 0.5;
+}
+
+.detail-comments__send-text {
+  color: #fff;
   font-size: var(--font-meta);
   font-weight: var(--weight-semibold);
-  transition: opacity var(--motion-fast);
 }
 
-.cmt-input__send--disabled {
-  opacity: 0.35;
-}
-
-.cmt-input__replying {
+/* 回复提示 */
+.detail-comments__replying {
   margin-top: var(--space-2);
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-small);
+  background: var(--color-diary-soft);
 }
 
-.cmt-input__replying-text {
+.detail-comments__replying-text {
   color: var(--color-diary);
   font-size: var(--font-tiny);
   font-weight: var(--weight-medium);
   flex: 1;
 }
 
-.cmt-input__replying-cancel {
+.detail-comments__replying-cancel {
   color: var(--color-text-muted);
   font-size: var(--font-tiny);
 }
 
 /* 评论列表 */
-.cmt-list {
+.detail-comments__list {
   margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
-.cmt-group {
+.comment-item {
   padding: var(--space-3) 0;
-}
-
-.cmt-group + .cmt-group {
   border-top: 1rpx solid var(--color-divider);
 }
 
-.cmt-item {
+.comment-item:first-child {
+  border-top: none;
 }
 
-.cmt-item + .cmt-item--reply {
-  margin-top: var(--space-3);
-}
-
-.cmt-item__meta {
+.comment-item__head {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  justify-content: space-between;
   margin-bottom: var(--space-1);
 }
 
-.cmt-item__name {
+.comment-item__author {
   color: var(--color-diary);
   font-size: var(--font-meta);
   font-weight: var(--weight-semibold);
 }
 
-.cmt-item__dot {
+.comment-item__time {
   color: var(--color-text-muted);
-  font-size: 18rpx;
+  font-size: var(--font-tiny);
 }
 
-.cmt-item__time {
-  color: var(--color-text-muted);
-  font-size: 18rpx;
+.comment-item__reply-tip {
+  margin-bottom: var(--space-1);
 }
 
-.cmt-item__text {
-  display: block;
+.comment-item__reply-tip-text {
+  color: var(--color-text-muted);
+  font-size: var(--font-tiny);
+}
+
+.comment-item__content {
   color: var(--color-text-primary);
   font-size: var(--font-meta);
   line-height: var(--leading-relaxed);
 }
 
-.cmt-item__at {
-  color: var(--color-diary);
-  font-size: var(--font-meta);
-}
-
-.cmt-item__bar {
+.comment-item__actions {
   margin-top: var(--space-1);
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
 }
 
 .cmt-item__action {
