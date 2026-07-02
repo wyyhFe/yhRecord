@@ -1,6 +1,6 @@
 # lifeRecord
 
-个人生活记录微信小程序，覆盖日记、记账、打卡、纪念日、AI 辅助等场景。
+个人生活记录微信小程序 + 管理后台，覆盖日记、记账、打卡、纪念日、AI 辅助等场景。
 
 ---
 
@@ -47,10 +47,10 @@ pnpm dev
 # 后端编译检查
 cd record && ./mvnw.cmd -q -DskipTests compile
 
-# 前端类型检查
+# 小程序类型检查
 cd miniapp && npm run type-check
 
-# 前端构建
+# 小程序构建
 cd miniapp && npm run build:mp-weixin
 ```
 
@@ -94,15 +94,3 @@ Spring Boot 后端
 
 - 域名：`https://recordlife.top`
 - JVM 参数：`-Xmx1g -Xms512m -XX:+UseG1GC`
-
----
-
-## 文档
-
-| 文档 | 说明 |
-|---|---|
-| [项目总结](项目总结.md) | 已完成功能、技术栈、架构详情 |
-| [迭代记录](迭代记录.md) | 功能迭代变更日志 |
-| [打卡 V2 设计](docs/设计文档/打卡V2/设计文档.md) | 打卡模块 V2 产品设计 |
-| [AGENTS.md](AGENTS.md) | AI Agent 开发指南 |
-| [开发规范](web/开发规范.md) | 编码与提交规范 |

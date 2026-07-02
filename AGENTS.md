@@ -1,13 +1,12 @@
 # lifeRecord · Agent Guide
 
-个人生活记录类项目，单仓四子项目：
+个人生活记录类项目，单仓三子项目：
 
 | 目录 | 技术栈 | 启动命令 |
 |---|---|---|
 | `miniapp/` | uni-app 3 + Vue 3 + TS + Pinia + uView Pro + UnoCSS | `npm run dev:mp-weixin` |
 | `record/` | Spring Boot 3.5.3 + Java 21 + MyBatis-Plus 3.5.6 + Spring Security + JWT + Redis + Spring AI 1.1.2 | `./mvnw.cmd spring-boot:run` |
 | `admin/` | vue-pure-admin 7（Element Plus，fork 模板） | `pnpm dev` |
-| `web/` | Nuxt 3 + TailwindCSS 3 + Headless UI + Pinia + VueUse (nuxt3-awesome-starter 二开) | `pnpm dev` |
 
 ---
 
@@ -36,13 +35,6 @@ pnpm typecheck                               # vue-tsc --noEmit --skipLibCheck
 pnpm lint                                    # eslint + prettier + stylelint
 ```
 Node >= 22.22.1, pnpm >= 11。
-
-### Web 端（`web/`）
-```
-pnpm dev                                     # 开发 (默认 localhost:3000, /api 代理到 localhost:8080)
-pnpm build                                   # 构建
-pnpm lint                                    # eslint
-```
 
 ---
 
@@ -122,20 +114,6 @@ src/utils/        # request.ts（鉴权拦截器）, validators
 src/config/       # 应用配置
 ```
 
-### Web 端（`web/`）
-
-基底是 [nuxt3-awesome-starter](https://github.com/viandwi24/nuxt3-awesome-starter) 二开，SSR 博客风格，与小程序共用同一后端 API：
-
-| 层面 | 说明 |
-|---|---|
-| `pages/` | 文件路由：首页、日记(diary/)、记账(ledger/)、打卡(checkin/)、纪念日(memorial/)、回忆(memory/)、AI(ai/) |
-| `layouts/` | `sidebar.vue`（自定义侧边栏布局）+ `page.vue`（模板原始布局） |
-| `components/` | `awesome/` 模板组件 + `layouts/` 布局组件 |
-| `stores/` | `use-auth.ts`（登录态） |
-| `utils/` | `http.ts`（`fetch` 封装，自动 `/api` 前缀 + Bearer token + 401 跳登录）、`auth.ts`（localStorage token 管理） |
-| `composables/` | `useScroll.ts`（滚动检测） |
-| `nuxt.config.ts` | `nitro.devProxy` 把 `/api` 代理到 `localhost:8080` |
-
 ---
 
 ## 关键注意事项
@@ -144,18 +122,11 @@ src/config/       # 应用配置
 - **esbuild target 必须是 `es2017`**（`miniapp/vite.config.ts`）—— 微信小程序 JS 引擎不支持 ES2020 可选链（`?.`）和空值合并（`??`）。绝不能提升此 target。
 - **UnoCSS 快捷类 `page-shell-safe`** = `min-h-screen box-border px-6 pb-40 pt-6`。所有小程序页面的根容器样式标准。
 - **Admin 是 vue-pure-admin 模板**，仅做了最小定制。避免深度重构，作为模板消费者使用。
-- **Web 端的 `web/` 是 nuxt3-awesome-starter 模板** 二开，有独立的 Web 端设计文档（`web/web-diary-设计文档.md`）。
 
 ### 鉴权流程（小程序）
 - `request.ts` 401 拦截器：3 层静默重试 → 1) refreshToken 换新 access，2) `wx.login()` 重新登录换 token，3) 跳转登录页
 - JWT + refreshToken 双 token 方案，存于 `wx` 本地存储，无 session 机制
 - OAuth 登录/绑定共用同一个回调 URL，通过 Redis `state` 区分意图（LOGIN vs BIND）。一次性消费，10 分钟 TTL
-
-### 鉴权流程（Web 端）
-- `utils/http.ts`：`fetch` 封装，自动拼 `/api` 前缀 + `Authorization: Bearer` header
-- 401 → 清 localStorage token → 跳 `/login`
-- `utils/auth.ts`：token 存 localStorage，key=`lr-token`
-- Web 端 nitro dev proxy：`/api` → `localhost:8080`
 
 ### 主题系统（小程序）
 - 当前**固定使用 "clay"（暖陶）**主题。多主题切换已于 2026-05-27 下线，但 CSS 变量 + 语义命名的 token 体系保留，未来可恢复
@@ -186,8 +157,6 @@ src/config/       # 应用配置
 - 域名 `https://recordlife.top`，腾讯云免费 SSL 证书
 - nginx 已为 SSE 流式关闭 `proxy_buffering`，`proxy_read_timeout 300s`
 - 后端 JVM 参数：`-Xmx1g -Xms512m -XX:+UseG1GC`，日志 10MB × 14 份滚动
-- Web 端暂未部署
-
 ---
 
 ## 编码约定
