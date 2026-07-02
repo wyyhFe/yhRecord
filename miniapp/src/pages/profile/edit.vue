@@ -102,6 +102,7 @@ import { updateUserProfile } from '@/api/user'
 import { useAppStore } from '@/stores/app'
 import type { UserProfileUpdatePayload } from '@/types/domain'
 import { uploadImageToOss } from '@/utils/upload'
+import { resolveImage } from '@/utils/image'
 
 const appStore = useAppStore()
 const submitting = ref(false)
@@ -188,7 +189,7 @@ onMounted(() => {
   form.value.gender = profile.gender || 'UNKNOWN'
   form.value.birthday = profile.birthday || ''
   form.value.signature = profile.signature || ''
-  avatarPreview.value = profile.avatarPath || ''
+  avatarPreview.value = resolveImage(profile.avatarPath)
 })
 </script>
 

@@ -6,7 +6,7 @@
         <text class="profile-user__poster-icon">🖼️</text>
       </view>
       <view class="profile-user__avatar">
-        <image v-if="profile?.avatarPath" :src="profile.avatarPath" mode="aspectFill" class="profile-user__avatar-img" />
+        <image v-if="profile?.avatarPath" :src="resolveImage(profile.avatarPath)" mode="aspectFill" class="profile-user__avatar-img" />
         <text v-else class="profile-user__avatar-text">{{ avatarText }}</text>
       </view>
       <text class="profile-user__name">{{ profile?.nickname || '未设置昵称' }}</text>
@@ -64,6 +64,7 @@ import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
 import TabBar from '@/components/business/tab-bar/index.vue'
 import PosterGenerator from './modules/poster-generator/index.vue'
+import { resolveImage } from '@/utils/image'
 
 onShareAppMessage(() => ({ title: '个人中心' }))
 onShareTimeline(() => ({ title: '个人中心' }))
