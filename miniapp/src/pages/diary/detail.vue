@@ -172,7 +172,7 @@
 import { computed, ref, type ComputedRef } from 'vue'
 import { onReachBottom, onShareAppMessage, onShareTimeline, onLoad } from '@dcloudio/uni-app'
 import { deleteDiary, fetchDiaryDetail, fetchPublicDiaryDetail, toggleLike, addComment, fetchComments, deleteComment } from '@/api/diary'
-import { OSS_BASE_URL } from '@/config/app'
+import { resolveImage } from '@/utils/image'
 import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
 import { useAppStore } from '@/stores/app'
 import LoadMore from '@/components/business/load-more/index.vue'
@@ -183,11 +183,6 @@ onShareTimeline(() => ({ title: '日记详情' }))
 
 const appStore = useAppStore()
 const currentUserId = computed(() => appStore.profile?.id || '')
-
-function resolveImage(path: string) {
-  if (!path) return ''
-  return path.startsWith('http') ? path : `${OSS_BASE_URL}/${path}`
-}
 
 function previewImage(idx: number) {
   if (!detail.value?.mediaPaths?.length) return

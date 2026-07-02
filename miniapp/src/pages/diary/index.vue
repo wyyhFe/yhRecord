@@ -136,7 +136,7 @@ import EmptyStateCard from '@/components/business/empty-state-card'
 import FilterTabs from '@/components/business/filter-tabs'
 import LoadMore from '@/components/business/load-more/index.vue'
 import { fetchDiaryList } from '@/api/diary'
-import { OSS_BASE_URL } from '@/config/app'
+import { resolveImage } from '@/utils/image'
 import type { DiaryItem, Id } from '@/types/domain'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { resolveDiaryMoodLabel, resolveDiaryWeatherLabel } from '@/utils/diary-display'
@@ -177,10 +177,6 @@ function dayNum(date: string) {
 
 function monthShort(date: string) {
   return MONTH_SHORT[Number(date.slice(5, 7)) - 1]
-}
-
-function resolveImage(path: string) {
-  return path.startsWith('http') ? path : `${OSS_BASE_URL}/${path}`
 }
 
 function goEditor() {
