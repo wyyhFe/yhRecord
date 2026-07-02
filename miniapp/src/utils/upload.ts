@@ -45,5 +45,5 @@ export async function uploadImageToOss({ filePath, dir = 'diary/' }: UploadToOss
     throw new Error(message)
   }
 
-  return `${policy.host}/${key}`
+  return key
 }
