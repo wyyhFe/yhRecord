@@ -124,7 +124,7 @@ import EmptyStateCard from '@/components/business/empty-state-card'
 import LoadMore from '@/components/business/load-more/index.vue'
 import TabBar from '@/components/business/tab-bar/index.vue'
 import { fetchDiaryHall } from '@/api/diary'
-import { OSS_BASE_URL } from '@/config/app'
+import { resolveImage } from '@/utils/image'
 import type { DiaryItem, Id } from '@/types/domain'
 
 onShareAppMessage(() => ({ title: '发现' }))
@@ -136,10 +136,6 @@ const loadingMore = ref(false)
 const noMore = ref(false)
 const currentPage = ref(1)
 const pageSize = 10
-
-function resolveImage(path: string) {
-  return path.startsWith('http') ? path : `${OSS_BASE_URL}/${path}`
-}
 
 function truncateContent(content: string): string {
   if (!content) return ''

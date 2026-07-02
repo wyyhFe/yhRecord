@@ -241,7 +241,7 @@ import TagPicker from '@/components/business/tag-picker/index.vue'
 import MendCheckinPopup from './modules/mend-checkin-popup/index.vue'
 import { fetchCheckinDayTimeline, fetchCheckinTasks, fetchCheckinTags, fetchMendRemaining, updateCheckinRecord } from '@/api/checkin'
 import { uploadImageToOss } from '@/utils/upload'
-import { OSS_BASE_URL } from '@/config/app'
+import { resolveImage } from '@/utils/image'
 import type { CheckinDayDetail, CheckinRecordItem, CheckinTag, CheckinTask } from '@/types/domain'
 
 onShareAppMessage(() => ({ title: '打卡记录' }))
@@ -311,10 +311,6 @@ function formatTime(iso: string) {
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
   return `${hh}:${mm}`
-}
-
-function resolveImage(path: string) {
-  return path.startsWith('http') ? path : `${OSS_BASE_URL}/${path}`
 }
 
 function previewImage(urls: string[], current: number) {
