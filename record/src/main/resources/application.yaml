@@ -198,8 +198,6 @@ app:
       max-entries: 200
       default-days: 30
       system-prompt:
-    blog:
-      slug-prompt:
     rag:
       enabled: true
       top-k: 5

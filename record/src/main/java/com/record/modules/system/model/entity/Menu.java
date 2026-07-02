@@ -47,9 +47,6 @@ public class Menu extends BaseEntity {
     /** 状态。 */
     private CommonStatus status;
 
-    /** 平台：ADMIN / WEB / ALL。 */
-    private String platform;
-
     // ============ 便捷方法，从 meta 中获取常用字段 ============
 
     public String getTitle() {

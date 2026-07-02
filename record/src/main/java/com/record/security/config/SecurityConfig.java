@@ -39,10 +39,7 @@ public class SecurityConfig {
                                 "/auth/*/authorize", "/auth/*/callback",
                                 // 动态路由接口：web C 端 + admin 共用，未登录返回公开菜单，已登录按角色过滤
                                 "/system/menu/get-async-routes",
-                                // Web C 端公开博客接口
-                                "/blog/public/**",
-                                // 查询评论公开（发表评论需登录，在 controller 层校验）
-                                "/blog/comments",
+
                                 "/doc.html", "/swagger-ui/**",
                                 "/swagger-resources/**", "/v3/api-docs/**", "/webjars/**").permitAll()
                         // 其余 /system/** 是管理后台接口，必须 admin

@@ -29,7 +29,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
-    public List<AsyncRouteVO> getAsyncRoutesByUserId(Long userId, String platform) {
+    public List<AsyncRouteVO> getAsyncRoutesByUserId(Long userId) {
         // 获取用户的角色列表；未登录时默认视为 editor（C 端可浏览内容）
         List<String> userRoles;
         if (userId == null) {
@@ -42,10 +42,6 @@ public class MenuServiceImpl implements MenuService {
         LambdaQueryWrapper<Menu> query = new LambdaQueryWrapper<Menu>()
                 .eq(Menu::getStatus, CommonStatus.ENABLED)
                 .ne(Menu::getMenuType, "BUTTON");
-        // 按 platform 过滤：ADMIN / WEB / ALL
-        if (platform != null) {
-            query.and(w -> w.eq(Menu::getPlatform, platform).or().eq(Menu::getPlatform, "ALL"));
-        }
         List<Menu> menus = menuMapper.selectList(query);
 
         // 根据 meta.roles 字段过滤菜单
