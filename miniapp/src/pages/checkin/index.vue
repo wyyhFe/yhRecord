@@ -32,6 +32,7 @@
       <view class="checkin-card__header">
         <text class="checkin-card__title">我的任务</text>
         <text class="checkin-card__badge">{{ tasks.length }}</text>
+        <text v-if="tasks.length" class="checkin-card__hint">左滑可删除</text>
       </view>
 
       <view v-if="tasks && tasks.length" class="task-list">
@@ -79,10 +80,7 @@
       />
     </view>
 
-    <!-- 左滑删除提示 -->
-    <view v-if="tasks.length" class="checkin-hint">
-      <text class="checkin-hint__text">左滑任务可删除</text>
-    </view>
+
 
     <!-- 打卡弹窗 -->
     <u-popup v-model="showCheckinPopup" mode="bottom" border-radius="28" :safe-area-inset-bottom="false">
@@ -180,10 +178,6 @@
     <!-- 悬浮按钮 -->
     <view class="fab" :class="{ 'fab--open': fabOpen }">
       <view class="fab__mask" @tap="fabOpen = false" />
-      <!-- 小弧：始终包裹 + 按钮 -->
-      <view class="fab__arc-small" />
-      <!-- 大弧：展开后覆盖子菜单 -->
-      <view class="fab__arc-big" />
       <!-- 子菜单 -->
       <view class="fab__sub fab__sub--1" @tap="goMedals">
         <view class="fab__sub-circle"><text class="fab__sub-emoji">🏆</text></view>
@@ -204,8 +198,9 @@
     </view>
   </view>
 
-  <!-- 自定义 TabBar -->
+  <!-- 自TabBar定义 TabBar -->
   <TabBar current="checkin" />
+
 </template>
 
 <script setup lang="ts">
@@ -637,7 +632,7 @@ onPullDownRefresh(() => {
 .fab {
   position: fixed;
   right: 32rpx;
-  bottom: 120rpx;
+  bottom: calc(120rpx + var(--tabbar-total));
   z-index: 50;
 }
 
@@ -659,57 +654,11 @@ onPullDownRefresh(() => {
   pointer-events: auto;
 }
 
-/* 弧形通用样式 — 固定圆角半径，保证大小弧弧度一致 */
-.fab__arc-small,
-.fab__arc-big {
-  position: fixed;
-  border-radius: 500rpx;
-  background: rgba(255, 255, 255, 0.97);
-  box-shadow: -4rpx -4rpx 24rpx rgba(0, 0, 0, 0.08);
-  opacity: 0;
-  transform: scale(0);
-  transform-origin: bottom right;
-  pointer-events: none;
-}
-
-/* 小弧 — 包裹 + 按钮 */
-.fab__arc-small {
-  right: -60rpx;
-  bottom: -60rpx;
-  width: 300rpx;
-  height: 300rpx;
-  z-index: 50;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.fab--open .fab__arc-small {
-  opacity: 1;
-  transform: scale(1);
-  pointer-events: auto;
-}
-
-/* 大弧 — 包裹菜单和 + 按钮 */
-.fab__arc-big {
-  right: -300rpx;
-  bottom: -300rpx;
-  width: 700rpx;
-  height: 700rpx;
-  z-index: 49;
-  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.fab--open .fab__arc-big {
-  opacity: 1;
-  transform: scale(1);
-  pointer-events: auto;
-  transition-delay: 0.15s;
-}
-
 /* 主按钮 */
 .fab__btn {
   position: fixed;
   right: 32rpx;
-  bottom: 45rpx;
+  bottom: calc(45rpx + var(--tabbar-total));
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
@@ -733,7 +682,7 @@ onPullDownRefresh(() => {
   line-height: 1;
 }
 
-/* 子按钮 — 在弧形内部 */
+/* 子按钮 — 垂直弹出 */
 .fab__sub {
   position: fixed;
   display: flex;
@@ -748,20 +697,20 @@ onPullDownRefresh(() => {
 }
 
 .fab__sub--1 {
-  right: 200rpx;
-  bottom: 180rpx;
+  right: 32rpx;
+  bottom: calc(165rpx + var(--tabbar-total));
   transition-delay: 0s;
 }
 
 .fab__sub--2 {
-  right: 80rpx;
-  bottom: 280rpx;
+  right: 32rpx;
+  bottom: calc(290rpx + var(--tabbar-total));
   transition-delay: 0.06s;
 }
 
 .fab__sub--3 {
-  right: 300rpx;
-  bottom: 100rpx;
+  right: 32rpx;
+  bottom: calc(415rpx + var(--tabbar-total));
   transition-delay: 0.12s;
 }
 
@@ -911,14 +860,10 @@ onPullDownRefresh(() => {
 }
 
 /* ========== 提示 ========== */
-.checkin-hint {
-  margin-top: var(--space-3);
-  text-align: center;
-}
-
-.checkin-hint__text {
+.checkin-card__hint {
+  margin-left: auto;
   color: var(--color-text-muted);
-  font-size: var(--font-tiny);
+  font-size: 18rpx;
 }
 
 /* ========== 打卡弹窗 ========== */
