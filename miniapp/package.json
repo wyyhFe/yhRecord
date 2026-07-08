@@ -27,6 +27,15 @@
     "uview-pro": "^0.5.13",
     "vue": "^3.4.21"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "core-js",
+      "core-js-pure",
+      "esbuild",
+      "vue-demi"
+    ]
+  },
   "devDependencies": {
     "@dcloudio/types": "^3.4.14",
     "@dcloudio/vite-plugin-uni": "^3.0.0-alpha-5000420260319001",
