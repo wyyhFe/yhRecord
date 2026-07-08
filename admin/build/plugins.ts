@@ -1,12 +1,12 @@
 import vue from "@vitejs/plugin-vue";
-import { pathResolve } from "./utils";
-import { viteBuildInfo } from "./info";
+import { pathResolve } from "./utils.ts";
+import { viteBuildInfo } from "./info.ts";
 import svgLoader from "vite-svg-loader";
 import Icons from "unplugin-icons/vite";
 import type { PluginOption } from "vite";
 import vueJsx from "@vitejs/plugin-vue-jsx";
 import tailwindcss from "@tailwindcss/vite";
-import { configCompressPlugin } from "./compress";
+import { configCompressPlugin } from "./compress.ts";
 import removeNoMatch from "vite-plugin-router-warn";
 import { visualizer } from "rollup-plugin-visualizer";
 import removeConsole from "vite-plugin-remove-console";
