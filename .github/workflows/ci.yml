@@ -82,3 +82,30 @@ jobs:
       - name: 构建
         working-directory: miniapp
         run: pnpm run build:mp-weixin
+
+  release:
+    name: 语义化发版
+    needs: [backend, admin, miniapp]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 执行语义化发版
+        run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
