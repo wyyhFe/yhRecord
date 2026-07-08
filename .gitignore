@@ -62,6 +62,8 @@ logs/
 ### Admin (vue-pure-admin) ###
 admin/dist/
 admin/node_modules/
+# admin/build/ 是 Vite 构建配置，不可忽略
+!admin/build/
 admin/.env.local
 admin/.env.*.local
 admin/CHANGELOG*.md
