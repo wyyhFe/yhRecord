@@ -1,7 +1,9 @@
 package com.record.modules.memorial.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.record.common.exception.MemorialException;
+import com.record.common.util.PageQuery;
 import com.record.modules.memorial.mapper.MemorialDayMapper;
 import com.record.modules.memorial.model.dto.CreateMemorialDayRequest;
 import com.record.modules.memorial.model.dto.UpdateMemorialDayRequest;
@@ -84,28 +86,34 @@ class MemorialDayServiceImplTest {
     @DisplayName("list 方法")
     class ListTests {
 
+        private final PageQuery pageQuery = new PageQuery(1, 10);
+
         @Test
         @DisplayName("返回用户的所有纪念日")
         void list_returnsAll() {
             MemorialDay md = createSampleMemorialDay();
-            when(memorialDayMapper.selectList(any(LambdaQueryWrapper.class)))
-                    .thenReturn(List.of(md));
+            Page<MemorialDay> page = new Page<>(1, 10, 1);
+            page.setRecords(List.of(md));
+            when(memorialDayMapper.selectPage(any(), any(LambdaQueryWrapper.class)))
+                    .thenReturn(page);
 
-            List<MemorialDayVO> result = memorialDayService.list(USER_ID);
+            Page<MemorialDayVO> result = memorialDayService.list(USER_ID, pageQuery);
 
-            assertEquals(1, result.size());
-            assertEquals("第一次旅行", result.get(0).getTitle());
+            assertEquals(1, result.getTotal());
+            assertEquals("第一次旅行", result.getRecords().get(0).getTitle());
         }
 
         @Test
         @DisplayName("无纪念日时返回空列表")
         void list_empty() {
-            when(memorialDayMapper.selectList(any(LambdaQueryWrapper.class)))
-                    .thenReturn(List.of());
+            Page<MemorialDay> page = new Page<>(1, 10, 0);
+            page.setRecords(List.of());
+            when(memorialDayMapper.selectPage(any(), any(LambdaQueryWrapper.class)))
+                    .thenReturn(page);
 
-            List<MemorialDayVO> result = memorialDayService.list(USER_ID);
+            Page<MemorialDayVO> result = memorialDayService.list(USER_ID, pageQuery);
 
-            assertTrue(result.isEmpty());
+            assertTrue(result.getRecords().isEmpty());
         }
     }
 
