@@ -45,6 +45,8 @@ record/src/main/resources/application-local.yaml
 
 # OpenCode 工作目录
 scripts/.opencode/
+.opencode/
+.workbuddy/
 
 # 部署相关（含私钥）
 lifeRecord-deploy/
