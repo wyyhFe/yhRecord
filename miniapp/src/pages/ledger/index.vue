@@ -352,11 +352,11 @@ interface YearMonthCard {
   distributions: YearMonthDistributionItem[]
 }
 
-const typeOptions = [
+const typeOptions: { label: string; value: EntryType }[] = [
   { label: '支出', value: 'EXPENSE' },
   { label: '收入', value: 'INCOME' }
 ]
-const filterTypeOptions = [
+const filterTypeOptions: { label: string; value: TypeFilter }[] = [
   { label: '全部', value: 'ALL' },
   { label: '支出', value: 'EXPENSE' },
   { label: '收入', value: 'INCOME' }
@@ -603,8 +603,12 @@ function syncPendingFilter() {
   pendingFilterTagId.value = selectedFilterTagId.value
 }
 
+function goBooks() {
+  uni.navigateTo({ url: '/pages/ledger/books' })
+}
+
 function shareBook() {
-  uni.$feedback.info('账本邀请功能下一步再接入')
+  uni.$feedback.info('此功能暂未开放')
 }
 
 function onYearMonthChange(event: { detail: { value: number[] } }) {

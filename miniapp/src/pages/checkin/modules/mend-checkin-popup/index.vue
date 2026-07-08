@@ -45,14 +45,14 @@
 import { ref, reactive, watch, computed } from 'vue'
 import BottomSheet from '@/components/business/bottom-sheet/index.vue'
 import { mendCheckin } from '@/api/checkin'
-import type { CheckinTask } from '@/types/domain'
+import type { CheckinTask, Id } from '@/types/domain'
 
 const props = defineProps<{
   modelValue: boolean
   mendDate: string
   displayDate: string
   tasks: CheckinTask[]
-  completedIds: Set<number>
+  completedIds: Set<Id>
   remaining: number
 }>()
 
@@ -62,7 +62,7 @@ const emit = defineEmits<{
 }>()
 
 const pendingTasks = reactive<CheckinTask[]>([])
-const doneIds = reactive(new Set<number>())
+const doneIds = reactive(new Set<Id>())
 const submitting = ref(false)
 const localRemaining = ref(0)
 

@@ -69,7 +69,7 @@ async function generate() {
       uni.createSelectorQuery()
         .in(instance)
         .select('#posterCanvas')
-        .fields({ node: true, size: true })
+        .fields({ node: true, size: true }, () => {})
         .exec((res) => resolve(res?.[0]?.node))
     })
     if (!canvasNode) throw new Error('canvas not found')

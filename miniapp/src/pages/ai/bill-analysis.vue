@@ -307,7 +307,7 @@ function handleBookChange(event: { detail: { value: number } }) {
 
 async function loadBooks() {
   try {
-    const books: LedgerBook[] = await fetchBooks()
+    const { list: books } = await fetchBooks()
     bookOptions.value = [
       { label: '全部账本', value: '' },
       ...books.map((book) => ({ label: book.name, value: book.id }))

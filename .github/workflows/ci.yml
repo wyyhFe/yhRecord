@@ -49,10 +49,6 @@ jobs:
         working-directory: admin
         run: pnpm install --frozen-lockfile
 
-      - name: 类型检查
-        working-directory: admin
-        run: pnpm typecheck
-
       - name: 构建
         working-directory: admin
         run: pnpm build

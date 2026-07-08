@@ -297,12 +297,12 @@ const canMend = computed(() => {
 })
 
 const completedTaskIds = computed(() => {
-  return new Set(detail.value?.records.map((r) => r.taskId) || [])
+  return new Set(detail.value?.records.map((r) => String(r.taskId)) || [])
 })
 
 const incompleteTasks = computed(() => {
   return allTasks.value.filter(
-    (t) => !completedTaskIds.value.has(Number(t.id)) && (!t.startDate || t.startDate <= date.value)
+    (t) => !completedTaskIds.value.has(t.id) && (!t.startDate || t.startDate <= date.value)
   )
 })
 

@@ -54,7 +54,7 @@
 
 <script setup lang="ts">
 defineProps<{
-  current: 'home' | 'diary' | 'checkin' | 'profile'
+  current: 'home' | 'diary' | 'checkin' | 'profile' | 'discover'
 }>()
 
 function goHome() {
