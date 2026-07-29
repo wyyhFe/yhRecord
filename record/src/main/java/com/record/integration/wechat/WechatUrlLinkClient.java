@@ -1,14 +1,14 @@
 package com.record.integration.wechat;
 
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.record.common.config.AppProperties;
 import com.record.common.constant.RedisKeyConstants;
 import com.record.common.exception.AuthException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 微信 URL Link 客户端。
- * 用于生成云调用短链接，微信扫一扫打开后可直接唤起小程序。
+ * POST 请求使用 Hutool（与 MiniProgramMessageClient 一致），避免 RestTemplate POST 兼容性问题。
  * access_token 复用 {@link MiniProgramMessageClient} 的缓存。
  */
 @Component
@@ -29,21 +29,20 @@ public class WechatUrlLinkClient {
     private final RestTemplate restTemplate;
     private final AppProperties appProperties;
     private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
 
     public WechatUrlLinkClient(RestTemplate restTemplate,
                                AppProperties appProperties,
-                               StringRedisTemplate stringRedisTemplate) {
+                               StringRedisTemplate stringRedisTemplate,
+                               ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.appProperties = appProperties;
         this.stringRedisTemplate = stringRedisTemplate;
+        this.objectMapper = objectMapper;
     }
 
     /**
      * 生成一个打开小程序指定页面并携带参数的短链接。
-     *
-     * @param path  小程序页面路径，如 "pages/home/index"
-     * @param query URL query 参数，如 "qrToken=abc123"
-     * @return 短链接，如 "https://wxaurl.cn/xxx"
      */
     public String generateUrlLink(String path, String query) {
         String accessToken = getAccessToken();
@@ -57,30 +56,44 @@ public class WechatUrlLinkClient {
                 "env_version", "release",
                 "is_expire", true,
                 "expire_type", 1,
-                "expire_interval", 1  // 1 天后过期
+                "expire_interval", 1
         );
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-        WechatUrlLinkResponse response;
+        String jsonBody;
         try {
-            response = restTemplate.postForObject(url, request, WechatUrlLinkResponse.class);
+            jsonBody = objectMapper.writeValueAsString(body);
         } catch (Exception e) {
-            log.error("[WechatUrlLink] 生成 URL Link 失败: {}", e.getMessage());
-            throw new AuthException("生成小程序链接失败");
+            throw new AuthException("序列化 URL Link 请求失败: " + e.getMessage());
         }
 
-        if (response == null || response.getErrCode() == null || response.getErrCode() != 0) {
-            String errMsg = response != null ? response.getErrMsg() : "无响应";
-            log.error("[WechatUrlLink] 微信返回错误 errcode={} errmsg={}",
-                    response != null ? response.getErrCode() : null, errMsg);
-            throw new AuthException("生成小程序链接失败: " + errMsg);
+        log.info("[WechatUrlLink] >> url={} body={}", url, jsonBody);
+
+        HttpResponse httpResponse = HttpRequest.post(url)
+                .header("Content-Type", "application/json")
+                .body(jsonBody)
+                .timeout(10000)
+                .execute();
+        int statusCode = httpResponse.getStatus();
+        String rawBody = httpResponse.body();
+        log.info("[WechatUrlLink] << HTTP {} rawBody={}", statusCode, rawBody);
+
+        if (statusCode != 200 || rawBody == null || rawBody.isBlank()) {
+            throw new AuthException("微信 URL Link API 返回异常: HTTP " + statusCode + ", body=" + rawBody);
         }
 
-        log.info("[WechatUrlLink] 生成短链接成功 path={} query={} link={}", path, query, response.getUrlLink());
-        return response.getUrlLink();
+        try {
+            WechatUrlLinkResponse response = objectMapper.readValue(rawBody, WechatUrlLinkResponse.class);
+            if (response.getErrCode() == null || response.getErrCode() != 0) {
+                throw new AuthException("生成小程序链接失败: errcode=" + response.getErrCode() + " " + response.getErrMsg());
+            }
+            log.info("[WechatUrlLink] 生成短链接成功 link={}", response.getUrlLink());
+            return response.getUrlLink();
+        } catch (AuthException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[WechatUrlLink] 解析响应异常: {}", e.getMessage(), e);
+            throw new AuthException("生成小程序链接失败: 响应解析错误");
+        }
     }
 
     private String getAccessToken() {
