@@ -153,6 +153,12 @@
       }
     },
     {
+      "path": "pages/profile/security",
+      "style": {
+        "navigationBarTitleText": "账号安全"
+      }
+    },
+    {
       "path": "pages/profile/tags/index",
       "style": {
         "navigationBarTitleText": "标签管理"

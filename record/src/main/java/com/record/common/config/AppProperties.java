@@ -58,6 +58,9 @@ public class AppProperties {
 
         /** 微信 code2Session 接口地址。 */
         private String code2sessionUrl;
+
+        /** 微信 getuserphonenumber 接口地址。 */
+        private String getPhoneNumberUrl;
     }
 
     @Data

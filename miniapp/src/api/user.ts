@@ -24,6 +24,18 @@ export function updateUserProfile(data: UserProfileUpdatePayload) {
 }
 
 /**
+ * 绑定手机号（微信小程序端，需已登录）。
+ * code 来自 button open-type="getPhoneNumber" 回调。
+ */
+export function bindPhone(data: { code: string }) {
+  return request<void>({
+    url: '/auth/bind-phone',
+    method: 'POST',
+    data
+  })
+}
+
+/**
  * 获取指定用户的公开资料（供他人主页展示）。
  */
 export function fetchPublicUserProfile(userId: Id) {

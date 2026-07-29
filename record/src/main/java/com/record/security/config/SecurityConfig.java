@@ -35,7 +35,8 @@ public class SecurityConfig {
                         // OAuth 登录链路无 token：跳转授权 + 回调
                         // 注意 `*` 是单段匹配，不会命中 `/auth/{provider}/bind/authorize`，所以绑定授权会落到 authenticated 分支
                         .requestMatchers("/auth/login", "/auth/register",
-                                "/auth/wx-login", "/auth/refresh",
+                                "/auth/wx-login", "/auth/phone-login", "/auth/refresh",
+                                "/auth/qr-token", "/auth/qr-status",
                                 "/auth/*/authorize", "/auth/*/callback",
                                 // 动态路由接口：web C 端 + admin 共用，未登录返回公开菜单，已登录按角色过滤
                                 "/system/menu/get-async-routes",

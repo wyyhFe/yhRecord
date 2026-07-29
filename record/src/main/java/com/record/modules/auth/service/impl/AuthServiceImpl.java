@@ -1,6 +1,7 @@
 package com.record.modules.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.record.common.config.AppProperties;
 import com.record.common.constant.RedisKeyConstants;
 import com.record.common.exception.AuthException;
@@ -9,7 +10,9 @@ import com.record.integration.oauth.OAuthProviderRegistry;
 import com.record.integration.oauth.OAuthUserInfo;
 import com.record.integration.wechat.WechatAuthClient;
 import com.record.integration.wechat.WechatCode2SessionResponse;
+import com.record.integration.wechat.WechatPhoneClient;
 import com.record.modules.auth.model.vo.AuthTokenVO;
+import com.record.modules.auth.model.vo.QrTokenVO;
 import com.record.modules.auth.service.AuthService;
 import com.record.common.exception.BusinessException;
 import com.record.common.exception.ErrorCode;
@@ -56,7 +59,9 @@ public class AuthServiceImpl implements AuthService {
     private static final String FIELD_EXPIRE_AT = "expire_at";
 
     private final WechatAuthClient wechatAuthClient;
+    private final WechatPhoneClient wechatPhoneClient;
     private final OAuthProviderRegistry oAuthProviderRegistry;
+    private final ObjectMapper objectMapper;
     private final UserService userService;
     private final UserMapper userMapper;
     private final UserIdentityMapper userIdentityMapper;
@@ -68,7 +73,9 @@ public class AuthServiceImpl implements AuthService {
     private final AppProperties appProperties;
 
     public AuthServiceImpl(WechatAuthClient wechatAuthClient,
+                           WechatPhoneClient wechatPhoneClient,
                            OAuthProviderRegistry oAuthProviderRegistry,
+                           ObjectMapper objectMapper,
                            UserService userService,
                            UserMapper userMapper,
                            UserIdentityMapper userIdentityMapper,
@@ -79,7 +86,9 @@ public class AuthServiceImpl implements AuthService {
                            UserRoleMapper userRoleMapper,
                            AppProperties appProperties) {
         this.wechatAuthClient = wechatAuthClient;
+        this.wechatPhoneClient = wechatPhoneClient;
         this.oAuthProviderRegistry = oAuthProviderRegistry;
+        this.objectMapper = objectMapper;
         this.userService = userService;
         this.userMapper = userMapper;
         this.userIdentityMapper = userIdentityMapper;
@@ -349,6 +358,153 @@ public class AuthServiceImpl implements AuthService {
                 FIELD_EXPIRE_AT, String.valueOf(expireAt)
         ));
         stringRedisTemplate.expire(key, ttlDays, TimeUnit.DAYS);
+    }
+
+    // TODO: 个人主体小程序暂不可用 getPhoneNumber，代码保留待主体升级后启用
+    @Override
+    public void bindPhone(Long userId, String code) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new AuthException("用户不存在");
+        }
+        if (user.getPhone() != null && !user.getPhone().isBlank()) {
+            throw new BusinessException(ErrorCode.USER_ERROR, "该账号已绑定手机号，如需更换请联系管理员");
+        }
+
+        String phone = wechatPhoneClient.getPhoneNumber(code);
+
+        // 校验手机号唯一性
+        User phoneUser = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getPhone, phone));
+        if (phoneUser != null && !phoneUser.getId().equals(userId)) {
+            throw new BusinessException(ErrorCode.USER_ERROR, "该手机号已被其他用户绑定");
+        }
+
+        // 自动使用手机号后 6 位作为初始密码
+        String initialPassword = phone.substring(phone.length() - 6);
+
+        user.setPhone(phone);
+        user.setPassword(passwordEncoder().encode(initialPassword));
+        userMapper.updateById(user);
+
+        log.info("[bindPhone] 绑定成功 userId={} phone={}", userId, maskPhone(phone));
+    }
+
+    @Override
+    public AuthTokenVO phoneLogin(String phone, String password) {
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getPhone, phone));
+        if (user == null) {
+            throw new AuthException("手机号或密码错误");
+        }
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new AuthException("该账号未绑定手机号");
+        }
+        if (!passwordEncoder().matches(password, user.getPassword())) {
+            throw new AuthException("手机号或密码错误");
+        }
+        if (user.getStatus() == CommonStatus.DISABLED) {
+            throw new AuthException("账号已被禁用");
+        }
+
+        AuthTokenVO token = issueToken(user);
+
+        // 校验是否为初始密码（手机号后 6 位）
+        String initialPassword = phone.substring(phone.length() - 6);
+        if (password.equals(initialPassword)) {
+            token.setRequirePasswordChange(true);
+        }
+
+        return token;
+    }
+
+    @Override
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new AuthException("用户不存在");
+        }
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new AuthException("该账号未设置密码");
+        }
+        if (!passwordEncoder().matches(oldPassword, user.getPassword())) {
+            throw new AuthException("旧密码不正确");
+        }
+
+        user.setPassword(passwordEncoder().encode(newPassword));
+        userMapper.updateById(user);
+
+        log.info("[changePassword] 密码修改成功 userId={}", userId);
+    }
+
+    // ==================== QR 扫码登录 ====================
+
+    @Override
+    public QrTokenVO generateQrToken() {
+        String qrToken = UUID.randomUUID().toString();
+        stringRedisTemplate.opsForValue().set(
+                RedisKeyConstants.QR_LOGIN + qrToken,
+                "PENDING",
+                120,
+                TimeUnit.SECONDS
+        );
+        log.info("[QR] 生成二维码 token={}", qrToken);
+        return QrTokenVO.builder().qrToken(qrToken).expireSeconds(120).build();
+    }
+
+    @Override
+    public AuthTokenVO confirmQrLogin(Long userId, String qrToken) {
+        String key = RedisKeyConstants.QR_LOGIN + qrToken;
+        String status = stringRedisTemplate.opsForValue().get(key);
+        if (status == null) {
+            throw new AuthException("二维码已过期，请刷新后重试");
+        }
+        if (!"PENDING".equals(status)) {
+            throw new AuthException("二维码已被使用，请刷新后重试");
+        }
+
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new AuthException("用户不存在");
+        }
+
+        AuthTokenVO token = issueToken(user);
+        // 将 token 序列化存入 Redis，供管理后台轮询
+        try {
+            String tokenJson = objectMapper.writeValueAsString(token);
+            stringRedisTemplate.opsForValue().set(key, "CONFIRMED:" + tokenJson, 120, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw new AuthException("序列化 token 失败");
+        }
+        log.info("[QR] 扫码确认登录 userId={} token={}", userId, qrToken);
+        return token;
+    }
+
+    @Override
+    public AuthTokenVO getQrStatus(String qrToken) {
+        String key = RedisKeyConstants.QR_LOGIN + qrToken;
+        String value = stringRedisTemplate.opsForValue().get(key);
+        if (value == null) {
+            throw new AuthException("二维码已过期，请刷新后重试");
+        }
+        if ("PENDING".equals(value)) {
+            return null; // 前端根据 null 判断继续轮询
+        }
+        if (value.startsWith("CONFIRMED:")) {
+            // 一次性消费：删掉 Redis，防止重放
+            stringRedisTemplate.delete(key);
+            try {
+                return objectMapper.readValue(value.substring("CONFIRMED:".length()), AuthTokenVO.class);
+            } catch (Exception e) {
+                throw new AuthException("解析 token 失败");
+            }
+        }
+        throw new AuthException("未知的二维码状态");
+    }
+
+    private static String maskPhone(String phone) {
+        if (phone == null || phone.length() < 7) return "***";
+        return phone.substring(0, 3) + "****" + phone.substring(phone.length() - 4);
     }
 
     private PasswordEncoder passwordEncoder() {

@@ -6,10 +6,15 @@ import com.record.common.model.ApiResponse;
 import com.record.modules.auth.model.OAuthStateContext;
 import com.record.modules.auth.model.dto.AdminLoginRequest;
 import com.record.modules.auth.model.dto.AdminRegisterRequest;
+import com.record.modules.auth.model.dto.BindPhoneRequest;
+import com.record.modules.auth.model.dto.ChangePasswordRequest;
+import com.record.modules.auth.model.dto.PhoneLoginRequest;
 import com.record.modules.auth.model.dto.RefreshTokenRequest;
 import com.record.modules.auth.model.dto.WxLoginRequest;
 import com.record.modules.auth.model.vo.AuthTokenVO;
 import com.record.modules.auth.model.vo.OAuthAuthorizeUrlVO;
+import com.record.modules.auth.model.vo.QrTokenVO;
+import com.record.modules.auth.model.dto.QrLoginRequest;
 import com.record.modules.auth.service.AuthService;
 import com.record.modules.auth.service.OAuthStateService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +24,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -84,6 +90,52 @@ public class AuthController {
     @GetMapping("/me")
     public ApiResponse<Long> me() {
         return ApiResponse.success(UserContext.getUserId());
+    }
+
+    // TODO: 个人主体小程序暂不可用 getPhoneNumber，代码保留待主体升级后启用
+    @Operation(summary = "绑定手机号（微信小程序端，需已登录）")
+    @PostMapping("/bind-phone")
+    public ApiResponse<Void> bindPhone(@Valid @RequestBody BindPhoneRequest request) {
+        authService.bindPhone(UserContext.getUserId(), request.getCode());
+        return ApiResponse.success();
+    }
+
+    // TODO: 个人主体小程序暂不可用，代码保留待主体升级后启用
+    @Operation(summary = "管理后台手机号 + 密码登录")
+    @PostMapping("/phone-login")
+    public ApiResponse<AuthTokenVO> phoneLogin(@Valid @RequestBody PhoneLoginRequest request) {
+        return ApiResponse.success(authService.phoneLogin(request.getPhone(), request.getPassword()));
+    }
+
+    @Operation(summary = "修改密码（需已登录）")
+    @PutMapping("/change-password")
+    public ApiResponse<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(UserContext.getUserId(), request.getOldPassword(), request.getNewPassword());
+        return ApiResponse.success();
+    }
+
+    // ==================== 二维码扫码登录 ====================
+
+    @Operation(summary = "生成二维码扫码登录 token（管理后台调用）")
+    @GetMapping("/qr-token")
+    public ApiResponse<QrTokenVO> generateQrToken() {
+        return ApiResponse.success(authService.generateQrToken());
+    }
+
+    @Operation(summary = "小程序扫码确认登录（需已通过微信登录）")
+    @PostMapping("/qr-login")
+    public ApiResponse<AuthTokenVO> confirmQrLogin(@Valid @RequestBody QrLoginRequest request) {
+        return ApiResponse.success(authService.confirmQrLogin(UserContext.getUserId(), request.getQrToken()));
+    }
+
+    @Operation(summary = "管理后台轮询二维码扫码状态")
+    @GetMapping("/qr-status")
+    public ApiResponse<AuthTokenVO> getQrStatus(@RequestParam String qrToken) {
+        AuthTokenVO token = authService.getQrStatus(qrToken);
+        if (token == null) {
+            return ApiResponse.failure(202, "等待扫码确认");
+        }
+        return ApiResponse.success(token);
     }
 
     // ==================== OAuth 第三方登录 ====================

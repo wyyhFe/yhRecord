@@ -62,6 +62,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
+import { confirmQrLogin } from '@/api/auth'
 import TabBar from '@/components/business/tab-bar/index.vue'
 import PosterGenerator from './modules/poster-generator/index.vue'
 import { resolveImage } from '@/utils/image'
@@ -96,18 +97,51 @@ const menuItems = [
   { key: 'reminder', icon: '🔔', title: '提醒设置', description: '订阅消息和公众号提醒' },
   { key: 'memorial', icon: '📅', title: '纪念日管理', description: '重要日期和提醒配置' },
   { key: 'tag', icon: '🏷️', title: '标签管理', description: '日记、记账和打卡标签' },
-  { key: 'recycle', icon: '🗑️', title: '回收站', description: '已删除内容可恢复' }
+  { key: 'recycle', icon: '🗑️', title: '回收站', description: '已删除内容可恢复' },
+  { key: 'qrlogin', icon: '📱', title: '扫码登录管理后台', description: '扫描网页上的二维码，快速登录管理后台' },
+  // TODO: 个人主体小程序暂不可用 getPhoneNumber，待主体升级后启用
+  // { key: 'security', icon: '🔐', title: '账号安全', description: '绑定手机号，设置管理后台登录' },
 ]
+
+/** 扫码登录管理后台 */
+async function handleQrLogin() {
+  try {
+    const res = await uni.scanCode({ onlyFromCamera: true, scanType: ['qrCode'] })
+    const text = res.result || ''
+    if (!text.startsWith('LR_LOGIN:')) {
+      uni.showToast({ title: '无效的二维码', icon: 'none' })
+      return
+    }
+    const qrToken = text.slice('LR_LOGIN:'.length)
+    const confirmRes = await uni.showModal({
+      title: '确认登录',
+      content: '确认在浏览器端登录管理后台？'
+    })
+    if (!confirmRes.confirm) return
+
+    await confirmQrLogin(qrToken)
+    uni.showToast({ title: '登录成功', icon: 'success' })
+  } catch (err: any) {
+    if (err?.errMsg?.includes('cancel')) return // 用户取消扫码
+    uni.$feedback.error(err, undefined, '扫码登录失败')
+    console.error('[QrLogin]', err)
+  }
+}
 
 function handleSelect(key: string) {
   const routes: Record<string, string> = {
     profile: '/pages/profile/edit',
     reminder: '/pages/profile/reminder',
     memorial: '/pages/memorialPage/index',
-    recycle: '/pages/profile/recycle/index'
+    recycle: '/pages/profile/recycle/index',
+    security: '/pages/profile/security'
   }
   if (routes[key]) {
     uni.navigateTo({ url: routes[key] })
+    return
+  }
+  if (key === 'qrlogin') {
+    handleQrLogin()
     return
   }
   if (key === 'tag') {
