@@ -5,9 +5,6 @@ const operates = [
     title: $t("login.purePhoneLogin")
   },
   {
-    title: $t("login.pureQRCodeLogin")
-  },
-  {
     title: $t("login.pureRegister")
   }
 ];

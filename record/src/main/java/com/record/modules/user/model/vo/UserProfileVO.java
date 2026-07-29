@@ -25,6 +25,9 @@ public class UserProfileVO {
     @Schema(description = "小程序 openid")
     private String openid;
 
+    @Schema(description = "手机号")
+    private String phone;
+
     @Schema(description = "昵称", example = "wyh")
     private String nickname;
 

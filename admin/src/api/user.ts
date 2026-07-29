@@ -17,6 +17,8 @@ export type UserResult = ApiResult<{
   sessionId: string;
   /** accessToken 过期时间（秒），用于前端主动续签判断 */
   expiresIn: number;
+  /** 是否需要强制修改密码（初始密码登录时返回 true） */
+  requirePasswordChange?: boolean;
 }>;
 
 /** 刷新 token 响应 */
@@ -52,6 +54,16 @@ export const registerAccount = (data?: object) => {
 /** 微信登录（小程序端使用，后台管理暂不使用） */
 export const getWxLogin = (data?: object) => {
   return http.request<UserResult>("post", "/auth/wx-login", { data });
+};
+
+/** 手机号 + 密码登录管理后台 */
+export const phoneLogin = (data?: object) => {
+  return http.request<UserResult>("post", "/auth/phone-login", { data });
+};
+
+/** 修改密码（需已登录） */
+export const changePassword = (data?: object) => {
+  return http.request<void>("put", "/auth/change-password", { data });
 };
 
 /** 刷新 token */

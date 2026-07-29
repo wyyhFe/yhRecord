@@ -96,7 +96,9 @@ const menuItems = [
   { key: 'reminder', icon: '🔔', title: '提醒设置', description: '订阅消息和公众号提醒' },
   { key: 'memorial', icon: '📅', title: '纪念日管理', description: '重要日期和提醒配置' },
   { key: 'tag', icon: '🏷️', title: '标签管理', description: '日记、记账和打卡标签' },
-  { key: 'recycle', icon: '🗑️', title: '回收站', description: '已删除内容可恢复' }
+  { key: 'recycle', icon: '🗑️', title: '回收站', description: '已删除内容可恢复' },
+  // TODO: 个人主体小程序暂不可用 getPhoneNumber，待主体升级后启用
+  // { key: 'security', icon: '🔐', title: '账号安全', description: '绑定手机号，设置管理后台登录' },
 ]
 
 function handleSelect(key: string) {
@@ -104,7 +106,8 @@ function handleSelect(key: string) {
     profile: '/pages/profile/edit',
     reminder: '/pages/profile/reminder',
     memorial: '/pages/memorialPage/index',
-    recycle: '/pages/profile/recycle/index'
+    recycle: '/pages/profile/recycle/index',
+    security: '/pages/profile/security'
   }
   if (routes[key]) {
     uni.navigateTo({ url: routes[key] })

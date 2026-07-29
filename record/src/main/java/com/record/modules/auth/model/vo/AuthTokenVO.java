@@ -40,4 +40,7 @@ public class AuthTokenVO {
 
     @Schema(description = "accessToken 过期时间（秒），前端可据此判断是否需要主动续签", example = "14400")
     private Long expiresIn;
+
+    @Schema(description = "是否需要强制修改密码（初始密码登录时返回 true）", example = "false")
+    private Boolean requirePasswordChange;
 }

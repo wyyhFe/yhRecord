@@ -134,6 +134,31 @@ const updateRules = reactive<FormRules>({
   ]
 });
 
+/** 手机号登录校验 */
+const phoneLoginRules = reactive<FormRules>({
+  phone: [
+    {
+      validator: (rule, value, callback) => {
+        if (value === "") {
+          callback(new Error("请输入手机号"));
+        } else if (!isPhone(value)) {
+          callback(new Error("请输入正确的手机号"));
+        } else {
+          callback();
+        }
+      },
+      trigger: "blur"
+    }
+  ],
+  password: [
+    {
+      required: true,
+      message: "请输入密码",
+      trigger: "blur"
+    }
+  ]
+});
+
 /** 管理后台注册校验（用户名 + 密码） */
 const registerRules = reactive<FormRules>({
   password: [
@@ -145,4 +170,4 @@ const registerRules = reactive<FormRules>({
   ]
 });
 
-export { loginRules, phoneRules, updateRules, registerRules };
+export { loginRules, phoneRules, phoneLoginRules, updateRules, registerRules };

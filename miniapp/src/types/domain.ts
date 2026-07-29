@@ -8,6 +8,7 @@ export interface UserProfile {
   nickname: string
   avatarPath?: string
   gender?: 'UNKNOWN' | 'MALE' | 'FEMALE'
+  phone?: string
   officialAccountOpenid?: string
   signature?: string
   birthday?: string

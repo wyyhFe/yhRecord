@@ -160,6 +160,7 @@ public class UserServiceImpl implements UserService {
         return UserProfileVO.builder()
                 .id(user.getId())
                 .openid(user.getOpenid())
+                .phone(user.getPhone())
                 .nickname(user.getNickname())
                 .avatarPath(user.getAvatarPath())
                 .gender(user.getGender())

@@ -55,6 +55,9 @@ public class User extends BaseEntity {
     @Schema(description = "若已被合并，指向目标用户 ID；否则为 null")
     private Long mergedIntoUserId;
 
+    @Schema(description = "手机号（绑定后可用于管理后台登录）", example = "13800138000")
+    private String phone;
+
     @Schema(description = "管理后台登录用户名，仅管理员使用", example = "admin")
     private String username;
 

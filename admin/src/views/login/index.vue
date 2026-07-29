@@ -15,7 +15,6 @@ import { useLayout } from "@/layout/hooks/useLayout";
 import LoginPhone from "./components/LoginPhone.vue";
 import LoginRegist from "./components/LoginRegist.vue";
 import LoginUpdate from "./components/LoginUpdate.vue";
-import LoginQrCode from "./components/LoginQrCode.vue";
 import { useUserStoreHook } from "@/store/modules/user";
 import { initRouter, getTopMenu } from "@/router/utils";
 import { bg, avatar, illustration } from "./utils/static";
@@ -274,7 +273,7 @@ const handleOAuthLogin = (provider: string) => {
                   <el-button
                     link
                     type="primary"
-                    @click="useUserStoreHook().SET_CURRENTPAGE(4)"
+                    @click="useUserStoreHook().SET_CURRENTPAGE(3)"
                   >
                     {{ t("login.pureForget") }}
                   </el-button>
@@ -372,12 +371,10 @@ const handleOAuthLogin = (provider: string) => {
           </Motion>
           <!-- 手机号登录 -->
           <LoginPhone v-if="currentPage === 1" />
-          <!-- 二维码登录 -->
-          <LoginQrCode v-if="currentPage === 2" />
           <!-- 注册 -->
-          <LoginRegist v-if="currentPage === 3" />
+          <LoginRegist v-if="currentPage === 2" />
           <!-- 忘记密码 -->
-          <LoginUpdate v-if="currentPage === 4" />
+          <LoginUpdate v-if="currentPage === 3" />
         </div>
       </div>
     </div>

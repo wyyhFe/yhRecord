@@ -11,6 +11,7 @@ import {
   type UserResult,
   type RefreshTokenResult,
   getLogin,
+  phoneLogin,
   refreshTokenApi
 } from "@/api/user";
 import { useMultiTagsStoreHook } from "./multiTags";
@@ -79,6 +80,26 @@ export const useUserStore = defineStore("pure-user", {
     async loginByUsername(data) {
       return new Promise<UserResult>((resolve, reject) => {
         getLogin(data)
+          .then(data => {
+            if (data.code === 0) {
+              setToken({
+                ...data.data,
+                expires: new Date(Date.now() + data.data.expiresIn * 1000)
+              });
+              resolve(data);
+            } else {
+              reject(data.message);
+            }
+          })
+          .catch(error => {
+            reject(error);
+          });
+      });
+    },
+    /** 手机号 + 密码登录 */
+    async loginByPhone(data) {
+      return new Promise<UserResult>((resolve, reject) => {
+        phoneLogin(data)
           .then(data => {
             if (data.code === 0) {
               setToken({
