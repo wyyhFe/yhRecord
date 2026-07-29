@@ -190,7 +190,7 @@ app:
         api-key: ${DEEPSEEK_API_KEY:}
       dashscope:
         api-key: ${DASHSCOPE_API_KEY:}
-    system-prompt:
+    system-prompt:  prompts/ai/system.md
     chat:
       memory-enabled: true
       max-messages: 20
