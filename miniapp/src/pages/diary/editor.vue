@@ -127,7 +127,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import PhotoPicker, { type SelectedPhoto } from '@/components/business/photo-picker/index.vue'
 import LocationPicker from '@/components/business/location-picker/index.vue'
 import SelectorDialog from '@/components/business/selector-dialog/index.vue'
-import { createDiary, fetchDiaryDetail, updateDiary } from '@/api/diary'
+import { createDiary, fetchDiaryDetail, updateDiary, checkContentSecurity } from '@/api/diary'
 import { fetchUserTags } from '@/api/tag'
 import { VISIBILITY_OPTIONS } from '@/config/app'
 import { DIARY_MOOD_OPTIONS, DIARY_WEATHER_OPTIONS } from '@/config/diary'
@@ -275,6 +275,14 @@ async function submitDiary() {
   }
   submitting.value = true
   try {
+    // Check content security before submission
+    const textToCheck = form.value.title + '\n' + form.value.content
+    const checkResult = await checkContentSecurity(textToCheck, 4)
+    if (!checkResult.safe) {
+      uni.$feedback.error('内容包含违规信息，请修改后重新发布')
+      return
+    }
+    
     for (let i = 0; i < photos.value.length; i++) {
       if (photos.value[i].status !== 'done') await uploadOne(i)
     }

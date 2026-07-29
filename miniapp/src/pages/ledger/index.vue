@@ -272,14 +272,8 @@
                 class="ep-note__input"
                 placeholder="备注（选填）"
               />
-              <view class="ep-note__image-btn" @tap="chooseLedgerImage">
-                <text>{{ entryImagePath ? '📷' : '📷' }}</text>
-              </view>
             </view>
-            <view v-if="entryImagePath" class="ep-note__preview">
-              <image :src="resolveMediaUrl(entryImagePath)" mode="aspectFill" class="ep-note__preview-img" />
-              <text class="ep-note__preview-clear" @tap="entryImagePath = ''">✕</text>
-            </view>
+            <PhotoPicker v-model="ledgerPhotos" :max-count="1" @retry="retryLedgerPhotoUpload" />
           </view>
 
           <!-- 数字键盘 -->
@@ -323,6 +317,7 @@ import { computed, ref, watch } from 'vue'
 import { onShareAppMessage, onShareTimeline, onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app'
 import LedgerYearCharts from '@/components/business/ledger-year-charts/index.vue'
 import EmptyStateCard from '@/components/business/empty-state-card'
+import PhotoPicker, { type SelectedPhoto } from '@/components/business/photo-picker/index.vue'
 import { API_BASE_URL, OSS_BASE_URL } from '@/config/app'
 import { fetchBooks, type LedgerBook } from '@/api/books'
 import { fetchMonthLedger, fetchYearLedger } from '@/api/ledger'
@@ -392,7 +387,7 @@ const selectedBookId = ref<Id>()
 const selectedBookName = ref('')
 const selectedTagIds = ref<Id[]>([])
 const amountText = ref('')
-const entryImagePath = ref('')
+const ledgerPhotos = ref<SelectedPhoto[]>([])
 const showFilterPopup = ref(false)
 const showEntryPopup = ref(false)
 const submitting = ref(false)
@@ -651,7 +646,7 @@ function resetEntryForm() {
   }
   amountText.value = ''
   selectedTagIds.value = []
-  entryImagePath.value = ''
+  ledgerPhotos.value = []
 }
 
 function openCreateEntryPopup() {
@@ -675,7 +670,9 @@ function editEntry(entry: LedgerEntry) {
   selectedTagIds.value = entry.tagIds?.length
     ? [...entry.tagIds]
     : (entry.tags || []).map((item) => item.id)
-  entryImagePath.value = entry.imagePath || ''
+  ledgerPhotos.value = entry.imagePath
+    ? [{ localPath: resolveMediaUrl(entry.imagePath), ossPath: entry.imagePath, status: 'done' }]
+    : []
   if (entry.bookId) {
     selectedBookId.value = entry.bookId
   }
@@ -732,23 +729,23 @@ function openBookSelector() {
   })
 }
 
-async function chooseLedgerImage() {
+async function uploadLedgerPhoto(index: number) {
+  const current = ledgerPhotos.value[index]
+  if (!current) return
+  current.status = 'uploading'
   try {
-    const result = await uni.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      sourceType: ['album', 'camera']
-    })
-    const filePath = result.tempFilePaths?.[0]
-    if (!filePath) return
-    entryImagePath.value = await uploadImageToOss({
-      filePath,
-      dir: 'ledger/'
-    })
-    uni.$feedback.success('图片已上传')
-  } catch (error) {
-    uni.$feedback.error(error, undefined, '图片上传失败')
+    const ossPath = current.ossPath || (await uploadImageToOss({ filePath: current.localPath, dir: 'ledger/' }))
+    current.ossPath = ossPath
+    current.status = 'done'
+  } catch {
+    current.status = 'failed'
+    throw new Error('图片上传失败')
   }
+}
+
+async function retryLedgerPhotoUpload(index: number) {
+  try { await uploadLedgerPhoto(index); uni.$feedback.success('重试成功') }
+  catch (error) { uni.$feedback.error(error, undefined, '重试失败') }
 }
 
 async function submitEntry() {
@@ -767,18 +764,24 @@ async function submitEntry() {
     return
   }
 
-  const payload: LedgerEntryFormPayload = {
-    bookId: selectedBookId.value,
-    type: entryForm.value.type,
-    amount,
-    entryDate: entryForm.value.entryDate,
-    remark: entryForm.value.remark.trim() || undefined,
-    imagePath: entryImagePath.value || undefined,
-    tagIds: selectedTagIds.value
-  }
-
   submitting.value = true
   try {
+    // 上传未上传的图片
+    for (let i = 0; i < ledgerPhotos.value.length; i++) {
+      if (ledgerPhotos.value[i].status !== 'done') await uploadLedgerPhoto(i)
+    }
+    const imagePath = ledgerPhotos.value.find((item) => item.ossPath)?.ossPath
+
+    const payload: LedgerEntryFormPayload = {
+      bookId: selectedBookId.value,
+      type: entryForm.value.type,
+      amount,
+      entryDate: entryForm.value.entryDate,
+      remark: entryForm.value.remark.trim() || undefined,
+      imagePath: imagePath || undefined,
+      tagIds: selectedTagIds.value
+    }
+
     if (editingEntryId.value) {
       await updateLedgerEntry(editingEntryId.value, payload)
       uni.$feedback.success('账单已更新')
@@ -1562,46 +1565,6 @@ onPullDownRefresh(() => {
   color: var(--color-text-primary);
   font-size: var(--font-body);
   box-sizing: border-box;
-}
-
-.ep-note__image-btn {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: var(--radius-medium);
-  background: var(--color-ledger-soft);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28rpx;
-  flex-shrink: 0;
-}
-
-.ep-note__preview {
-  position: relative;
-  display: inline-block;
-  margin-top: var(--space-2);
-}
-
-.ep-note__preview-img {
-  width: 100rpx;
-  height: 100rpx;
-  border-radius: var(--radius-small);
-  background: var(--color-surface-soft);
-}
-
-.ep-note__preview-clear {
-  position: absolute;
-  top: -8rpx;
-  right: -8rpx;
-  width: 32rpx;
-  height: 32rpx;
-  border-radius: var(--radius-full);
-  background: var(--color-danger);
-  color: #fff;
-  font-size: 18rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* 操作按钮 */

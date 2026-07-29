@@ -77,7 +77,7 @@ function remove(index: number) {
 async function chooseFrom(sourceType: Array<'album' | 'camera'>) {
   const result = await uni.chooseImage({
     count: props.maxCount - props.modelValue.length,
-    sizeType: ['compressed'],
+    sizeType: ['original', 'compressed'],
     sourceType
   })
   const paths = Array.isArray(result.tempFilePaths) ? result.tempFilePaths : [result.tempFilePaths]
