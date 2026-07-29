@@ -19,8 +19,10 @@ const expired = ref(false);
 const errorMsg = ref("");
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
-// 生产环境域名，微信扫一扫会根据此 URL 规则自动打开小程序
-const QR_LOGIN_URL = "https://recordlife.top/qr-login";
+// 扫码登录 URL 前缀，可通过 VITE_QR_LOGIN_BASE_URL 环境变量配置
+const QR_LOGIN_URL = (import.meta as any).env?.VITE_QR_LOGIN_BASE_URL
+  ? ((import.meta as any).env.VITE_QR_LOGIN_BASE_URL as string).replace(/\/+$/, "") + "/qr-login"
+  : "https://recordlife.top/qr-login";
 
 async function generateAndPoll() {
   expired.value = false;
