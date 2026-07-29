@@ -3,6 +3,24 @@ import type { Pagination } from '@/types/api'
 import type { DiaryComment, DiaryItem, Id } from '@/types/domain'
 import type { CreateDiaryPayload } from '@/types/diary'
 
+/** 内容安全检测结果 */
+export interface ContentCheckResult {
+  safe: boolean
+  message?: string
+}
+
+/**
+ * 检测文本内容是否安全。
+ * 调用后端微信 msgSecCheck 接口。
+ */
+export function checkContentSecurity(content: string, scene: number = 4) {
+  return request<ContentCheckResult>({
+    url: '/security/check',
+    method: 'POST',
+    data: { content, scene }
+  })
+}
+
 /**
  * 查询日记列表。
  */

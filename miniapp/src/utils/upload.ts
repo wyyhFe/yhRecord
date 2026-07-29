@@ -1,4 +1,5 @@
-import { fetchUploadPolicy } from '@/api/file'
+import { fetchUploadPolicy, checkImageSecurity } from '@/api/file'
+import { OSS_BASE_URL } from '@/config/app'
 
 /**
  * OSS 上传所需的最小参数。
@@ -20,6 +21,7 @@ function getFileExtension(filePath: string) {
 
 /**
  * 通过后端获取签名后，将图片直接上传到 OSS。
+ * 上传成功后自动调用微信图片安全检测，违规图片抛出异常。
  * 最终只返回对象 key，业务表仍然只保存路径，不保存完整域名。
  */
 export async function uploadImageToOss({ filePath, dir = 'diary/' }: UploadToOssOptions) {
@@ -43,6 +45,13 @@ export async function uploadImageToOss({ filePath, dir = 'diary/' }: UploadToOss
   if (result.statusCode !== 200) {
     const message = typeof result.data === 'string' ? result.data : '上传到 OSS 失败'
     throw new Error(message)
+  }
+
+  // 图片安全检测：上传成功后调微信 imgSecCheck
+  const imageUrl = `${OSS_BASE_URL}/${key}`
+  const checkResult = await checkImageSecurity(imageUrl)
+  if (!checkResult.safe) {
+    throw new Error('图片包含违规内容，请更换')
   }
 
   return key
