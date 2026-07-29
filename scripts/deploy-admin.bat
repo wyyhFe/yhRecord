@@ -24,7 +24,7 @@ REM ============================================
 
 set "SERVER_IP=123.207.210.150"
 set "SERVER_USER=root"
-set "SSH_KEY=C:\Users\Administrator\Desktop\lifeRecord-deploy\record.pem"
+set "SSH_KEY=D:\1\\Me\life-record\lifeRecord-deploy\record.pem"
 
 set "REMOTE_DIR=/www/wwwroot/myproject/recordFront-admin"
 set "REMOTE_TMP=/tmp/lifeRecord-admin-dist.tar.gz"
@@ -123,8 +123,8 @@ echo [OK] upload done
 echo.
 
 echo [5/5] extract on remote ...
-REM 注意：cmd 不识别 \" 转义，内部双引号必须用 "" (doubled quotes)，否则 2>/dev/null 会被 cmd 当作本地重定向，报 "系统找不到指定的路径"
-ssh %SSH_OPTS% "%SERVER_USER%@%SERVER_IP%" "set -e; BAK=%REMOTE_DIR%_backup_$(date +%%Y%%m%%d_%%H%%M%%S); if [ -d %REMOTE_DIR% ] && [ -n ""$(ls -A %REMOTE_DIR% 2>/dev/null)"" ]; then mv %REMOTE_DIR% ""$BAK"" && mkdir -p %REMOTE_DIR% && echo backup to $BAK; fi; tar -xzf %REMOTE_TMP% -C %REMOTE_DIR%/ && rm -f %REMOTE_TMP% && echo 'deploy ok'"
+REM 用 rm -rf 清空再解压，避免 mv 导致 Docker bind mount 断连（bind mount 绑定 inode，mv 后新目录 inode 不同）
+ssh %SSH_OPTS% "%SERVER_USER%@%SERVER_IP%" "set -e; rm -rf %REMOTE_DIR%/* %REMOTE_DIR%/.[!.]* %REMOTE_DIR%/..?* 2>/dev/null; tar -xzf %REMOTE_TMP% -C %REMOTE_DIR%/ && rm -f %REMOTE_TMP% && echo 'deploy ok'"
 if errorlevel 1 (
     echo [FAIL] remote extract failed
     exit /b 1
