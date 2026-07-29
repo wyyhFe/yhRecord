@@ -29,13 +29,13 @@ async function generateAndPoll() {
   errorMsg.value = "";
 
   try {
-    const { data } = await getQrToken();
-    if (!data?.qrToken) {
+    const tokenData = await getQrToken();
+    if (!tokenData?.qrToken) {
       errorMsg.value = "获取二维码失败";
       return;
     }
-    qrText.value = QR_LOGIN_URL + "?token=" + data.qrToken;
-    startPolling(data.qrToken);
+    qrText.value = QR_LOGIN_URL + "?token=" + tokenData.qrToken;
+    startPolling(tokenData.qrToken);
   } catch {
     errorMsg.value = "获取二维码失败";
   }
