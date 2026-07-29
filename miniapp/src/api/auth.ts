@@ -29,6 +29,18 @@ export function wxLogin(code: string) {
 }
 
 /**
+ * 小程序扫码确认管理后台登录。
+ * qrToken 来自扫码解析的二维码内容（LR_LOGIN: 前缀后的部分）。
+ */
+export function confirmQrLogin(qrToken: string) {
+  return request<void>({
+    url: '/auth/qr-login',
+    method: 'POST',
+    data: { qrToken }
+  })
+}
+
+/**
  * 手动刷新 token。
  * 正常情况下请求层会自动调用，这里同时保留给业务层显式使用。
  */

@@ -10,6 +10,9 @@ public final class RedisKeyConstants {
     /** OAuth state 上下文（防 CSRF + 区分登录/绑定意图）。完整 key 为 OAUTH_STATE + {state}。 */
     public static final String OAUTH_STATE = "record:oauth:state:";
 
+    /** 后台二维码扫码登录 token。完整 key 为 QR_LOGIN + {qrToken}，值存储 JSON 状态。 */
+    public static final String QR_LOGIN = "record:qr:login:";
+
     private RedisKeyConstants() {
     }
 }
