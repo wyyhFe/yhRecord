@@ -88,13 +88,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onLoad, onPullDownRefresh, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { useGreeting } from '@/composables/useGreeting'
 import { fetchCalendarSummaryRecent, fetchYearlyDiaryCount } from '@/api/calendar'
 import type { DaySummary } from '@/types/domain'
 import { tokenStorage } from '@/utils/storage'
 import { getLastLedgerBook } from '@/utils/ledger-book'
+import { confirmQrLogin } from '@/api/auth'
 import LoginSheet from '@/components/business/login-sheet'
 import TabBar from '@/components/business/tab-bar/index.vue'
 
@@ -246,9 +247,71 @@ function handleLoginSuccess() {
   loadSummary()
 }
 
+/**
+ * 从微信扫一扫打开的 URL 中提取 QR 登录 token。
+ * 微信扫一扫会将完整的二维码 URL 通过 `q` 参数传给小程序。
+ */
+async function handleQrScanParam(q: string) {
+  const match = q.match(/[?&]token=([^&\s#]+)/)
+  const qrToken = match ? decodeURIComponent(match[1]) : null
+  if (!qrToken) return
+
+  // 需要先登录
+  if (!tokenStorage.getAccessToken()) {
+    showLogin.value = true
+    // 登录成功后自动处理
+    const unwatch = watch(showLogin, async (val) => {
+      if (!val && tokenStorage.getAccessToken()) {
+        unwatch()
+        await doConfirmQrLogin(qrToken)
+      }
+    })
+    return
+  }
+  await doConfirmQrLogin(qrToken)
+}
+
+/** URL Link 直接传入 token（无需解析 URL） */
+async function handleQrScanParamDirect(qrToken: string) {
+  if (!tokenStorage.getAccessToken()) {
+    showLogin.value = true
+    const unwatch = watch(showLogin, async (val) => {
+      if (!val && tokenStorage.getAccessToken()) {
+        unwatch()
+        await doConfirmQrLogin(qrToken)
+      }
+    })
+    return
+  }
+  await doConfirmQrLogin(qrToken)
+}
+
+async function doConfirmQrLogin(qrToken: string) {
+  try {
+    const confirmRes = await uni.showModal({
+      title: '确认登录',
+      content: '确认在浏览器端登录管理后台？'
+    })
+    if (!confirmRes.confirm) return
+    await confirmQrLogin(qrToken)
+    uni.showToast({ title: '登录成功', icon: 'success' })
+  } catch (err: any) {
+    uni.$feedback.error(err, undefined, '扫码登录失败')
+    console.error('[QrLogin-Home]', err)
+  }
+}
+
 onLoad((query) => {
   if (query?.showLogin === '1') {
     showLogin.value = true
+  }
+  // 方式 1：微信扫一扫打开（需配置「扫普通链接二维码打开小程序」，个人主体暂不支持）
+  if (query?.q) {
+    handleQrScanParam(query.q as string)
+  }
+  // 方式 2：URL Link 跳转（微信扫一扫 → 网页 → 生成 URL Link → 唤起小程序）
+  if (query?.qrToken) {
+    handleQrScanParamDirect(query.qrToken as string)
   }
   loadSummary()
 })

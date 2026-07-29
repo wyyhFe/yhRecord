@@ -85,6 +85,7 @@ app:
     app-secret: ${WECHAT_APP_SECRET}
     code2session-url: https://api.weixin.qq.com/sns/jscode2session
     get-phone-number-url: https://api.weixin.qq.com/wxa/business/getuserphonenumber
+    generate-url-link-url: https://api.weixin.qq.com/wxa/generate_urllink
   oauth:
     frontend-callback-url: ${OAUTH_FRONTEND_CALLBACK_URL:http://localhost:8848/#/auth/callback}
     frontend-bind-result-url: ${OAUTH_FRONTEND_BIND_RESULT_URL:http://localhost:8848/#/account/identities}

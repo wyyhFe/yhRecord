@@ -61,6 +61,9 @@ public class AppProperties {
 
         /** 微信 getuserphonenumber 接口地址。 */
         private String getPhoneNumberUrl;
+
+        /** 微信生成 URL Link 接口地址。 */
+        private String generateUrlLinkUrl;
     }
 
     @Data

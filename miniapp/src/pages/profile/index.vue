@@ -103,16 +103,32 @@ const menuItems = [
   // { key: 'security', icon: '🔐', title: '账号安全', description: '绑定手机号，设置管理后台登录' },
 ]
 
+/**
+ * 从二维码文本中提取 token。支持两种格式：
+ * 1. https://recordlife.top/qr-login?token=xxx （微信扫一扫 + 小程序内扫码通用）
+ * 2. LR_LOGIN:xxx （向后兼容）
+ */
+function extractQrToken(text: string): string | null {
+  // URL query 参数解析（兼容微信环境，不用 URL 构造函数）
+  const match = text.match(/[?&]token=([^&\s#]+)/)
+  if (match) return decodeURIComponent(match[1])
+  // 兼容旧格式
+  if (text.startsWith('LR_LOGIN:')) {
+    return text.slice('LR_LOGIN:'.length)
+  }
+  return null
+}
+
 /** 扫码登录管理后台 */
 async function handleQrLogin() {
   try {
     const res = await uni.scanCode({ onlyFromCamera: true, scanType: ['qrCode'] })
     const text = res.result || ''
-    if (!text.startsWith('LR_LOGIN:')) {
+    const qrToken = extractQrToken(text)
+    if (!qrToken) {
       uni.showToast({ title: '无效的二维码', icon: 'none' })
       return
     }
-    const qrToken = text.slice('LR_LOGIN:'.length)
     const confirmRes = await uni.showModal({
       title: '确认登录',
       content: '确认在浏览器端登录管理后台？'

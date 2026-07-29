@@ -19,7 +19,8 @@ const expired = ref(false);
 const errorMsg = ref("");
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
-const QR_LOGIN_PREFIX = "LR_LOGIN:";
+// 生产环境域名，微信扫一扫会根据此 URL 规则自动打开小程序
+const QR_LOGIN_URL = "https://recordlife.top/qr-login";
 
 async function generateAndPoll() {
   expired.value = false;
@@ -31,7 +32,7 @@ async function generateAndPoll() {
       errorMsg.value = "获取二维码失败";
       return;
     }
-    qrText.value = QR_LOGIN_PREFIX + data.qrToken;
+    qrText.value = QR_LOGIN_URL + "?token=" + data.qrToken;
     startPolling(data.qrToken);
   } catch {
     errorMsg.value = "获取二维码失败";
