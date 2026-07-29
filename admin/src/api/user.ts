@@ -73,7 +73,7 @@ export const getQrToken = () => {
 
 /** 轮询二维码扫码状态 */
 export const getQrStatus = (qrToken: string) => {
-  return http.request<UserResult["data"]>("get", "/auth/qr-status", { params: { qrToken } });
+  return http.request<UserResult["data"]>("get", `/auth/qr-status?qrToken=${qrToken}`);
 };
 
 /** 刷新 token */
