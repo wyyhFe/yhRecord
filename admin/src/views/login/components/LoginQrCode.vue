@@ -29,13 +29,14 @@ async function generateAndPoll() {
   errorMsg.value = "";
 
   try {
-    const tokenData = await getQrToken();
-    if (!tokenData?.qrToken) {
+    const res = await getQrToken() as any;
+    const qrToken = res?.data?.qrToken;
+    if (!qrToken) {
       errorMsg.value = "获取二维码失败";
       return;
     }
-    qrText.value = QR_LOGIN_URL + "?token=" + tokenData.qrToken;
-    startPolling(tokenData.qrToken);
+    qrText.value = QR_LOGIN_URL + "?token=" + qrToken;
+    startPolling(qrToken);
   } catch {
     errorMsg.value = "获取二维码失败";
   }
@@ -45,19 +46,19 @@ function startPolling(qrToken: string) {
   stopPolling();
   pollTimer = setInterval(async () => {
     try {
-      const result = await getQrStatus(qrToken);
-      // 成功拿到 token（HTTP 200 + data 不为空）
-      if (result) {
+      const res = await getQrStatus(qrToken) as any;
+      // code === 0 表示已确认，data 里有 token 信息
+      if (res?.code === 0 && res?.data) {
         stopPolling();
         setToken({
-          ...result,
-          expires: new Date(Date.now() + ((result as any).expiresIn || 0) * 1000)
+          ...res.data,
+          expires: new Date(Date.now() + ((res.data.expiresIn || 0) * 1000))
         });
         await initRouter();
         router.push(getTopMenu(true).path);
         message(transformI18n($t("login.pureLoginSuccess")), { type: "success" });
       }
-      // code 202 = 等待中，继续轮询
+      // code 202 = 等待中，继续轮询；其他 code 抛出异常走 catch
     } catch (err: any) {
       const msg = err?.message || "";
       if (msg.includes("过期")) {
