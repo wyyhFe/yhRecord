@@ -1,20 +1,47 @@
 <template>
-  <view class="page-shell-safe home-page">
+  <view class="home-page">
     <!-- 1. Hero 渐变头部 -->
     <view class="home-hero">
-      <view class="home-hero__top">
-        <view class="home-hero__date">
-          <text class="home-hero__date-en">{{ todayEN }}</text>
-          <text class="home-hero__date-dot">·</text>
-          <text class="home-hero__date-cn">{{ todayShort }}</text>
+      <!-- 轮播图 + 浮在左上角的扫码按钮 -->
+      <view class="home-hero__banner" :style="{ paddingTop: (statusBarHeight ) + 'px' }">
+        <!-- 扫码按钮浮在轮播图左上角，与微信胶囊按钮同行 -->
+        <view class="home-hero__scan" hover-class="home-hero__scan--pressed" @tap="handleScanLogin"
+              :style="{ top: (statusBarHeight + 8) + 'px' }">
+          <image class="home-hero__scan-icon" src="/static/sys.png" mode="aspectFit" />
+          <text class="home-hero__scan-text">扫一扫</text>
         </view>
+
+        <swiper class="home-hero__swiper" :indicator-dots="true" :autoplay="false" :circular="true">
+          <swiper-item>
+            <view class="home-hero__swiper-slide" style="background: linear-gradient(135deg, #c47c52, #e8b896);">
+              <text class="home-hero__swiper-title">欢迎回来 👋</text>
+              <text class="home-hero__swiper-desc">记录生活的每一个瞬间</text>
+            </view>
+          </swiper-item>
+          <swiper-item>
+            <view class="home-hero__swiper-slide" style="background: linear-gradient(135deg, #6b8f71, #a3c9a8);">
+              <text class="home-hero__swiper-title">今天打卡了吗？</text>
+              <text class="home-hero__swiper-desc">坚持就是胜利 ✊</text>
+            </view>
+          </swiper-item>
+        </swiper>
       </view>
-      <view class="home-hero__greeting">
-        <text class="home-hero__greeting-text">{{ greeting }}.</text>
-      </view>
-      <view class="home-hero__sub">
-        把今天，认真留下来。
-        <text class="home-hero__sub-count">今年已记 {{ recordedCount }} 天</text>
+
+      <view class="home-hero__bottom">
+        <view class="home-hero__top">
+          <view class="home-hero__date">
+            <text class="home-hero__date-en">{{ todayEN }}</text>
+            <text class="home-hero__date-dot">·</text>
+            <text class="home-hero__date-cn">{{ todayShort }}</text>
+          </view>
+        </view>
+        <view class="home-hero__greeting">
+          <text class="home-hero__greeting-text">{{ greeting }}.</text>
+        </view>
+        <view class="home-hero__sub">
+          把今天，认真留下来。
+          <text class="home-hero__sub-count">今年已记 {{ recordedCount }} 天</text>
+        </view>
       </view>
 
       <!-- 快捷入口浮在 Hero 底部 -->
@@ -103,6 +130,37 @@ onShareAppMessage(() => ({ title: '把今天，认真留下来' }))
 onShareTimeline(() => ({ title: '把今天，认真留下来' }))
 
 const greeting = useGreeting()
+const statusBarHeight = ref(20)
+uni.getSystemInfo({
+  success: (info: any) => { statusBarHeight.value = info.statusBarHeight || 20 }
+})
+
+/** 首页扫码登录管理后台 */
+async function handleScanLogin() {
+  if (!tokenStorage.getAccessToken()) {
+    showLogin.value = true
+    return
+  }
+  try {
+    const res = await uni.scanCode({ onlyFromCamera: true, scanType: ['qrCode'] })
+    const text = res.result || ''
+    if (!text.startsWith('LR_LOGIN:')) {
+      uni.showToast({ title: '无效的二维码', icon: 'none' })
+      return
+    }
+    const confirmRes = await uni.showModal({
+      title: '确认登录',
+      content: '确认在浏览器端登录管理后台？'
+    })
+    if (!confirmRes.confirm) return
+    await confirmQrLogin(text.slice('LR_LOGIN:'.length))
+    uni.showToast({ title: '登录成功', icon: 'success' })
+  } catch (err: any) {
+    if (err?.errMsg?.includes('cancel')) return
+    uni.$feedback.error(err, undefined, '扫码登录失败')
+    console.error('[QrLogin-Home]', err)
+  }
+}
 const calendarItems = ref<DaySummary[]>([])
 const recordedCount = ref(0)
 const showLogin = ref(false)
@@ -341,8 +399,80 @@ onPullDownRefresh(() => {
 .home-hero {
   background: var(--hero-gradient);
   border-radius: 0 0 var(--radius-xlarge) var(--radius-xlarge);
-  padding: var(--space-7) var(--space-6) var(--space-9);
   position: relative;
+}
+
+/* 轮播图 */
+.home-hero__banner {
+  position: relative;
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-4);
+}
+
+.home-hero__swiper {
+  height: 320rpx;
+  overflow: hidden;
+}
+
+.home-hero__swiper-slide {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-large);
+}
+
+.home-hero__swiper-title {
+  color: #ffffff;
+  font-size: var(--font-title);
+  font-weight: var(--weight-bold);
+}
+
+.home-hero__swiper-desc {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--font-meta);
+  margin-top: var(--space-2);
+}
+
+/* 扫码按钮：绝对定位浮在轮播图左上角 */
+.home-hero__scan {
+  position: absolute;
+  left: var(--space-6);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 48rpx;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  transition: all var(--motion-fast) var(--ease-standard);
+}
+
+.home-hero__scan--pressed {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.home-hero__scan-icon {
+  width: 32rpx;
+  height: 32rpx;
+  display: block;
+}
+
+.home-hero__scan-text {
+  color: #ffffff;
+  font-size: 22rpx;
+  font-weight: var(--weight-medium);
+  line-height: 1;
+}
+
+.home-hero__bottom {
+  padding: var(--space-4) var(--space-6) 0;
 }
 
 .home-hero__top {
@@ -405,6 +535,8 @@ onPullDownRefresh(() => {
   display: flex;
   justify-content: space-between;
   margin-top: var(--space-7);
+  padding-left: var(--space-6);
+  padding-right: var(--space-6);
 }
 
 .home-shortcuts__item {

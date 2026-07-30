@@ -62,7 +62,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { onShareAppMessage, onShareTimeline, onShow } from '@dcloudio/uni-app'
 import { useAppStore } from '@/stores/app'
-import { confirmQrLogin } from '@/api/auth'
 import TabBar from '@/components/business/tab-bar/index.vue'
 import PosterGenerator from './modules/poster-generator/index.vue'
 import { resolveImage } from '@/utils/image'
@@ -98,51 +97,9 @@ const menuItems = [
   { key: 'memorial', icon: '📅', title: '纪念日管理', description: '重要日期和提醒配置' },
   { key: 'tag', icon: '🏷️', title: '标签管理', description: '日记、记账和打卡标签' },
   { key: 'recycle', icon: '🗑️', title: '回收站', description: '已删除内容可恢复' },
-  { key: 'qrlogin', icon: '📱', title: '扫码登录管理后台', description: '扫描网页上的二维码，快速登录管理后台' },
   // TODO: 个人主体小程序暂不可用 getPhoneNumber，待主体升级后启用
   // { key: 'security', icon: '🔐', title: '账号安全', description: '绑定手机号，设置管理后台登录' },
 ]
-
-/**
- * 从二维码文本中提取 token。支持两种格式：
- * 1. https://recordlife.top/qr-login?token=xxx （微信扫一扫 + 小程序内扫码通用）
- * 2. LR_LOGIN:xxx （向后兼容）
- */
-function extractQrToken(text: string): string | null {
-  // URL query 参数解析（兼容微信环境，不用 URL 构造函数）
-  const match = text.match(/[?&]token=([^&\s#]+)/)
-  if (match) return decodeURIComponent(match[1])
-  // 兼容旧格式
-  if (text.startsWith('LR_LOGIN:')) {
-    return text.slice('LR_LOGIN:'.length)
-  }
-  return null
-}
-
-/** 扫码登录管理后台 */
-async function handleQrLogin() {
-  try {
-    const res = await uni.scanCode({ onlyFromCamera: true, scanType: ['qrCode'] })
-    const text = res.result || ''
-    const qrToken = extractQrToken(text)
-    if (!qrToken) {
-      uni.showToast({ title: '无效的二维码', icon: 'none' })
-      return
-    }
-    const confirmRes = await uni.showModal({
-      title: '确认登录',
-      content: '确认在浏览器端登录管理后台？'
-    })
-    if (!confirmRes.confirm) return
-
-    await confirmQrLogin(qrToken)
-    uni.showToast({ title: '登录成功', icon: 'success' })
-  } catch (err: any) {
-    if (err?.errMsg?.includes('cancel')) return // 用户取消扫码
-    uni.$feedback.error(err, undefined, '扫码登录失败')
-    console.error('[QrLogin]', err)
-  }
-}
 
 function handleSelect(key: string) {
   const routes: Record<string, string> = {
@@ -154,10 +111,6 @@ function handleSelect(key: string) {
   }
   if (routes[key]) {
     uni.navigateTo({ url: routes[key] })
-    return
-  }
-  if (key === 'qrlogin') {
-    handleQrLogin()
     return
   }
   if (key === 'tag') {
