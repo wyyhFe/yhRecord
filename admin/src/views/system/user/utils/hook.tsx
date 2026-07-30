@@ -3,6 +3,7 @@ import roleForm from "../form/role.vue";
 import editForm from "../form/index.vue";
 import { handleTree } from "@/utils/tree";
 import { message } from "@/utils/message";
+import { resolveImage } from "@/utils/image";
 import { usePublicHooks } from "../../hooks";
 import { addDialog } from "@/components/ReDialog";
 import type { FormItemProps, RoleFormItemProps } from "../utils/types";
@@ -66,7 +67,7 @@ export function useUser(tableRef: Ref, treeRef: Ref) {
         <el-image
           fit="cover"
           preview-teleported={true}
-          src={row.avatarPath || ""}
+          src={resolveImage(row.avatarPath)}
           class="size-6 rounded-full align-middle"
         >
           {{ error: () => <el-icon size={24}><i class="ep:avatar" /></el-icon> }}

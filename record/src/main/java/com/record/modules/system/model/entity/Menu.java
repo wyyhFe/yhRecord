@@ -67,15 +67,20 @@ public class Menu extends BaseEntity {
     }
 
     public Boolean getShowLink() {
-        return meta != null ? (Boolean) meta.get("showLink") : true;
+        if (meta == null) return true;
+        Object value = meta.get("showLink");
+        return value instanceof Boolean b ? b : true;
     }
 
     public Boolean getShowParent() {
-        return meta != null ? (Boolean) meta.get("showParent") : false;
+        if (meta == null) return false;
+        Object value = meta.get("showParent");
+        return value instanceof Boolean b ? b : false;
     }
 
     public Boolean getKeepAlive() {
-        return meta != null ? (Boolean) meta.get("keepAlive") : false;
+        Object value = meta.get("keepAlive");
+        return value instanceof Boolean b ? b : false;
     }
 
     public String getFrameSrc() {
